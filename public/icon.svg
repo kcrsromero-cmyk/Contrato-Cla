@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#312e81;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#grad)" />
+  
+  <!-- Outer Glow Ring -->
+  <rect x="24" y="24" width="464" height="464" rx="88" fill="none" stroke="#ffffff" stroke-opacity="0.15" stroke-width="4" />
+  
+  <!-- Document Container -->
+  <g filter="url(#shadow)" transform="translate(128, 112)">
+    <!-- Main Contract Sheet -->
+    <rect x="0" y="0" width="256" height="320" rx="24" fill="#ffffff" />
+    
+    <!-- Folded Corner Effect -->
+    <path d="M 200 0 L 256 56 L 200 56 Z" fill="#e0e7ff" />
+    <path d="M 200 0 L 256 0 L 256 56 Z" fill="#4f46e5" fill-opacity="0.1" />
+    
+    <!-- Colombian Flag Accent Lines at the header of the contract sheet -->
+    <rect x="32" y="40" width="136" height="6" rx="3" fill="#fcd34d" /> <!-- Yellow -->
+    <rect x="32" y="50" width="136" height="4" rx="2" fill="#3b82f6" /> <!-- Blue -->
+    <rect x="32" y="58" width="136" height="4" rx="2" fill="#ef4444" /> <!-- Red -->
+
+    <!-- Text line placeholders inside contract sheet -->
+    <rect x="32" y="86" width="192" height="12" rx="6" fill="#e2e8f0" />
+    <rect x="32" y="114" width="160" height="12" rx="6" fill="#e2e8f0" />
+    <rect x="32" y="142" width="192" height="12" rx="6" fill="#e2e8f0" />
+    <rect x="32" y="170" width="120" height="12" rx="6" fill="#e2e8f0" />
+
+    <!-- Emerald Check Badge / Seal of transparency -->
+    <circle cx="210" cy="220" r="34" fill="#10b981" />
+    <circle cx="210" cy="220" r="30" fill="none" stroke="#ffffff" stroke-width="3" />
+    <!-- Checkmark inside Badge -->
+    <path d="M 198 220 L 206 228 L 222 212" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Magnifying Glass overlay (citizen check) -->
+    <g transform="translate(10, 150)">
+      <circle cx="70" cy="70" r="32" fill="#ffffff" stroke="#4f46e5" stroke-width="10" filter="url(#shadow)" />
+      <!-- Inner lens highlight -->
+      <circle cx="70" cy="70" r="22" fill="#818cf8" fill-opacity="0.15" />
+      <!-- Handle -->
+      <line x1="92" y1="92" x2="125" y2="125" stroke="#4f46e5" stroke-width="12" stroke-linecap="round" />
+      <line x1="98" y1="98" x2="118" y2="118" stroke="#312e81" stroke-width="6" stroke-linecap="round" />
+    </g>
+  </g>
+</svg>

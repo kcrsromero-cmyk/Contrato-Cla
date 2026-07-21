@@ -1,0 +1,10 @@
+{
+  "version": "v1.3.0",
+  "releaseDate": "2026-07-21",
+  "changelog": [
+    "Nueva sección de Comparativa Mensual con desvíos porcentuales y evolución presupuestaria.",
+    "Buscador instantáneo por objeto y contratista en el módulo de Contratos.",
+    "Visualización interactiva con Recharts y soporte completo para modo oscuro y modo claro.",
+    "Documentación cívica completa (CONTRIBUTING, SECURITY, LICENSE, Términos y Descargo de Responsabilidad)."
+  ]
+}
