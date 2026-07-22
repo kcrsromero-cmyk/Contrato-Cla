@@ -15,7 +15,7 @@
 **Contrato-Claro es un proyecto 100% independiente de carácter cívico, educativo, analítico y social.**
 
 * **Sin Afiliación Oficial:** No tiene ninguna relación, patrocinio, asociación ni aval oficial con la Agencia Nacional de Contratación Pública — Colombia Compra Eficiente, el Departamento Nacional de Planeación (DNP) ni ninguna otra entidad gubernamental de la República de Colombia.
-* **Fuente Oficial de Datos:** Toda la información provista proviene de los conjuntos de datos abiertos de la plataforma estatal **Datos Abiertos Colombia (`datos.gov.co`)** a través de la API SODA del dataset SECOP II.
+* **Fuente Oficial de Datos:** Toda la información provista proviene de los conjuntos de datos abiertos de la plataforma estatal **Datos Abiertos Colombia (`datos.gov.co`)** a través de la API SODA del dataset SECOP II (`jbjy-vk9h.json`).
 * **Términos Completos:** Para consultar el alcance legal del proyecto, revise el [Descargo de Responsabilidad](DESCARGO_DE_RESPONSABILIDAD.md) y los [Términos de Uso](TERMINOS_DE_USO.md).
 
 ---
@@ -46,13 +46,19 @@ Contrato-Claro está diseñado bajo un paradigma de alta legibilidad, respuesta 
 
 ---
 
-## 📚 Documentación Técnica, Métodos y API Socrata 📖
+## 📚 Documentación Técnica, Métodos y Enlaces API Socrata 📖
 
 Para una descripción detallada sobre la arquitectura técnica, las fórmulas matemáticas y los canales de integración con datos abiertos, consulte la **[Documentación Técnica Completa (`DOCUMENTACION_TECNICA.md`)](DOCUMENTACION_TECNICA.md)**:
 
+* 🔗 **[Enlaces Oficiales de la API Socrata SECOP II](DOCUMENTACION_TECNICA.md#4-enlaces-oficiales-y-documentación-de-la-api-socrata-secop-ii):**
+  * Dataset Oficial en Datos Abiertos: [datos.gov.co/Gastos-Publicos/SECOP-II-Contratos-Electronicos/jbjy-vk9h](https://www.datos.gov.co/Gastos-Publicos/SECOP-II-Contratos-Electronicos/jbjy-vk9h/about_data)
+  * Endpoint JSON de Socrata: [datos.gov.co/resource/jbjy-vk9h.json](https://www.datos.gov.co/resource/jbjy-vk9h.json)
+  * Socrata Developer Portal (Foundry API): [dev.socrata.com/foundry/www.datos.gov.co/jbjy-vk9h](https://dev.socrata.com/foundry/www.datos.gov.co/jbjy-vk9h)
+  * Documentación General de Endpoints SODA: [dev.socrata.com/docs/endpoints.html](https://dev.socrata.com/docs/endpoints.html)
 * 🧮 **[Motor de Cálculo Matemático](DOCUMENTACION_TECNICA.md#2-motor-de-cálculo-matemático-y-cruces-de-datos):** Fórmulas exactas para agregaciones financieras, desviaciones presupuestales, coeficiente de Jaccard ($J(A,B) = \frac{|A \cap B|}{|A \cup B|}$), filtrado de stopwords en contratación colombiana e índice invertido.
-* 📋 **[Tabla de Campos Consumidos (SECOP II)](DOCUMENTACION_TECNICA.md#4-campos-consumidos-de-la-api-socrata-secop-ii):** Mapeo de más de 35 campos de la API Socrata (`jbjy-vk9h.json`) hacia la aplicación React/TypeScript.
-* 📡 **[Encabezados HTTP Socrata (SODA API v2.1)](DOCUMENTACION_TECNICA.md#5-encabezados-http-de-socrata-soda-api-v21):** Detalle de encabezados HTTP disponibles en Socrata (`X-App-Token`, `X-Soda2-Fields`, `X-Soda2-Types`, `X-Total-Count`, `Cache-Control`) y la estrategia de cliente adoptada por Contrato-Claro.
+* 📋 **[Tabla de Campos Consumidos (42 campos)](DOCUMENTACION_TECNICA.md#51-tabla-detallada-de-campos-de-la-api):** Mapeo de todos los campos de la API Socrata (`jbjy-vk9h.json`) consumidos y validados por Contrato-Claro.
+* 🛡️ **[Política de Minimización de Datos y Habeas Data](DOCUMENTACION_TECNICA.md#52-análisis-normativo-y-política-de-minimización-de-datos-personales-habeas-data):** Cumplimiento estricto de la Ley 1581 de 2012 y Ley 1712 de 2014. No se solicitan ni exponen números de documento de identidad de personas naturales actuando como supervisores o ordenadores de gasto.
+* 📡 **[Encabezados HTTP Socrata (SODA API v2.1)](DOCUMENTACION_TECNICA.md#6-encabezados-http-de-socrata-soda-api-v21):** Detalle de encabezados HTTP disponibles en Socrata (`X-App-Token`, `X-Soda2-Fields`, `X-Soda2-Types`, `X-Total-Count`, `Cache-Control`) y la estrategia de cliente adoptada por Contrato-Claro.
 
 ---
 

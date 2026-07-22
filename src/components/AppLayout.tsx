@@ -265,7 +265,7 @@ export default function AppLayout({
               <span className="hidden sm:inline text-slate-300 dark:text-slate-800">•</span>
               <span>GNU AGPLv3 License</span>
               <span className="hidden sm:inline text-slate-300 dark:text-slate-800">•</span>
-              <span>© 2026 EDWIN MAURICIO CACERES ROMERO</span>
+              <span>© 2026 Contrato-Claro</span>
             </div>
             <div className="text-center md:text-right">
               <span>No afiliado al Gobierno de Colombia.</span>

@@ -17,10 +17,13 @@
    * 2.5 [Indicadores de Riesgo y Control Ciudadano](#25-indicadores-de-riesgo-y-control-ciudadano)
    * 2.6 [Consolidación y Recurrencia de Contratistas](#26-consolidación-y-recurrencia-de-contratistas)
 3. 💻 [Procesamiento fuera del Hilo Principal (Web Worker)](#3-procesamiento-fuera-del-hilo-principal-web-worker)
-4. 📋 [Campos Consumidos de la API Socrata (SECOP II)](#4-campos-consumidos-de-la-api-socrata-secop-ii)
-5. 📡 [Encabezados HTTP de Socrata (SODA API v2.1)](#5-encabezados-http-de-socrata-soda-api-v21)
-   * 5.1 [Encabezados Disponibles en la Plataforma Socrata](#51-encabezados-disponibles-en-la-plataforma-socrata)
-   * 5.2 [Encabezados y Estrategias Utilizados por Contrato-Claro](#52-encabezados-y-estrategias-utilizados-por-contrato-claro)
+4. 🔗 [Enlaces Oficiales y Documentación de la API Socrata (SECOP II)](#4-enlaces-oficiales-y-documentación-de-la-api-socrata-secop-ii)
+5. 📋 [Campos Consumidos y Política de Minimización de Datos](#5-campos-consumidos-y-política-de-minimización-de-datos)
+   * 5.1 [Tabla Detallada de Campos de la API](#51-tabla-detallada-de-campos-de-la-api)
+   * 5.2 [Análisis Normativo y Política de Minimización de Datos Personales (Habeas Data)](#52-análisis-normativo-y-política-de-minimización-de-datos-personales-habeas-data)
+6. 📡 [Encabezados HTTP de Socrata (SODA API v2.1)](#6-encabezados-http-de-socrata-soda-api-v21)
+   * 6.1 [Encabezados Disponibles en la Plataforma Socrata](#61-encabezados-disponibles-en-la-plataforma-socrata)
+   * 6.2 [Encabezados y Estrategias Utilizados por Contrato-Claro](#62-encabezados-y-estrategias-utilizados-por-contrato-claro)
 
 ---
 
@@ -157,15 +160,32 @@ Para mantener una experiencia de usuario fluida a 60 FPS sin congelar la interfa
 
 ---
 
-## 4. 📋 Campos Consumidos de la API Socrata (SECOP II)
+## 4. 🔗 Enlaces Oficiales y Documentación de la API Socrata (SECOP II)
 
-La aplicación consume la API JSON del dataset **`jbjy-vk9h`** de **Datos Abiertos Colombia (datos.gov.co)**. A continuación se detallan los campos procesados:
+Si cualquier ciudadano, desarrollador o investigador desea consultar la totalidad de los campos del dataset en la fuente oficial de Datos Abiertos de Colombia o en la documentación oficial de la API de Socrata, puede acceder a los siguientes enlaces públicos:
+
+* 🏛️ **Ficha del Dataset Oficial en Datos Abiertos Colombia:**  
+  [https://www.datos.gov.co/Gastos-Publicos/SECOP-II-Contratos-Electronicos/jbjy-vk9h/about_data](https://www.datos.gov.co/Gastos-Publicos/SECOP-II-Contratos-Electronicos/jbjy-vk9h/about_data)
+* 📡 **Endpoint directo de la API JSON (Dataset SECOP II `jbjy-vk9h`):**  
+  [https://www.datos.gov.co/resource/jbjy-vk9h.json](https://www.datos.gov.co/resource/jbjy-vk9h.json)
+* 📚 **Documentación de Desarrollo para la API SECOP II en Socrata Developer Portal:**  
+  [https://dev.socrata.com/foundry/www.datos.gov.co/jbjy-vk9h](https://dev.socrata.com/foundry/www.datos.gov.co/jbjy-vk9h)
+* 📖 **Especificación General del Estándar SODA API (Socrata Open Data API v2.1):**  
+  [https://dev.socrata.com/docs/endpoints.html](https://dev.socrata.com/docs/endpoints.html)
+
+---
+
+## 5. 📋 Campos Consumidos y Política de Minimización de Datos
+
+### 5.1 Tabla Detallada de Campos de la API
+
+La aplicación procesa y valida los siguientes campos del dataset oficial en Socrata (`jbjy-vk9h.json`):
 
 | # | Campo en Socrata API | Campo en TypeScript (`Contrato`) | Tipo de Dato | Descripción y Uso en Contrato-Claro |
 |---|----------------------|----------------------------------|--------------|-------------------------------------|
 | 1 | `nombre_entidad` | `nombre_entidad` | `string` | Nombre oficial de la entidad estatal contratante. |
 | 2 | `nit_entidad` | `nit_entidad` | `string` | NIT de la entidad pública contratante. |
-| 3 | `codigo_entidad` | `codigo_entidad` | `string` | Identificador único de la entidad en SECOP II. |
+| 3 | `codigo_entidad` | `codigo_entidad` | `string` | Identificador único de la entidad en SECOP II. Usado para filtros SoQL precisos. |
 | 4 | `departamento` | `departamento` | `string` | Departamento geográfico de localización. |
 | 5 | `ciudad` | `ciudad` | `string` | Municipio o ciudad de localización. |
 | 6 | `id_contrato` | `id_contrato` | `string` | Código de identificación único del contrato. |
@@ -184,8 +204,8 @@ La aplicación consume la API JSON del dataset **`jbjy-vk9h`** de **Datos Abiert
 | 19 | `fecha_de_fin_del_contrato` | `fecha_de_fin_del_contrato` | `string` | Fecha prevista o de terminación contractual. |
 | 20 | `ultima_actualizacion` | `ultima_actualizacion` | `string` | Fecha de la última modificación en la plataforma SECOP II. |
 | 21 | `tipodocproveedor` | `tipodocproveedor` | `string` | Tipo de documento del adjudicatario (NIT, Cédula de Ciudadanía, etc.). |
-| 22 | `documento_proveedor` | `documento_proveedor` | `string` | Número de identificación del contratista. |
-| 23 | `proveedor_adjudicado` | `proveedor_adjudicado` | `string` | Razón social o nombre completo del contratista. |
+| 22 | `documento_proveedor` | `documento_proveedor` | `string` | Número de identificación tributaria o comercial del contratista adjudicado. |
+| 23 | `proveedor_adjudicado` | `proveedor_adjudicado` | `string` | Razón social o nombre del contratista. |
 | 24 | `codigo_proveedor` | `codigo_proveedor` | `string` | Identificador único del proveedor en el registro RUP/SECOP. |
 | 25 | `valor_del_contrato` | `valor_del_contrato` | `number \| string` | Monto total en Pesos Colombianos (COP) acordado en el contrato. |
 | 26 | `valor_de_pago_adelantado` | `valor_de_pago_adelantado` | `number \| string` | Importe asignado como anticipo o pago adelantado. |
@@ -194,24 +214,39 @@ La aplicación consume la API JSON del dataset **`jbjy-vk9h`** de **Datos Abiert
 | 29 | `valor_pendiente_de_pago` | `valor_pendiente_de_pago` | `number \| string` | Saldo facturado u obligado pendiente de pago. |
 | 30 | `valor_pendiente_de_ejecucion` | `valor_pendiente_de_ejecucion` | `number \| string` | Saldo pendiente por ejecutar presupuestalmente. |
 | 31 | `saldo_cdp` | `saldo_cdp` | `number \| string` | Saldo disponible del Certificado de Disponibilidad Presupuestal. |
-| 32 | `nombre_supervisor` | `nombre_supervisor` | `string` | Nombre del funcionario designado como supervisor. |
-| 33 | `tipo_de_documento_supervisor` | `tipo_de_documento_supervisor` | `string` | Tipo de documento del supervisor. |
-| 34 | `nombre_ordenador_del_gasto` | `nombre_ordenador_del_gasto` | `string` | Nombre del funcionario ordenador de gasto. |
-| 35 | `duraci_n_del_contrato` | `duraci_n_del_contrato` | `number \| string` | Duración o plazo en días o meses. |
-| 36 | `dias_adicionados` | `dias_adicionados` | `number \| string` | Días agregados mediante prórroga o adición en tiempo. |
-| 37 | `el_contrato_puede_ser_prorrogado` | `el_contrato_puede_ser_prorrogado` | `string` | Indicador si admite prórrogas ("Si" / "No"). |
-| 38 | `direcci_n_de_ejecuci_n_del_contrato` | `direcci_n_de_ejecuci_n_del_contrato` | `string` | Dirección o sede física donde se presta el servicio. |
-| 39 | `localizaci_n` | `localizaci_n` | `string` | Ubicación geográfica estandarizada. |
-| 40 | `entidad_centralizada` | `entidad_centralizada` | `string` | Clasificación de descentralización. |
-| 41 | `orden` | `orden` | `string` | Orden administrativo (Nacional, Territorial). |
-| 42 | `sector` | `sector` | `string` | Sector de la administración pública (Educación, Salud, Hacienda, etc.). |
-| 43 | `rama` | `rama` | `string` | Rama del poder público (Ejecutiva, Judicial, Legislativa, Órganos Autónomos). |
+| 32 | `nombre_supervisor` | `nombre_supervisor` | `string` | Nombre del funcionario o contratista designado como supervisor. |
+| 33 | `nombre_ordenador_del_gasto` | `nombre_ordenador_del_gasto` | `string` | Nombre del funcionario ordenador de gasto. |
+| 34 | `duraci_n_del_contrato` | `duraci_n_del_contrato` | `number \| string` | Duración o plazo en días o meses. |
+| 35 | `dias_adicionados` | `dias_adicionados` | `number \| string` | Días agregados mediante prórroga o adición en tiempo. |
+| 36 | `el_contrato_puede_ser_prorrogado` | `el_contrato_puede_ser_prorrogado` | `string` | Indicador si admite prórrogas ("Si" / "No"). |
+| 37 | `direcci_n_de_ejecuci_n_del_contrato` | `direcci_n_de_ejecuci_n_del_contrato` | `string` | Dirección o sede física donde se presta el servicio. |
+| 38 | `localizaci_n` | `localizaci_n` | `string` | Ubicación geográfica estandarizada. |
+| 39 | `entidad_centralizada` | `entidad_centralizada` | `string` | Clasificación de descentralización. |
+| 40 | `orden` | `orden` | `string` | Orden administrativo (Nacional, Territorial). |
+| 41 | `sector` | `sector` | `string` | Sector de la administración pública (Educación, Salud, Hacienda, etc.). |
+| 42 | `rama` | `rama` | `string` | Rama del poder público (Ejecutiva, Judicial, Legislativa, Órganos Autónomos). |
 
 ---
 
-## 5. 📡 Encabezados HTTP de Socrata (SODA API v2.1)
+### 5.2 Análisis Normativo y Política de Minimización de Datos Personales (Habeas Data)
 
-### 5.1 Encabezados Disponibles en la Plataforma Socrata
+Contrato-Claro aplica de manera estricta los principios de **Minimización de Datos** y la normatividad colombiana de protección de datos personales (Ley Estatutaria 1581 de 2012 — Habeas Data y Ley 1712 de 2014 de Transparencia y Acceso a la Información Pública):
+
+1. **Omisión de Documentos de Identidad de Supervisores y Ordenadores de Gasto:**
+   * *Verificación técnica:* Los campos `tipo_de_documento_supervisor`, `documento_supervisor` y `documento_ordenador_del_gasto` **NO** se incluyen en la cláusula `$select` de las consultas a la API Socrata (`src/services/secopApi.ts`).
+   * *Justificación de privacidad:* Los supervisores y ordenadores de gasto actúan como servidores públicos o contratistas en ejercicio de funciones públicas. Su nombre (`nombre_supervisor`, `nombre_ordenador_del_gasto`) es de conocimiento público para la rendición de cuentas. Sin embargo, exponer sus números de documento de identidad de persona natural carece de necesidad para el control cívico y podría vulnerar la intimidad personal o exponer a los funcionarios a riesgos de suplantación.
+
+2. **Tratamiento del Documento del Contratista (`documento_proveedor`):**
+   * El número de identificación comercial (NIT para personas jurídicas, o Cédula de Ciudadanía para personas naturales que contrataron con el Estado) es información de carácter público en el SECOP II bajo la Ley 1712 de 2014. Contrato-Claro únicamente procesa este dato para consolidar la recurrencia contractual y evitar homónimos entre contratistas.
+
+3. **Inexistencia de Rastreo o Perfilamiento:**
+   * No se almacenan cookies de seguimiento, ni se registran direcciones IP ni datos personales de los usuarios ciudadanos que consultan la plataforma.
+
+---
+
+## 6. 📡 Encabezados HTTP de Socrata (SODA API v2.1)
+
+### 6.1 Encabezados Disponibles en la Plataforma Socrata
 
 La especificación **SODA (Socrata Open Data API v2.1)** ofrece múltiples encabezados HTTP de solicitud y respuesta para el control de tráfico y metadatos:
 
@@ -231,14 +266,14 @@ La especificación **SODA (Socrata Open Data API v2.1)** ofrece múltiples encab
 
 ---
 
-### 5.2 Encabezados y Estrategias Utilizados por Contrato-Claro
+### 6.2 Encabezados y Estrategias Utilizados por Contrato-Claro
 
 En **Contrato-Claro**:
 
 1. **Consultas SoQL Vía Parámetros de URL:**
    Las solicitudes se realizan mediante peticiones HTTP GET utilizando el estándar SoQL (*Socrata Query Language*):
    ```http
-   GET /resource/jbjy-vk9h.json?$select=*&$where=codigo_entidad='123' AND fecha_de_firma >= '2026-01-01'&$order=fecha_de_firma DESC&$limit=2000 HTTP/1.1
+   GET /resource/jbjy-vk9h.json?$select=nombre_entidad,nit_entidad,codigo_entidad,departamento,ciudad,id_contrato,referencia_del_contrato,proceso_de_compra,urlproceso,estado_contrato,tipo_de_contrato,modalidad_de_contratacion,justificacion_modalidad_de,objeto_del_contrato,descripcion_del_proceso,condiciones_de_entrega,fecha_de_firma,fecha_de_inicio_del_contrato,fecha_de_fin_del_contrato,ultima_actualizacion,tipodocproveedor,documento_proveedor,proveedor_adjudicado,codigo_proveedor,valor_del_contrato,valor_de_pago_adelantado,valor_facturado,valor_pagado,valor_pendiente_de_pago,valor_pendiente_de_ejecucion,saldo_cdp,nombre_supervisor,nombre_ordenador_del_gasto,duraci_n_del_contrato,dias_adicionados,el_contrato_puede_ser_prorrogado,localizaci_n,entidad_centralizada,orden,sector,rama&$where=codigo_entidad='123' AND fecha_de_firma >= '2026-01-01'&$order=fecha_de_firma DESC&$limit=2000 HTTP/1.1
    Host: www.datos.gov.co
    Accept: application/json
    ```
