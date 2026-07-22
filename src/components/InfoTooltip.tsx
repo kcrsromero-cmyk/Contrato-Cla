@@ -83,22 +83,22 @@ export function InfoTooltip({
       <IconComponent className="w-3.5 h-3.5 shrink-0" />
       {show && (
         <span 
-          className={`absolute ${alignClasses} w-64 p-3 bg-slate-950 dark:bg-slate-900 text-white dark:text-slate-100 text-[11px] leading-relaxed rounded-xl shadow-2xl border border-slate-800 dark:border-slate-750 pointer-events-none text-left font-normal normal-case whitespace-normal z-50 transition-all ${
+          className={`absolute ${alignClasses} w-64 max-w-[300px] p-3 bg-slate-800/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-100 text-[11px] leading-relaxed rounded-xl shadow-2xl border border-slate-700/80 dark:border-slate-800 pointer-events-none text-left font-normal normal-case whitespace-normal break-words z-50 transition-all duration-200 ease-out ${
             placement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'
           }`}
         >
-          <span className="block font-sans text-slate-200 dark:text-slate-200 font-medium">
+          <span className="block font-sans text-slate-100 dark:text-slate-200 font-medium">
             {content}
           </span>
           {calculation && (
-            <span className="block mt-1.5 pt-1.5 border-t border-slate-800 dark:border-slate-800 text-[10px] font-mono text-indigo-300 dark:text-indigo-300">
+            <span className="block mt-1.5 pt-1.5 border-t border-slate-700 dark:border-slate-800 text-[10px] font-mono text-indigo-300 dark:text-indigo-300">
               <strong className="text-indigo-200 font-semibold">¿Cómo se calcula?</strong> {calculation}
             </span>
           )}
           {placement === 'bottom' ? (
-            <span className={`absolute bottom-full ${arrowAlignClasses} border-4 border-transparent border-b-slate-950 dark:border-b-slate-900`}></span>
+            <span className={`absolute bottom-full ${arrowAlignClasses} border-4 border-transparent border-b-slate-800 dark:border-b-slate-900`}></span>
           ) : (
-            <span className={`absolute top-full ${arrowAlignClasses} border-4 border-transparent border-t-slate-950 dark:border-t-slate-900`}></span>
+            <span className={`absolute top-full ${arrowAlignClasses} border-4 border-transparent border-t-slate-800 dark:border-t-slate-900`}></span>
           )}
         </span>
       )}

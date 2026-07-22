@@ -178,7 +178,48 @@ html.easy-read .recharts-bar-rectangle path {
 }
 
 /* --------------------------------------------------------------------------
-   5. ANILLOS DE ENFOQUE (FOCUS RINGS) Y CONTROLES INTERACTIVOS
+   5. TOOLTIPS GLOBALES & POPOVERS (Elegante Slate-800 con borde sutil, glassmorphism y animación)
+   -------------------------------------------------------------------------- */
+#root .recharts-default-tooltip,
+#root [role="tooltip"],
+#root .custom-tooltip {
+  background-color: rgba(30, 41, 59, 0.95) !important; /* slate-800 con 95% opacidad */
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(51, 65, 85, 0.8) !important; /* slate-700/80 */
+  border-radius: 0.875rem !important; /* 14px */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
+  color: #f8fafc !important;
+  padding: 0.75rem 1rem !important;
+  max-width: 300px !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  transition: all 200ms ease-out !important;
+}
+
+#root .recharts-tooltip-item,
+#root .recharts-tooltip-item-name,
+#root .recharts-tooltip-item-value,
+#root .recharts-tooltip-label {
+  color: #f8fafc !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.75rem !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+/* Tooltips en modo lectura fácil */
+html.easy-read #root .recharts-default-tooltip,
+html.easy-read #root [role="tooltip"] {
+  background-color: #0f172a !important; /* slate-900 */
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. ANILLOS DE ENFOQUE (FOCUS RINGS) Y CONTROLES INTERACTIVOS
    -------------------------------------------------------------------------- */
 html.easy-read button:focus-visible,
 html.easy-read input:focus-visible,

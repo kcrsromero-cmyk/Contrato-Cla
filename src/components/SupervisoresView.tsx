@@ -438,6 +438,11 @@ export default function SupervisoresView({ contratos }: SupervisoresViewProps) {
                             <span className="font-bold text-slate-700 dark:text-slate-300">
                               #{sIdx + 1} de {filteredContractsForSupervisor.length}
                               <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 font-normal ml-2 bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 rounded">ID: {c.id_contrato}</span>
+                              {c.referencia_del_contrato && (
+                                <span className="font-mono text-[10px] text-indigo-700 dark:text-indigo-300 font-bold ml-1.5 bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 px-1.5 py-0.5 rounded">
+                                  Ref: {c.referencia_del_contrato}
+                                </span>
+                              )}
                             </span>
                             <span>Firma: {formatDate(c.fecha_de_firma)}</span>
                           </div>
@@ -531,6 +536,34 @@ export default function SupervisoresView({ contratos }: SupervisoresViewProps) {
                   <p className="leading-relaxed">
                     Este resultado se calcula a partir de los datos públicos disponibles en SECOP II. Es descriptivo y no constituye una conclusión sobre legalidad, cumplimiento, responsabilidad o irregularidad. Consulte el expediente oficial de cada contrato para ampliar la información.
                   </p>
+                </div>
+              </div>
+
+              {/* Identificadores del Contrato */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-xl text-xs shadow-2xs">
+                <div>
+                  <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                    Referencia del Contrato
+                  </div>
+                  <div className="font-bold font-mono text-slate-900 dark:text-slate-100 mt-1 text-xs select-all">
+                    {selectedDetailContract.referencia_del_contrato || 'No reportada'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                    ID del Contrato
+                  </div>
+                  <div className="font-bold font-mono text-slate-900 dark:text-slate-100 mt-1 text-xs select-all">
+                    {selectedDetailContract.id_contrato}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                    Proceso de Compra
+                  </div>
+                  <div className="font-bold font-mono text-slate-900 dark:text-slate-100 mt-1 text-xs select-all truncate" title={selectedDetailContract.proceso_de_compra || 'No especificado'}>
+                    {selectedDetailContract.proceso_de_compra || 'No especificado'}
+                  </div>
                 </div>
               </div>
 
