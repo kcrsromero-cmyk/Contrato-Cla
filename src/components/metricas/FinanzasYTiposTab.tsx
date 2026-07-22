@@ -3,28 +3,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pi
 import { TrendingUp, Info } from 'lucide-react';
 import { formatCOP, maskDocument } from './utils';
 import { ContractorAggregate } from './types';
-
-// Custom reusable tooltip component
-function InfoTooltip({ content }: { content: string }) {
-  const [show, setShow] = React.useState(false);
-  return (
-    <span 
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-      onFocus={() => setShow(true)}
-      onBlur={() => setShow(false)}
-      className="relative inline-block ml-1.5 align-middle cursor-help text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors z-20"
-    >
-      <Info className="w-3.5 h-3.5" />
-      {show && (
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-2.5 bg-slate-950 dark:bg-slate-800 text-white dark:text-slate-100 text-[11px] leading-relaxed rounded-xl shadow-xl border border-slate-800 dark:border-slate-750 pointer-events-none text-left font-normal normal-case whitespace-normal z-30">
-          {content}
-          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-950 dark:border-t-slate-800"></span>
-        </span>
-      )}
-    </span>
-  );
-}
+import { InfoTooltip } from '../InfoTooltip';
 
 interface FinanzasYTiposTabProps {
   topContractors: ContractorAggregate[];
@@ -57,12 +36,15 @@ export const FinanzasYTiposTab: React.FC<FinanzasYTiposTabProps> = ({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in" id="finanzas-tipos-tab">
       
       {/* Top Contractors list */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 lg:col-span-2 flex flex-col h-[520px] shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 lg:col-span-2 flex flex-col h-[520px] shadow-xs">
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase font-mono tracking-wider">
               Top {limiteContratistas} Contratistas por Monto
-              <InfoTooltip content="Muestra los proveedores adjudicados con el mayor valor acumulado contratado en el periodo de tiempo analizado." />
+              <InfoTooltip 
+                content="Muestra los proveedores adjudicados con el mayor valor acumulado contratado en el periodo analizado." 
+                calculation="Suma de cuantías contractuales agrupadas por NIT o documento del proveedor."
+              />
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium font-sans">Personas y empresas con mayor valor acumulado contratado.</p>
           </div>
@@ -137,13 +119,16 @@ export const FinanzasYTiposTab: React.FC<FinanzasYTiposTabProps> = ({
         </div>
       </div>
 
-      {/* Contract type donut chart */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col h-[520px] shadow-xs overflow-hidden">
+      {/* Contract type pie chart */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col h-[520px] shadow-xs">
         <div className="mb-4 flex flex-col gap-2 shrink-0">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase font-mono tracking-wider truncate">
               Tipos de Contrato
-              <InfoTooltip content="Clasifica los procesos contractuales de acuerdo con el tipo de prestación (Prestación de Servicios, Suministros, Obra Pública, etc.)." />
+              <InfoTooltip 
+                content="Clasifica los procesos contractuales de acuerdo con el objeto de prestación (Prestación de Servicios, Suministros, Obra Pública, etc.)." 
+                calculation="Conteo de contratos clasificados según la tipología oficial declarada en SECOP II."
+              />
             </h3>
             
             {/* Selector de tipo de gráfico */}
@@ -155,9 +140,9 @@ export const FinanzasYTiposTab: React.FC<FinanzasYTiposTabProps> = ({
                     ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-3xs' 
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
-                title="Gráfico de Dona"
+                title="Gráfico Circular"
               >
-                Dona
+                Circular
               </button>
               <button
                 onClick={() => setChartType('bar-horizontal')}
@@ -201,9 +186,9 @@ export const FinanzasYTiposTab: React.FC<FinanzasYTiposTabProps> = ({
                       data={typeData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
+                      innerRadius={0}
                       outerRadius={68}
-                      paddingAngle={3}
+                      paddingAngle={2}
                       dataKey="value"
                     >
                       {typeData.map((entry, index) => (

@@ -14,7 +14,7 @@ import { ArrowLeft, Sliders, RefreshCw } from 'lucide-react';
 import { formatBytes } from './utils/helpers';
 
 export default function App() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, easyRead, toggleEasyRead } = useTheme();
   const windowWidth = useWindowWidth();
   
   const { 
@@ -73,6 +73,8 @@ export default function App() {
     <AppLayout
       theme={theme}
       toggleTheme={toggleTheme}
+      easyRead={easyRead}
+      toggleEasyRead={toggleEasyRead}
       handleClearCache={handleClearCache}
     >
       {/* If an entity is selected and we are on a wide screen, render the Dual Column Sidebar layout */}

@@ -2,6 +2,8 @@
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
+@variant easy-read (&:where(.easy-read, .easy-read *));
+@variant high-contrast (&:where(.high-contrast, .high-contrast *));
 
 @theme {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
@@ -18,3 +20,172 @@ html.dark body {
   background-color: #030712; /* gray-950 */
   color: #f9fafb; /* gray-50 */
 }
+
+/* ==========================================================================
+   MODO LECTURA FÁCIL & ALTO CONTRASTE (Accesibilidad Ciudadana WCAG 2.1 AAA)
+   ========================================================================== */
+
+html.easy-read {
+  font-size: 103%;
+  letter-spacing: 0.02em;
+}
+
+/* --------------------------------------------------------------------------
+   1. MODO LECTURA FÁCIL EN TEMA CLARO (Contraste superior a 7:1 - AAA)
+   -------------------------------------------------------------------------- */
+html.easy-read:not(.dark) body {
+  font-weight: 500;
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+/* Textos e intensidades en Tema Claro */
+html.easy-read:not(.dark) p,
+html.easy-read:not(.dark) span,
+html.easy-read:not(.dark) h1,
+html.easy-read:not(.dark) h2,
+html.easy-read:not(.dark) h3,
+html.easy-read:not(.dark) h4,
+html.easy-read:not(.dark) td,
+html.easy-read:not(.dark) th,
+html.easy-read:not(.dark) label,
+html.easy-read:not(.dark) .text-slate-400,
+html.easy-read:not(.dark) .text-slate-500,
+html.easy-read:not(.dark) .text-slate-600,
+html.easy-read:not(.dark) .text-slate-700,
+html.easy-read:not(.dark) .text-slate-800,
+html.easy-read:not(.dark) .text-slate-900,
+html.easy-read:not(.dark) .text-indigo-600,
+html.easy-read:not(.dark) .text-indigo-900 {
+  color: #000000 !important;
+  font-weight: 600 !important;
+}
+
+/* Contenedores y Tarjetas en Tema Claro */
+html.easy-read:not(.dark) .bg-white,
+html.easy-read:not(.dark) .bg-slate-50,
+html.easy-read:not(.dark) .bg-slate-100,
+html.easy-read:not(.dark) .bg-indigo-50 {
+  background-color: #ffffff !important;
+}
+
+html.easy-read:not(.dark) .border,
+html.easy-read:not(.dark) .border-slate-100,
+html.easy-read:not(.dark) .border-slate-200,
+html.easy-read:not(.dark) .border-slate-300,
+html.easy-read:not(.dark) .border-indigo-100,
+html.easy-read:not(.dark) .border-indigo-200 {
+  border-color: #000000 !important;
+  border-width: 2px !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. MODO LECTURA FÁCIL EN TEMA OSCURO (Contraste superior a 7:1 - AAA)
+   -------------------------------------------------------------------------- */
+html.easy-read.dark body {
+  font-weight: 500;
+  color: #ffffff !important;
+  background-color: #000000 !important;
+}
+
+/* Textos e intensidades en Tema Oscuro */
+html.easy-read.dark p,
+html.easy-read.dark span,
+html.easy-read.dark h1,
+html.easy-read.dark h2,
+html.easy-read.dark h3,
+html.easy-read.dark h4,
+html.easy-read.dark td,
+html.easy-read.dark th,
+html.easy-read.dark label,
+html.easy-read.dark .text-slate-100,
+html.easy-read.dark .text-slate-200,
+html.easy-read.dark .text-slate-300,
+html.easy-read.dark .text-slate-400,
+html.easy-read.dark .text-slate-500,
+html.easy-read.dark .text-slate-600,
+html.easy-read.dark .text-indigo-300,
+html.easy-read.dark .text-indigo-400 {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* Contenedores y Tarjetas en Tema Oscuro */
+html.easy-read.dark .bg-slate-900,
+html.easy-read.dark .bg-slate-950,
+html.easy-read.dark .bg-slate-800,
+html.easy-read.dark .bg-indigo-950 {
+  background-color: #080808 !important;
+}
+
+html.easy-read.dark .border,
+html.easy-read.dark .border-slate-800,
+html.easy-read.dark .border-slate-850,
+html.easy-read.dark .border-slate-900,
+html.easy-read.dark .border-indigo-900 {
+  border-color: #ffffff !important;
+  border-width: 2px !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. ELEMENTOS COMUNES Y TIPOGRAFÍA FINANCIERA EN LECTURA FÁCIL
+   -------------------------------------------------------------------------- */
+html.easy-read .font-mono {
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
+}
+
+/* Tooltips explicativos e información con máximo contraste */
+html.easy-read .bg-slate-950,
+html.easy-read .bg-slate-900 {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. GRÁFICOS RECHARTS Y VISUALIZACIONES DE DATOS (ACCESIBLES)
+   -------------------------------------------------------------------------- */
+html.easy-read:not(.dark) .recharts-cartesian-grid-horizontal line,
+html.easy-read:not(.dark) .recharts-cartesian-grid-vertical line {
+  stroke: #000000 !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: 2 2 !important;
+}
+
+html.easy-read.dark .recharts-cartesian-grid-horizontal line,
+html.easy-read.dark .recharts-cartesian-grid-vertical line {
+  stroke: #ffffff !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: 2 2 !important;
+}
+
+html.easy-read:not(.dark) .recharts-text {
+  fill: #000000 !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+}
+
+html.easy-read.dark .recharts-text {
+  fill: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+}
+
+html.easy-read .recharts-line-curve,
+html.easy-read .recharts-bar-rectangle path {
+  stroke-width: 3.5px !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. ANILLOS DE ENFOQUE (FOCUS RINGS) Y CONTROLES INTERACTIVOS
+   -------------------------------------------------------------------------- */
+html.easy-read button:focus-visible,
+html.easy-read input:focus-visible,
+html.easy-read select:focus-visible,
+html.easy-read a:focus-visible {
+  outline: 3px solid #f59e0b !important;
+  outline-offset: 3px !important;
+  border-radius: 6px !important;
+}
+

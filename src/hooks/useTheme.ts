@@ -11,6 +11,13 @@ export function useTheme() {
     return 'light';
   });
 
+  const [easyRead, setEasyRead] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('easyRead') === 'true';
+    }
+    return false;
+  });
+
   useEffect(() => {
     const root = window.document.documentElement;
     if (theme === 'dark') {
@@ -21,9 +28,26 @@ export function useTheme() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (easyRead) {
+      root.classList.add('easy-read');
+      root.classList.add('high-contrast');
+    } else {
+      root.classList.remove('easy-read');
+      root.classList.remove('high-contrast');
+    }
+    localStorage.setItem('easyRead', String(easyRead));
+  }, [easyRead]);
+
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  return { theme, toggleTheme };
+  const toggleEasyRead = () => {
+    setEasyRead(prev => !prev);
+  };
+
+  return { theme, toggleTheme, easyRead, toggleEasyRead };
 }
+

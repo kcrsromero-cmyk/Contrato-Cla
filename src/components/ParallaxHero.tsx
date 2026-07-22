@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from 'motion/react';
 import { EntidadResumen, Contrato } from '../types';
 import { ShieldCheck, MapPin, Landmark, Award, ArrowUpRight } from 'lucide-react';
 import { formatCOP } from '../utils/helpers';
+import { InfoTooltip } from './InfoTooltip';
 
 interface ParallaxHeroProps {
   selectedEntity: EntidadResumen;
@@ -134,8 +135,12 @@ export default function ParallaxHero({ selectedEntity, contratos }: ParallaxHero
 
           <div className="space-y-3.5">
             <div>
-              <span className="block text-[9px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              <span className="block text-[9px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider items-center">
                 Monto Firmado
+                <InfoTooltip 
+                  content="Valor total acumulado de la contratación celebrada por la entidad pública en esta vigencia." 
+                  calculation="Suma de las cuantías oficiales de los contratos vigentes."
+                />
               </span>
               <span className="block text-lg sm:text-xl font-black text-indigo-600 dark:text-indigo-400 mt-1 font-mono tracking-tight leading-tight break-all">
                 {formatCOP(totalAmount)}
@@ -144,8 +149,12 @@ export default function ParallaxHero({ selectedEntity, contratos }: ParallaxHero
             
             <div className="border-t border-slate-100 dark:border-slate-800/80 pt-3 flex items-center justify-between">
               <div>
-                <span className="block text-[9px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                <span className="block text-[9px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider items-center">
                   Total Contratos
+                  <InfoTooltip 
+                    content="Número de procesos contractuales suscritos formalmente." 
+                    calculation="Conteo directo de contratos únicos registrados en la plataforma."
+                  />
                 </span>
                 <span className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 font-mono">
                   {totalContracts.toLocaleString('es-CO')} {totalContracts === 1 ? 'contrato' : 'contratos'}

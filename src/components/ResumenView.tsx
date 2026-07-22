@@ -22,27 +22,8 @@ import {
   Info
 } from 'lucide-react';
 
-// Custom reusable tooltip component
-function InfoTooltip({ content }: { content: string }) {
-  const [show, setShow] = React.useState(false);
-  return (
-    <span 
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-      onFocus={() => setShow(true)}
-      onBlur={() => setShow(false)}
-      className="relative inline-block ml-1.5 align-middle cursor-help text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors z-20"
-    >
-      <Info className="w-3.5 h-3.5" />
-      {show && (
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-2.5 bg-slate-950 dark:bg-slate-850 text-white dark:text-slate-100 text-[11px] leading-relaxed rounded-xl shadow-xl border border-slate-800 dark:border-slate-750 pointer-events-none text-left font-normal normal-case whitespace-normal z-30">
-          {content}
-          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-950 dark:border-t-slate-800"></span>
-        </span>
-      )}
-    </span>
-  );
-}
+import { InfoTooltip } from './InfoTooltip';
+import TendenciaAnualTimeline from './TendenciaAnualTimeline';
 
 // Map Colombian contracting modalities to distinct Lucide icons, emojis, and thematic color palettes
 const getModalityVisuals = (name: string) => {
@@ -173,6 +154,13 @@ export default function ResumenView({ contratos, onModalityClick }: ResumenViewP
         </div>
       </div>
 
+      {/* Visualización de Tendencia Anual (Línea Temporal de 12 Meses) */}
+      <TendenciaAnualTimeline 
+        monthlyData={monthlyData} 
+        totalAnnualValue={stats.valorContratado} 
+        statusData={statusData}
+      />
+
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Contratos */}
@@ -180,7 +168,10 @@ export default function ResumenView({ contratos, onModalityClick }: ResumenViewP
           <div className="flex items-center justify-between text-slate-400 dark:text-slate-500">
             <span className="text-xs font-mono uppercase tracking-widest font-bold">
               Contratos Registrados
-              <InfoTooltip content="Total de registros únicos de contratos cargados y procesados de SECOP II para la entidad en este rango de fechas." />
+              <InfoTooltip 
+                content="Total de registros únicos de contratos cargados y procesados de SECOP II para la entidad en este rango de fechas." 
+                calculation="Conteo total de IDs o códigos oficiales de proceso contractual cargados."
+              />
             </span>
             <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
               <Briefcase className="w-4 h-4" />
@@ -199,7 +190,10 @@ export default function ResumenView({ contratos, onModalityClick }: ResumenViewP
           <div className="flex items-center justify-between text-slate-400 dark:text-slate-500">
             <span className="text-xs font-mono uppercase tracking-widest font-bold">
               Monto Contratado
-              <InfoTooltip content="Suma acumulada del valor de los contratos firmados (Cuantía del contrato). Refleja el presupuesto total comprometido." />
+              <InfoTooltip 
+                content="Suma acumulada del valor inicial de los contratos firmados (Cuantía del contrato). Refleja el presupuesto total comprometido." 
+                calculation="Σ (Valor oficial reportado de cada contrato firmado en el periodo)."
+              />
             </span>
             <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 rounded-lg">
               <Coins className="w-4 h-4" />
@@ -219,7 +213,10 @@ export default function ResumenView({ contratos, onModalityClick }: ResumenViewP
           <div className="flex items-center justify-between text-slate-400 dark:text-slate-500">
             <span className="text-xs font-mono uppercase tracking-widest font-bold">
               Monto Pagado
-              <InfoTooltip content="Monto acumulado que la entidad reporta haber pagado a los contratistas (desembolsos o avances financieros)." />
+              <InfoTooltip 
+                content="Monto acumulado que la entidad reporta haber pagado efectivamente a los contratistas (desembolsos o giros)." 
+                calculation="Σ (Giros, facturas abonadas y desembolsos financieros certificados en tesorería)."
+              />
             </span>
             <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 rounded-lg">
               <CheckCircle2 className="w-4 h-4" />
@@ -239,7 +236,10 @@ export default function ResumenView({ contratos, onModalityClick }: ResumenViewP
           <div className="flex items-center justify-between text-slate-400 dark:text-slate-500">
             <span className="text-xs font-mono uppercase tracking-widest font-bold">
               Monto por Ejecutar
-              <InfoTooltip content="Saldo financiero del contrato pendiente de entrega física (bienes, obras o servicios) de acuerdo al avance reportado." />
+              <InfoTooltip 
+                content="Saldo financiero del contrato pendiente de entrega física o cumplimiento de obligaciones de acuerdo al avance reportado." 
+                calculation="Monto Total Contratado - Avance físico/financiero ejecutado."
+              />
             </span>
             <div className="p-2 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-455 border border-amber-100 dark:border-amber-900/40 rounded-lg">
               <Clock className="w-4 h-4" />
@@ -265,7 +265,10 @@ export default function ResumenView({ contratos, onModalityClick }: ResumenViewP
           <div>
             <div className="text-[10px] font-mono uppercase tracking-widest font-semibold text-slate-400 dark:text-slate-500">
               Supervisores Públicos
-              <InfoTooltip content="Funcionarios o interventores designados por la entidad para certificar el cumplimiento de obligaciones del contrato." />
+              <InfoTooltip 
+                content="Funcionarios o interventores designados por la entidad para certificar el cumplimiento de obligaciones del contrato." 
+                calculation="Conteo único de números de documento o nombres de supervisores registrados."
+              />
             </div>
             <div className="text-lg font-bold text-slate-900 dark:text-slate-100">{formatNumber(stats.totalSupervisores)}</div>
           </div>
@@ -279,7 +282,10 @@ export default function ResumenView({ contratos, onModalityClick }: ResumenViewP
           <div>
             <div className="text-[10px] font-mono uppercase tracking-widest font-semibold text-slate-400 dark:text-slate-500">
               Contratistas Adjudicados
-              <InfoTooltip content="Personas jurídicas, naturales, consorcios o firmas que han ganado y suscrito contratos en este periodo." />
+              <InfoTooltip 
+                content="Personas jurídicas, naturales, consorcios o firmas que han ganado y suscrito contratos en este periodo." 
+                calculation="Conteo único de NITs o documentos de identidad de proveedores con contratos activos."
+              />
             </div>
             <div className="text-lg font-bold text-slate-900 dark:text-slate-100">{formatNumber(stats.totalContratistas)}</div>
           </div>
@@ -293,7 +299,10 @@ export default function ResumenView({ contratos, onModalityClick }: ResumenViewP
           <div>
             <div className="text-[10px] font-mono uppercase tracking-widest font-semibold text-slate-400 dark:text-slate-500">
               Pendiente de Pago
-              <InfoTooltip content="Monto contractual acumulado facturado o devengado que se encuentra en trámite o pendiente de abono de tesorería." />
+              <InfoTooltip 
+                content="Monto contractual acumulado facturado o devengado que se encuentra en trámite o pendiente de abono de tesorería." 
+                calculation="Monto Contratado Ejecutado - Monto Pagado acumulado."
+              />
             </div>
             <div className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono mt-0.5">
               {formatCOP(stats.valorPendientePago)}
@@ -302,89 +311,6 @@ export default function ResumenView({ contratos, onModalityClick }: ResumenViewP
               {formatCurrencyMillions(stats.valorPendientePago)}
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* Main Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly signature trend */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 lg:col-span-2 flex flex-col h-[350px] shadow-xs">
-          <div className="mb-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase font-mono tracking-wider">
-              Evolución Mensual de Contratación
-              <InfoTooltip content="Curva temporal de los valores acumulados contratados según la fecha oficial de firma del contrato." />
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Monto acumulado de los contratos firmados en cada mes de la vigencia.</p>
-          </div>
-          <div className="flex-1 w-full min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" stroke="#888" fontSize={11} tickLine={false} />
-                <YAxis 
-                  stroke="#888" 
-                  fontSize={11} 
-                  tickLine={false}
-                  tickFormatter={(val) => `$${(val / 1e6).toFixed(0)}M`} 
-                />
-                <Tooltip content={customTooltip} />
-                <Area 
-                  type="monotone" 
-                  dataKey="Valor Contratado" 
-                  stroke="#4f46e5" 
-                  strokeWidth={2}
-                  fillOpacity={1} 
-                  fill="url(#colorValue)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Contract Statuses */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col h-[350px] shadow-xs">
-          <div className="mb-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase font-mono tracking-wider">
-              Distribución por Estado
-              <InfoTooltip content="El estado administrativo y operativo actual en el que se encuentra reportado el contrato en SECOP II." />
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Estados de ejecución reportados en SECOP II.</p>
-          </div>
-          {statusData.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-xs text-slate-400 font-mono">
-              Sin datos de estados para este periodo
-            </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3 custom-scrollbar">
-              {statusData.map((item, idx) => {
-                const total = statusData.reduce((acc, curr) => acc + curr.value, 0);
-                const percent = ((item.value / total) * 100).toFixed(1);
-                return (
-                  <div key={item.name} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-[#222] dark:text-slate-200 truncate max-w-[70%]" title={item.name}>
-                        {item.name}
-                      </span>
-                      <span className="font-mono text-slate-500 dark:text-slate-400 shrink-0">
-                        {item.value} ({percent}%)
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-950 h-1.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-indigo-600 h-full rounded-full" 
-                        style={{ width: `${percent}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       </div>
 

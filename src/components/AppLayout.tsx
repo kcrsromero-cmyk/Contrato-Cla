@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X, CheckCircle2, Eye } from 'lucide-react';
 import { useVersionUpdate } from '../hooks/useVersionUpdate';
 
 interface AppLayoutProps {
   children: React.ReactNode;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  easyRead?: boolean;
+  toggleEasyRead?: () => void;
   handleClearCache: () => Promise<void>;
 }
 
@@ -13,6 +15,8 @@ export default function AppLayout({
   children,
   theme,
   toggleTheme,
+  easyRead = false,
+  toggleEasyRead,
   handleClearCache,
 }: AppLayoutProps) {
   const [scrollY, setScrollY] = useState(0);
@@ -146,6 +150,29 @@ export default function AppLayout({
                 </>
               )}
             </button>
+
+            {/* Modo Lectura Fácil (Alto Contraste) Button */}
+            {toggleEasyRead && (
+              <button
+                onClick={toggleEasyRead}
+                className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl transition-all shadow-xs cursor-pointer text-xs font-bold ${
+                  easyRead
+                    ? 'border-amber-500 bg-amber-50 text-amber-950 dark:bg-amber-950/80 dark:text-amber-100 dark:border-amber-400 ring-2 ring-amber-400/50'
+                    : 'border-slate-200 dark:border-slate-800 hover:border-indigo-600 dark:hover:border-indigo-400 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-slate-900'
+                }`}
+                title={easyRead ? 'Desactivar Modo Lectura Fácil (Alto Contraste)' : 'Activar Modo Lectura Fácil (Alto Contraste y Accesibilidad)'}
+                id="easy-read-toggle-btn"
+                aria-pressed={easyRead}
+              >
+                <Eye className={`w-4 h-4 ${easyRead ? 'text-amber-600 dark:text-amber-400' : 'text-indigo-600 dark:text-indigo-400'}`} />
+                <span className="hidden sm:inline">Lectura Fácil</span>
+                {easyRead && (
+                  <span className="bg-amber-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider ml-0.5">
+                    ON
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Check for Updates Button */}
             <button

@@ -20,6 +20,7 @@ import {
 import { formatCOP, formatCurrencyMillions } from '../utils/helpers';
 import { Contrato } from '../types';
 import { analyzeMonth, MonthlyAnalysisResult } from '../utils/monthlyAnalysis';
+import { InfoTooltip } from './InfoTooltip';
 
 interface MonthlyItem {
   key: string;
@@ -202,13 +203,11 @@ export function ComparativaMensual({
 
   const currentMonthName = selectedMonth ? (fullMonthNames[selectedMonth.name] || selectedMonth.name) : '';
 
-  // Render helper for metric variations
+  // Render helper for metric variations (neutral palette without green/red bias)
   const renderVariationBadge = (label: string, diff: number, percent: number, isCurrency: boolean = false) => {
     const isPositive = diff >= 0;
     const Icon = isPositive ? TrendingUp : TrendingDown;
-    const colorClass = isPositive 
-      ? 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900/50 dark:text-emerald-300' 
-      : 'text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-300';
+    const colorClass = 'text-slate-800 bg-slate-100/70 border-slate-200/90 dark:bg-slate-850 dark:border-slate-800 dark:text-slate-200';
 
     const formattedDiff = isCurrency 
       ? formatCOPInMillones(Math.abs(diff))
@@ -218,9 +217,9 @@ export function ComparativaMensual({
 
     return (
       <div className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-mono ${colorClass}`}>
-        <span className="font-sans font-medium text-slate-700 dark:text-slate-300 text-[11px]">{label}:</span>
-        <span className="font-bold flex items-center gap-1">
-          <Icon className="w-3.5 h-3.5 shrink-0" />
+        <span className="font-sans font-medium text-slate-500 dark:text-slate-400 text-[11px]">{label}:</span>
+        <span className="font-bold flex items-center gap-1.5 text-slate-850 dark:text-slate-100">
+          <Icon className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
           <span>{isPositive ? 'Aumentó' : 'Disminuyó'} {formattedDiff} ({formattedPercent})</span>
         </span>
       </div>
@@ -279,11 +278,12 @@ export function ComparativaMensual({
             <div className="bg-slate-50/60 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800 p-4.5 rounded-2xl">
               <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-slate-400 block mb-1">
                 💰 Presupuesto Total
+                <InfoTooltip 
+                  content="Suma total de la cuantía contractual de todas las firmas celebradas en la vigencia." 
+                  calculation={`Valor exacto acumulado: ${formatCOP(annualSummary.totalValue)} COP.`}
+                />
               </span>
-              <span className="text-base font-extrabold text-slate-900 dark:text-slate-100 font-mono block">
-                {formatCOP(annualSummary.totalValue)} COP
-              </span>
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block mt-0.5">
+              <span className="text-lg font-black text-slate-900 dark:text-slate-100 font-mono block">
                 {formatCOPInMillones(annualSummary.totalValue)}
               </span>
             </div>
@@ -292,6 +292,10 @@ export function ComparativaMensual({
             <div className="bg-slate-50/60 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800 p-4.5 rounded-2xl">
               <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-slate-400 block mb-1">
                 🟢 Total Contratos Firmados
+                <InfoTooltip 
+                  content="Cantidad total de convenios y contratos suscritos formalmente durante la vigencia." 
+                  calculation="Σ (Cantidad de contratos de cada mes)."
+                />
               </span>
               <span className="text-xl font-black text-slate-800 dark:text-slate-100 block">
                 {annualSummary.totalContracts} {annualSummary.totalContracts === 1 ? 'contrato' : 'contratos'}
@@ -305,6 +309,10 @@ export function ComparativaMensual({
             <div className="bg-indigo-50/30 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 p-4.5 rounded-2xl">
               <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-indigo-650 dark:text-indigo-400 block mb-1">
                 ⚖️ Promedio por Contrato
+                <InfoTooltip 
+                  content="Valor medio asignado a cada contrato firmado de manera global en el año." 
+                  calculation="Presupuesto Total ÷ Total Contratos Firmados."
+                />
               </span>
               <span className="text-base font-extrabold text-indigo-950 dark:text-indigo-200 font-mono block">
                 {formatCOPInMillones(annualSummary.avgValuePerContract)}
@@ -318,6 +326,10 @@ export function ComparativaMensual({
             <div className="bg-slate-50/60 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800 p-4.5 rounded-2xl">
               <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-slate-400 block mb-1">
                 📊 Promedio Mensual
+                <InfoTooltip 
+                  content="Presupuesto promedio ejecutado por cada mes activo del año." 
+                  calculation="Presupuesto Total ÷ Cantidad de meses con actividad."
+                />
               </span>
               <span className="text-base font-extrabold text-slate-800 dark:text-slate-200 font-mono block">
                 {formatCOPInMillones(annualSummary.avgValuePerMonth)}
@@ -336,6 +348,10 @@ export function ComparativaMensual({
                 <div>
                   <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block">
                     Pico de Presupuesto
+                    <InfoTooltip 
+                      content="Mes con el mayor valor acumulado contratado." 
+                      calculation="Máximo monto mensual registrado en el año."
+                    />
                   </span>
                   <span className="text-sm font-extrabold text-slate-850 dark:text-slate-200 block mt-0.5">
                     {fullMonthNames[annualSummary.maxBudgetMonth.name] || annualSummary.maxBudgetMonth.name}
@@ -358,6 +374,10 @@ export function ComparativaMensual({
                 <div>
                   <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block">
                     Pico de Contratos Firmados
+                    <InfoTooltip 
+                      content="Mes con el mayor volumen de procesos contractuales suscritos." 
+                      calculation="Máxima cantidad mensual de contratos."
+                    />
                   </span>
                   <span className="text-sm font-extrabold text-slate-850 dark:text-slate-200 block mt-0.5">
                     {fullMonthNames[annualSummary.maxContractsMonth.name] || annualSummary.maxContractsMonth.name}
@@ -380,6 +400,10 @@ export function ComparativaMensual({
                 <div>
                   <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block">
                     Menor Volumen
+                    <InfoTooltip 
+                      content="Mes con la menor cantidad de contratos registrados." 
+                      calculation="Mínima cantidad de firmas en un mes con actividad."
+                    />
                   </span>
                   <span className="text-sm font-extrabold text-slate-850 dark:text-slate-200 block mt-0.5">
                     {fullMonthNames[annualSummary.minContractsMonth.name] || annualSummary.minContractsMonth.name}
@@ -438,7 +462,7 @@ export function ComparativaMensual({
                         <td className="p-3 text-right font-bold text-slate-700 dark:text-slate-300">
                           {row['Cantidad Contratos']}
                         </td>
-                        <td className="p-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                        <td className="p-3 text-right font-bold text-slate-850 dark:text-slate-200">
                           {formatCOPInMillones(row['Valor Contratado'])}
                         </td>
                         <td className="p-3 text-right text-slate-600 dark:text-slate-400">
@@ -446,7 +470,7 @@ export function ComparativaMensual({
                         </td>
                         <td className="p-3 text-right">
                           {row.hasPrev ? (
-                            <span className={`font-bold ${isPositiveCnt ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            <span className="font-bold text-slate-700 dark:text-slate-300">
                               {isPositiveCnt ? '▲ +' : '▼ '}{row.cntDiffPrev} ({row.cntPercentPrev > 0 ? '+' : ''}{row.cntPercentPrev.toFixed(1)}%)
                             </span>
                           ) : (
@@ -455,7 +479,7 @@ export function ComparativaMensual({
                         </td>
                         <td className="p-3 text-right">
                           {row.hasPrev ? (
-                            <span className={`font-bold ${isPositiveVal ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            <span className="font-bold text-slate-700 dark:text-slate-300">
                               {isPositiveVal ? '▲ +' : '▼ '}{formatCOPInMillones(Math.abs(row.valDiffPrev))} ({row.valPercentPrev > 0 ? '+' : ''}{row.valPercentPrev.toFixed(1)}%)
                             </span>
                           ) : (
@@ -492,7 +516,7 @@ export function ComparativaMensual({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* 1. PREVIOUS MONTH CARD */}
-            <div className="bg-slate-50/40 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between min-h-[360px] relative overflow-hidden transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700">
+            <div className="bg-slate-50/40 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between min-h-[360px] relative transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700">
               {prevMonth ? (
                 <div className="space-y-5 flex-1 flex flex-col justify-between">
                   <div>
@@ -518,11 +542,12 @@ export function ComparativaMensual({
                         <div>
                           <span className="text-[10px] font-mono text-slate-400 block font-medium">
                             💰 Valor total contratado
+                            <InfoTooltip 
+                              content="Presupuesto global comprometido en convenios y contratos firmados durante este mes." 
+                              calculation={`Valor exacto oficial: ${formatCOP(prevMonth['Valor Contratado'])} COP.`}
+                            />
                           </span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block font-mono">
-                            {formatCOP(prevMonth['Valor Contratado'])} COP
-                          </span>
-                          <span className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          <span className="text-base font-extrabold text-slate-900 dark:text-slate-100 block font-mono mt-0.5">
                             {formatCOPInMillones(prevMonth['Valor Contratado'])}
                           </span>
                         </div>
@@ -551,16 +576,6 @@ export function ComparativaMensual({
                       </div>
                     )}
                   </div>
-
-                  {prevStats && selectedMonth && (
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
-                      <span className="text-[9px] font-mono text-slate-400 uppercase font-bold tracking-wider block">
-                        Evolución hacia {currentMonthName}:
-                      </span>
-                      {renderVariationBadge('Contratos', prevStats.countDiff, prevStats.countPercent)}
-                      {renderVariationBadge('Presupuesto', prevStats.valDiff, prevStats.valPercent, true)}
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-600 font-mono py-12">
@@ -572,8 +587,10 @@ export function ComparativaMensual({
             </div>
 
             {/* 2. SELECTED MONTH CARD (Base, Main Highlighted) */}
-            <div className="bg-indigo-50/15 dark:bg-indigo-950/10 border-2 border-indigo-600 dark:border-indigo-500 rounded-2xl p-5 flex flex-col justify-between min-h-[360px] shadow-sm relative overflow-hidden transition-all duration-300">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 dark:bg-indigo-500/20 blur-xl pointer-events-none rounded-full"></div>
+            <div className="bg-indigo-50/15 dark:bg-indigo-950/10 border-2 border-indigo-600 dark:border-indigo-500 rounded-2xl p-5 flex flex-col justify-between min-h-[360px] shadow-sm relative transition-all duration-300">
+              <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 dark:bg-indigo-500/20 blur-xl rounded-full"></div>
+              </div>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-indigo-100 dark:border-indigo-900/40 pb-2">
@@ -598,11 +615,12 @@ export function ComparativaMensual({
                     <div>
                       <span className="text-[10px] font-mono text-indigo-900/60 dark:text-indigo-400 block font-bold uppercase tracking-wider">
                         💰 Valor total contratado
+                        <InfoTooltip 
+                          content="Presupuesto global comprometido en contratos con fecha de firma en este mes." 
+                          calculation={`Valor exacto oficial: ${formatCOP(selectedMonth['Valor Contratado'])} COP.`}
+                        />
                       </span>
-                      <span className="text-base font-extrabold text-slate-900 dark:text-slate-100 block font-mono">
-                        {formatCOP(selectedMonth['Valor Contratado'])} COP
-                      </span>
-                      <span className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      <span className="text-lg font-black text-slate-900 dark:text-slate-100 block font-mono mt-0.5">
                         {formatCOPInMillones(selectedMonth['Valor Contratado'])}
                       </span>
                     </div>
@@ -610,6 +628,10 @@ export function ComparativaMensual({
                     <div>
                       <span className="text-[10px] font-mono text-indigo-900/60 dark:text-indigo-400 block font-bold uppercase tracking-wider">
                         🟢 Contratos firmados
+                        <InfoTooltip 
+                          content="Número total de contratos suscritos formalmente durante este mes." 
+                          calculation="Conteo directo de procesos formalizados en el mes."
+                        />
                       </span>
                       <span className="text-base font-black text-slate-800 dark:text-slate-200 block">
                         {selectedMonth['Cantidad Contratos']} {selectedMonth['Cantidad Contratos'] === 1 ? 'contrato' : 'contratos'}
@@ -619,6 +641,10 @@ export function ComparativaMensual({
                     <div>
                       <span className="text-[10px] font-mono text-indigo-900/60 dark:text-indigo-400 block font-bold uppercase tracking-wider">
                         ⚖️ Valor promedio por contrato
+                        <InfoTooltip 
+                          content="Costo medio de cada contratación suscrita en este mes." 
+                          calculation="Valor Total Contratado en el Mes ÷ Cantidad de Contratos del Mes."
+                        />
                       </span>
                       <span className="text-sm font-extrabold text-slate-800 dark:text-slate-200 font-mono block">
                         {formatCOPInMillones(selectedMonth['Valor Contratado'] / selectedMonth['Cantidad Contratos'])}
@@ -645,7 +671,7 @@ export function ComparativaMensual({
             </div>
 
             {/* 3. NEXT MONTH CARD */}
-            <div className="bg-slate-50/40 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between min-h-[360px] relative overflow-hidden transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700">
+            <div className="bg-slate-50/40 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between min-h-[360px] relative transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700">
               {nextMonth ? (
                 <div className="space-y-5 flex-1 flex flex-col justify-between">
                   <div>
@@ -671,11 +697,12 @@ export function ComparativaMensual({
                         <div>
                           <span className="text-[10px] font-mono text-slate-400 block font-medium">
                             💰 Valor total contratado
+                            <InfoTooltip 
+                              content="Presupuesto global comprometido en convenios y contratos firmados durante este mes." 
+                              calculation={`Valor exacto oficial: ${formatCOP(nextMonth['Valor Contratado'])} COP.`}
+                            />
                           </span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block font-mono">
-                            {formatCOP(nextMonth['Valor Contratado'])} COP
-                          </span>
-                          <span className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          <span className="text-base font-extrabold text-slate-900 dark:text-slate-100 block font-mono mt-0.5">
                             {formatCOPInMillones(nextMonth['Valor Contratado'])}
                           </span>
                         </div>
@@ -708,7 +735,7 @@ export function ComparativaMensual({
                   {nextStats && selectedMonth && (
                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
                       <span className="text-[9px] font-mono text-slate-400 uppercase font-bold tracking-wider block">
-                        Evolución desde {currentMonthName}:
+                        Variación respecto a {currentMonthName}:
                       </span>
                       {renderVariationBadge('Contratos', nextStats.countDiff, nextStats.countPercent)}
                       {renderVariationBadge('Presupuesto', nextStats.valDiff, nextStats.valPercent, true)}
