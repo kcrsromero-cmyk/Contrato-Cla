@@ -16,6 +16,25 @@ function escapeSoQL(val: string): string {
 
 export class SecopApiService {
   /**
+   * Wrapper for fetch with exponential backoff on 429 Too Many Requests
+   */
+  private static async fetchWithRetry(url: string, retries = 3, backoff = 300): Promise<Response> {
+    for (let i = 0; i < retries; i++) {
+      const response = await fetch(url);
+      if (response.status === 429) {
+        if (i < retries - 1) {
+          console.warn(`Rate limit exceeded (429). Retrying in ${backoff}ms...`);
+          await new Promise(res => setTimeout(res, backoff));
+          backoff *= 2; // Exponential backoff
+          continue;
+        }
+      }
+      return response;
+    }
+    return fetch(url); // final attempt
+  }
+
+  /**
    * Fetch all unique departments
    */
   public static async getDepartamentos(): Promise<string[]> {
@@ -26,7 +45,7 @@ export class SecopApiService {
     // SoQL: select distinct departamento ordered by departamento
     const query = `?$select=distinct departamento&$order=departamento&$where=departamento is not null&$limit=100`;
     try {
-      const response = await fetch(`${BASE_URL}${query}`);
+      const response = await SecopApiService.fetchWithRetry(`${BASE_URL}${query}`);
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json() as { departamento: string }[];
       const list = data
@@ -40,6 +59,8 @@ export class SecopApiService {
       return uniqueList;
     } catch (e) {
       console.error('Failed to fetch departamentos:', e);
+      const staleData = await CacheService.get<string[]>(cacheKey, true);
+      if (staleData) return staleData;
       // Fallback standard list of Colombian departments if API fails
       return [
         'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bogotá D.C.', 'Bolívar', 'Boyacá',
@@ -63,7 +84,7 @@ export class SecopApiService {
     // SoQL: select distinct ciudad for department, ordered by ciudad
     const query = `?$select=distinct ciudad&$where=departamento='${escapedDept}'&$order=ciudad&$limit=1000`;
     try {
-      const response = await fetch(`${BASE_URL}${query}`);
+      const response = await SecopApiService.fetchWithRetry(`${BASE_URL}${query}`);
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json() as { ciudad: string }[];
       const list = data
@@ -87,6 +108,8 @@ export class SecopApiService {
       return uniqueList;
     } catch (e) {
       console.error(`Failed to fetch ciudades for ${departamento}:`, e);
+      const staleData = await CacheService.get<string[]>(cacheKey, true);
+      if (staleData) return staleData;
       return [];
     }
   }
@@ -173,14 +196,14 @@ export class SecopApiService {
       
       let rawData: any[] = [];
       try {
-        const response = await fetch(`${BASE_URL}${query}`);
+        const response = await SecopApiService.fetchWithRetry(`${BASE_URL}${query}`);
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
         rawData = await response.json();
       } catch (err) {
         console.warn("Rich query failed, falling back to simple query:", err);
         // Fallback: simple query
         const simpleQuery = `?$select=codigo_entidad, nombre_entidad, nit_entidad&$where=departamento='${escapedDept}' and (ciudad='${escapedCity}' or ciudad='No Definido' or ciudad is null) and codigo_entidad is not null&$group=codigo_entidad, nombre_entidad, nit_entidad&$order=nombre_entidad&$limit=3000`;
-        const response = await fetch(`${BASE_URL}${simpleQuery}`);
+        const response = await SecopApiService.fetchWithRetry(`${BASE_URL}${simpleQuery}`);
         if (!response.ok) throw new Error(`Fallback HTTP error ${response.status}`);
         rawData = await response.json();
       }
@@ -294,6 +317,8 @@ export class SecopApiService {
       return filteredList;
     } catch (e) {
       console.error(`Failed to fetch entidades for ${departamento} - ${ciudad}:`, e);
+      const staleData = await CacheService.get<EntidadResumen[]>(cacheKey, true);
+      if (staleData) return staleData;
       return [];
     }
   }
@@ -311,7 +336,7 @@ export class SecopApiService {
     const url = `${BASE_URL}${encodeURI(query)}`;
 
     try {
-      const response = await fetch(url);
+      const response = await SecopApiService.fetchWithRetry(url);
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json() as { anio?: string }[];
       const anios = data
@@ -331,6 +356,8 @@ export class SecopApiService {
       return [String(current), String(current - 1)];
     } catch (err) {
       console.error(`Failed to fetch contraction years for ${codigoEntidad}:`, err);
+      const staleData = await CacheService.get<string[]>(cacheKey, true);
+      if (staleData) return staleData;
       const current = new Date().getFullYear();
       return [String(current), String(current - 1)];
     }
@@ -408,23 +435,37 @@ export class SecopApiService {
     ].join(' and ');
 
     const orderClause = `fecha_de_firma DESC, id_contrato ASC`;
-    const limit = 5000; // Safe threshold covering almost all entities in Colombian municipalities per year
-
-    const query = `?$select=${selectFields}&$where=${whereClause}&$order=${orderClause}&$limit=${limit}`;
-    const url = `${BASE_URL}${encodeURI(query)}`;
+    const limit = 5000;
 
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}: ${await response.text()}`);
+      let allData: Contrato[] = [];
+      let offset = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const query = `?$select=${selectFields}&$where=${whereClause}&$order=${orderClause}&$limit=${limit}&$offset=${offset}`;
+        const url = `${BASE_URL}${encodeURI(query)}`;
+
+        const response = await SecopApiService.fetchWithRetry(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}: ${await response.text()}`);
+        }
+
+        const data = (await response.json()) as Contrato[];
+        allData = allData.concat(data);
+
+        if (data.length < limit) {
+          hasMore = false;
+        } else {
+          offset += limit;
+        }
       }
-      const data = (await response.json()) as Contrato[];
 
       // Clean/deduplicate and parse numbers
       const deduplicated: Contrato[] = [];
       const seenIds = new Set<string>();
 
-      for (const item of data) {
+      for (const item of allData) {
         if (!item.id_contrato) continue;
         const cleanId = item.id_contrato.trim();
         if (seenIds.has(cleanId)) continue;
@@ -466,6 +507,8 @@ export class SecopApiService {
       return deduplicated;
     } catch (e) {
       console.error(`Failed to fetch contracts for ${codigoEntidad} in period ${fechaDesde} to ${fechaHasta}:`, e);
+      const staleData = await CacheService.get<Contrato[]>(cacheKey, true);
+      if (staleData) return staleData;
       throw e;
     }
   }
@@ -490,7 +533,7 @@ export class SecopApiService {
     const url = `${BASE_URL}?$select=${encodeURIComponent(fields)}&$where=${encodeURIComponent(whereParam)}&$group=${encodeURIComponent(fields)}&$limit=100`;
 
     try {
-      const response = await fetch(url);
+      const response = await SecopApiService.fetchWithRetry(url);
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json();
       
@@ -538,7 +581,7 @@ export class SecopApiService {
     const url = `${BASE_URL}?$select=${encodeURIComponent(fields)}&$where=${encodeURIComponent(whereParam)}&$group=${encodeURIComponent(fields)}&$limit=150`;
 
     try {
-      const response = await fetch(url);
+      const response = await SecopApiService.fetchWithRetry(url);
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json();
       

@@ -48,9 +48,9 @@ export class CacheService {
   }
 
   /**
-   * Retrieves an item from the IndexedDB cache. Returns null if expired or not found.
+   * Retrieves an item from the IndexedDB cache. Returns null if expired or not found (unless ignoreExpiration is true).
    */
-  public static async get<T>(key: string): Promise<T | null> {
+  public static async get<T>(key: string, ignoreExpiration: boolean = false): Promise<T | null> {
     try {
       const db = await this.openDB();
       return new Promise((resolve, reject) => {
@@ -65,7 +65,7 @@ export class CacheService {
             return;
           }
 
-          if (Date.now() > item.expiresAt) {
+          if (!ignoreExpiration && Date.now() > item.expiresAt) {
             // Async delete expired item
             this.delete(key);
             resolve(null);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'contrato-claro-cache-v1';
+const CACHE_NAME = 'contrato-claro-cache-v2';
 const PRE_CACHE_ASSETS = [
   '/',
   '/index.html',
@@ -118,8 +118,24 @@ self.addEventListener('fetch', (event) => {
           });
         })
       );
+    } else if (requestUrl.hostname.includes('datos.gov.co')) {
+      // Network-first for Socrata Open Data API
+      event.respondWith(
+        fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        }).catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(event.request);
+        })
+      );
     } else {
-      // Direct network for everything else (such as direct Socrata Open Data API)
+      // Direct network for everything else
       return;
     }
   }
