@@ -5,6 +5,7 @@ import { useContratos } from './hooks/useContratos';
 import { useEntidad } from './hooks/useEntidad';
 import { useDashboard, DashboardTab } from './hooks/useDashboard';
 import { useWindowWidth } from './hooks/useWindowWidth';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 import AppLayout from './components/AppLayout';
 import TerritorialSelector from './components/TerritorialSelector';
@@ -84,6 +85,16 @@ export default function App() {
     navigateToTab,
     resetDashboard,
   } = useDashboard();
+
+  const toggleOnboarding = React.useCallback(() => {
+    setIsOnboardingOpen(prev => !prev);
+  }, []);
+
+  useKeyboardShortcuts({
+    activeTab,
+    navigateToTab,
+    toggleOnboarding,
+  });
 
   const handleClearEntityAndReset = async () => {
     await clearEntity();

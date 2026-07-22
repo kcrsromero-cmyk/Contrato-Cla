@@ -24,6 +24,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { clasificarContrato, obtenerResumenDeGastos } from '../utils/categorizer';
 import CategoriasGastosPanel from './CategoriasGastosPanel';
+import PredictiveSearchBar from './PredictiveSearchBar';
 
 const formatInputAmount = (val: string): string => {
   const digits = val.replace(/\D/g, '');
@@ -449,21 +450,21 @@ export default function ContratosView({
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-xs">
         <div className="flex flex-col lg:flex-row gap-4 items-stretch">
           
-          {/* Text Search */}
+          {/* Predictive Text Search */}
           <div className="flex-1 space-y-1">
-            <label className="block text-[11px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              Búsqueda por Texto
+            <label htmlFor="predictive-search-input" className="block text-[11px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              Búsqueda Predictiva en Tiempo Real
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Buscar por objeto, contratista, supervisor, referencia o ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-500 focus:ring-1 focus:ring-indigo-600 transition-all text-slate-800 dark:text-slate-100"
-              />
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 dark:text-slate-550" />
-            </div>
+            <PredictiveSearchBar
+              contratos={contratos}
+              searchTerm={searchTerm}
+              onSearchChange={(val) => {
+                setSearchTerm(val);
+                setCurrentPage(1);
+              }}
+              placeholder="Buscar por objeto, proveedor, supervisor, ID o referencia..."
+              id="predictive-search-input"
+            />
           </div>
 
           {/* Keywords Search */}

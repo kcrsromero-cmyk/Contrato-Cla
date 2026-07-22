@@ -16,7 +16,8 @@ import {
   ArrowRight,
   Search,
   FileText,
-  Users
+  Users,
+  Keyboard
 } from 'lucide-react';
 import { DashboardTab } from '../hooks/useDashboard';
 
@@ -38,6 +39,7 @@ export interface TourStep {
   keyPoints: string[];
   targetTab?: DashboardTab;
   actionText?: string;
+  calloutQuestion?: string;
   interactivePreview: React.ReactNode;
 }
 
@@ -62,7 +64,7 @@ export default function OnboardingModal({
     {
       id: 'territorial',
       title: 'Búsqueda y Selección Territorial',
-      badge: 'Paso 1 de 6 · Cobertura SECOP II',
+      badge: 'Paso 1 de 7 · Cobertura SECOP II',
       icon: MapPin,
       description: 'Consulta información oficial de contratación pública en Colombia seleccionando Departamento y Municipio o buscando por NIT/Nombre oficial.',
       keyPoints: [
@@ -97,7 +99,7 @@ export default function OnboardingModal({
     {
       id: 'periodo',
       title: 'Lente de Análisis Temporal',
-      badge: 'Paso 2 de 6 · Acoplamiento por Fechas',
+      badge: 'Paso 2 de 7 · Acoplamiento por Fechas',
       icon: Calendar,
       description: 'Filtre el volumen contractual por año de vigencia (2024, 2025...), trimestres o meses específicos para analizar tendencias históricas.',
       keyPoints: [
@@ -136,7 +138,7 @@ export default function OnboardingModal({
     {
       id: 'dashboard-tabs',
       title: 'Módulos y Tableros Analíticos',
-      badge: 'Paso 3 de 6 · Estructura del Dashboard',
+      badge: 'Paso 3 de 7 · Estructura del Dashboard',
       icon: BarChart3,
       description: 'Navegue entre 4 grandes módulos diseñados para simplificar la auditoría ciudadana y el análisis de la contratación.',
       keyPoints: [
@@ -181,14 +183,14 @@ export default function OnboardingModal({
     {
       id: 'filtros-contratos',
       title: 'Filtrado Avanzado de Contratos',
-      badge: 'Paso 4 de 6 · Búsqueda Multicriterio',
+      badge: 'Paso 4 de 7 · Búsqueda Multicriterio',
       icon: Filter,
       description: 'En el listado de contratos puede combinar múltiples filtros en tiempo real para encontrar contrataciones de interés específico.',
       keyPoints: [
+        'Búsqueda predictiva en tiempo real por palabra clave, objeto del contrato o proveedor.',
         'Filtrado por Modalidad: Directa, Mínima Cuantía, Licitación.',
         'Rango de Cuantía: Filtre por montos mínimos y máximos.',
-        'Categorías de Gasto: Tecnología, Infraestructura, Salud, etc.',
-        'Búsqueda por texto en objeto, contratista o documento.'
+        'Categorías de Gasto: Tecnología, Infraestructura, Salud, etc.'
       ],
       targetTab: 'contratos',
       actionText: 'Ver Listado de Contratos',
@@ -212,7 +214,7 @@ export default function OnboardingModal({
     {
       id: 'alertas-patrones',
       title: 'Lentes de Control Ciudadano y Patrones',
-      badge: 'Paso 5 de 6 · Algoritmos de Detección',
+      badge: 'Paso 5 de 7 · Algoritmos de Detección',
       icon: ShieldAlert,
       description: 'El módulo de Métricas incluye algoritmos inteligentes para detectar posibles inconsistencias o concentraciones en la contratación.',
       keyPoints: [
@@ -247,17 +249,58 @@ export default function OnboardingModal({
       )
     },
     {
+      id: 'atajos-teclado',
+      title: 'Atajos de Teclado y Accesibilidad',
+      badge: 'Paso 6 de 7 · Navegación Rápida',
+      icon: Keyboard,
+      description: 'Acceda instantáneamente a las funciones clave mediante atajos de teclado globales desde cualquier sección de la plataforma.',
+      keyPoints: [
+        'Ctrl + Flechas (← / →): Cambie rápidamente entre las pestañas del tablero analítico.',
+        'Ctrl + H: Abra o cierre este tutorial y guía de uso en cualquier momento.',
+        'Tecla Escape: Cierre modales y paneles desplegables de inmediato.'
+      ],
+      calloutQuestion: '¿Desea probar los atajos en el dashboard ahora mismo?',
+      actionText: '¡Probar Atajos!',
+      interactivePreview: (
+        <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2.5 font-sans text-xs">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 pb-2">
+            <span className="font-mono text-[10px] uppercase text-indigo-600 dark:text-indigo-400 font-bold">Teclas de Acceso Rápido</span>
+            <span className="text-[10px] bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-2 py-0.5 rounded-full font-bold">Global</span>
+          </div>
+          <div className="space-y-2">
+            <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Pestañas Dashboard</span>
+              <div className="flex items-center gap-1 font-mono text-[10px]">
+                <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 font-bold">Ctrl</kbd>
+                <span>+</span>
+                <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 font-bold">← / →</kbd>
+              </div>
+            </div>
+            <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Abrir/Cerrar Tutorial</span>
+              <div className="flex items-center gap-1 font-mono text-[10px]">
+                <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 font-bold">Ctrl</kbd>
+                <span>+</span>
+                <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 font-bold">H</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
       id: 'cache-offline',
       title: 'Rendimiento y Modo Offline (IndexedDB)',
-      badge: 'Paso 6 de 6 · Tecnología Local',
+      badge: 'Paso 7 de 7 · Tecnología Local',
       icon: Database,
       description: 'Contrato-Claro almacena localmente los registros consultados en su navegador utilizando IndexedDB, permitiendo navegar al instante.',
       keyPoints: [
         'Velocidad extrema de respuesta en filtros e informes.',
         'Permite consultar datos guardados sin consumo recurrente de datos.',
-        'Exportación directa de reportes y tablas a formato CSV/Excel.'
+        'Almacenamiento seguro en su navegador con privacidad total.'
       ],
-      actionText: '¡Listo para comenzar!',
+      calloutQuestion: '¿Desea explorar la plataforma en el dashboard ahora mismo?',
+      actionText: '¡Comenzar Exploración!',
       interactivePreview: (
         <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3 font-sans text-xs">
           <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 pb-2">
@@ -315,6 +358,7 @@ export default function OnboardingModal({
     } else if (step.targetTab && onNavigateTab) {
       onNavigateTab(step.targetTab);
     }
+    onClose();
   };
 
   return createPortal(
@@ -445,7 +489,7 @@ export default function OnboardingModal({
                 : 'bg-indigo-50/80 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/40 text-indigo-900 dark:text-indigo-200'
             }`}>
               <span className={`text-xs font-medium ${easyRead ? 'font-bold text-sm text-indigo-950 dark:text-indigo-100' : ''}`}>
-                ¿Desea explorar esta función en el dashboard ahora mismo?
+                {step.calloutQuestion || '¿Desea explorar esta función en el dashboard ahora mismo?'}
               </span>
               <button
                 onClick={handleStepAction}

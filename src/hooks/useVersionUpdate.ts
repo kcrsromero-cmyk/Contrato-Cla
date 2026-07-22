@@ -6,13 +6,19 @@ export interface VersionInfo {
   changelog: string[];
 }
 
+const APP_CURRENT_VERSION = 'v1.0.0';
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000; // 7,200,000 ms (2 hours)
 const INSTALLED_VERSION_KEY = 'contrato-claro-installed-version';
 const LAST_CHECK_KEY = 'contrato-claro-last-version-check';
 
 export function useVersionUpdate() {
   const [localVersion, setLocalVersion] = useState(() => {
-    return localStorage.getItem(INSTALLED_VERSION_KEY) || 'v1.2.9';
+    const saved = localStorage.getItem(INSTALLED_VERSION_KEY);
+    if (!saved || saved !== APP_CURRENT_VERSION) {
+      localStorage.setItem(INSTALLED_VERSION_KEY, APP_CURRENT_VERSION);
+      return APP_CURRENT_VERSION;
+    }
+    return saved;
   });
   const [latestVersionInfo, setLatestVersionInfo] = useState<VersionInfo | null>(null);
   const [hasUpdate, setHasUpdate] = useState(false);
