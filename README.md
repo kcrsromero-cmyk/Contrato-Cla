@@ -1,10 +1,5 @@
 # 🇨🇴 Contrato-Claro — Fiscalización y Transparencia Contractual
 
-> **Plataforma ciudadana independiente para consultar, comparar y analizar la contratación pública en Colombia**  
-> 👨‍💻 **Autoría e Idea Original:** **EDWIN MAURICIO CACERES ROMERO**  
-> 🤖 **Nota de Transparencia:** Este software fue diseñado y estructurado por **EDWIN MAURICIO CACERES ROMERO**, utilizando asistencia de inteligencia artificial (Google AI Studio) para la generación de componentes específicos.  
-> ⚖️ **Licencia de Software Libre:** **GNU Affero General Public License v3.0 (GNU AGPLv3)**
-
 ---
 
 **Contrato-Claro** es una iniciativa de código abierto y desarrollo cívico para la transparencia presupuestal y la veeduría ciudadana en Colombia. Su propósito es democratizar, simplificar y hacer inteligible la información del **Sistema Electrónico de Contratación Pública (SECOP II)** de Colombia Compra Eficiente, transformando datos complejos y estructurados en visualizaciones intuitivas, comparativas mensuales y análisis algorítmicos al alcance de cualquier ciudadano.
@@ -123,8 +118,9 @@ Para colaborar:
 
 ## 📜 Licencia de Software Libre y Créditos
 
-* 👨‍💻 **Autor Principal y Dirección de Proyecto:** **EDWIN MAURICIO CACERES ROMERO** (`kcrsromero@gmail.com`)
-* 🤖 **Nota de Transparencia Tecnológica:** Este software fue diseñado y estructurado por **EDWIN MAURICIO CACERES ROMERO**, utilizando asistencia de inteligencia artificial (Google AI Studio) para la generación de componentes específicos.
-* ⚖️ **Licencia:** **[GNU Affero General Public License v3.0 (GNU AGPLv3)](LICENSE)**
+* 🏛️ **Plataforma ciudadana independiente para consultar, comparar y analizar la contratación pública en Colombia**
+* 👨‍💻 **Autoría e Idea Original:** **EDWIN MAURICIO CACERES ROMERO** (`kcrsromero@gmail.com`)
+* 🤖 **Nota de Transparencia:** Este software fue diseñado y estructurado por **EDWIN MAURICIO CACERES ROMERO**, utilizando asistencia de inteligencia artificial (Google AI Studio) para la generación de componentes específicos.
+* ⚖️ **Licencia de Software Libre:** **[GNU Affero General Public License v3.0 (GNU AGPLv3)](LICENSE)**
 
 Este programa es software libre: usted puede redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General Affero de GNU publicada por la Free Software Foundation.
