@@ -54,10 +54,10 @@ const getModalityVisuals = (name: string) => {
   }
   if (norm.includes('licitación') || norm.includes('licitacion')) {
     return {
-      icon: <Scale className="w-4 h-4 text-blue-600 dark:text-blue-400" />,
+      icon: <Scale className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />,
       emoji: "🏛️",
-      bgClass: "bg-blue-50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900/40 text-blue-700 dark:text-blue-400",
-      accentBorder: "hover:border-blue-500 hover:shadow-blue-50/50"
+      bgClass: "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-100 dark:border-indigo-900/40 text-indigo-700 dark:text-indigo-400",
+      accentBorder: "hover:border-indigo-500 hover:shadow-indigo-50/50"
     };
   }
   if (norm.includes('especial')) {

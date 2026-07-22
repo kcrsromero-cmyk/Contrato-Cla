@@ -4,6 +4,7 @@ import { EntidadResumen, Contrato } from '../types';
 import { ShieldCheck, MapPin, Landmark, Award, ArrowUpRight } from 'lucide-react';
 import { formatCOP } from '../utils/helpers';
 import { InfoTooltip } from './InfoTooltip';
+import TerritoryFlagBadge from './TerritoryFlagBadge';
 
 interface ParallaxHeroProps {
   selectedEntity: EntidadResumen;
@@ -53,7 +54,7 @@ export default function ParallaxHero({ selectedEntity, contratos }: ParallaxHero
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-auto min-h-[360px] sm:min-h-0 sm:h-[320px] md:h-[300px] lg:h-[320px] rounded-3xl overflow-hidden border border-slate-200/85 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 shadow-md flex items-center transition-colors duration-300"
+      className="relative w-full h-auto min-h-[260px] rounded-3xl overflow-hidden border border-slate-200/85 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 shadow-md flex items-center transition-colors duration-300 py-4 sm:py-6"
       id="parallax-scrolling-hero"
     >
       {/* 1. LAYER 1: DEEP BACKGROUND (Translates slower) */}
@@ -115,9 +116,16 @@ export default function ParallaxHero({ selectedEntity, contratos }: ParallaxHero
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
               {selectedEntity.nombre_entidad}
             </h2>
-            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-medium">
-              <MapPin className="w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0" />
-              <span>{selectedEntity.ciudad || 'Colombia'}, {selectedEntity.departamento}</span>
+            <div className="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-medium">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                <span>{selectedEntity.ciudad || 'Colombia'}, {selectedEntity.departamento}</span>
+              </div>
+              <TerritoryFlagBadge 
+                ciudad={selectedEntity.ciudad} 
+                departamento={selectedEntity.departamento} 
+                variant="hero"
+              />
             </div>
           </div>
         </div>

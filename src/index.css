@@ -218,9 +218,31 @@ html.easy-read #root [role="tooltip"] {
   color: #ffffff !important;
 }
 
-/* --------------------------------------------------------------------------
-   6. ANILLOS DE ENFOQUE (FOCUS RINGS) Y CONTROLES INTERACTIVOS
-   -------------------------------------------------------------------------- */
+/* Selection colors for cohesive indigo theme across entire interface */
+*::selection,
+::selection {
+  background-color: rgba(99, 102, 241, 0.25) !important; /* indigo-500 con opacidad ajustada */
+  color: inherit !important;
+}
+
+*::-moz-selection,
+::-moz-selection {
+  background-color: rgba(99, 102, 241, 0.25) !important;
+  color: inherit !important;
+}
+
+html.dark *::selection,
+html.dark ::selection {
+  background-color: rgba(99, 102, 241, 0.35) !important; /* opacidad ligeramente mayor para fondo oscuro */
+  color: inherit !important;
+}
+
+html.dark *::-moz-selection,
+html.dark ::-moz-selection {
+  background-color: rgba(99, 102, 241, 0.35) !important;
+  color: inherit !important;
+}
+
 html.easy-read button:focus-visible,
 html.easy-read input:focus-visible,
 html.easy-read select:focus-visible,

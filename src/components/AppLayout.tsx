@@ -77,7 +77,7 @@ export default function AppLayout({
 
   return (
     <div
-      className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col selection:bg-indigo-600 selection:text-white"
+      className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col selection:bg-indigo-500/25 dark:selection:bg-indigo-500/35 selection:text-current"
       id="main-app-container"
     >
       {/* Top Banner / Navbar (Smart Header) */}

@@ -109,11 +109,11 @@ export function getEstadoSemaforoConfig(estado: string) {
     };
   }
   
-  // Blue: Finalizado correctamente
+  // Finalizado correctamente
   if (clean === 'cerrado' || clean === 'terminado') {
     return {
-      colorClass: 'bg-blue-50 text-blue-800 border-blue-200',
-      dotClass: 'bg-blue-500',
+      colorClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+      dotClass: 'bg-indigo-500',
       label: estado || 'Terminado'
     };
   }
@@ -165,7 +165,7 @@ export function renderEstadoSemaforo(estado: string) {
 }
 
 export const contractCounterColors = [
-  'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100/50',
+  'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100/50',
   'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100/50',
   'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100/50',
   'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100/50',

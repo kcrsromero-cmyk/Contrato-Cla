@@ -111,11 +111,11 @@ function getEstadoSemaforoConfig(estado: string) {
     };
   }
   
-  // Blue: Finalizado correctamente
+  // Finalizado correctamente
   if (clean === 'cerrado' || clean === 'terminado') {
     return {
-      colorClass: 'bg-blue-50 text-blue-800 border-blue-200',
-      dotClass: 'bg-blue-500',
+      colorClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+      dotClass: 'bg-indigo-500',
       label: estado || 'Terminado'
     };
   }

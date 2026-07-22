@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, Building2, Search, ArrowRight, RotateCw, ChevronUp, ChevronDown, Sliders, X } from 'lucide-react';
 import { EntidadResumen } from '../types';
 import { useSecop } from '../hooks/useSecop';
+import TerritoryFlagBadge from './TerritoryFlagBadge';
 
 interface TerritorialSelectorProps {
   onEntitySelected: (entity: EntidadResumen) => void;
@@ -62,9 +63,16 @@ export default function TerritorialSelector({
             <h3 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate mt-0.5" title={selectedEntity.nombre_entidad}>
               {selectedEntity.nombre_entidad}
             </h3>
-            <p className="text-[10px] text-slate-500 dark:text-slate-450 font-mono mt-0.5 truncate">
-              {selectedEntity.departamento} — {selectedEntity.ciudad}
-            </p>
+            <div className="flex items-center justify-between gap-2 mt-1">
+              <p className="text-[10px] text-slate-500 dark:text-slate-450 font-mono truncate">
+                {selectedEntity.departamento} — {selectedEntity.ciudad}
+              </p>
+              <TerritoryFlagBadge 
+                ciudad={selectedEntity.ciudad} 
+                departamento={selectedEntity.departamento} 
+                variant="compact"
+              />
+            </div>
           </div>
         </div>
         <button
@@ -478,9 +486,14 @@ export default function TerritorialSelector({
       )}
 
       {selectedEntity && (
-        <div className="mt-4 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800/80 flex flex-col gap-2 animate-fade-in shadow-3xs">
+        <div className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in shadow-3xs">
           <div className="min-w-0 flex-1">
-            <div className="text-[9px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">Entidad Seleccionada</div>
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">Entidad Seleccionada</span>
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-lg border border-emerald-100 dark:border-emerald-800/30 inline-flex items-center gap-1 font-semibold">
+                <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span> Listo
+              </span>
+            </div>
             <div className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm mt-0.5 truncate" title={selectedEntity.nombre_entidad}>
               {selectedEntity.nombre_entidad}
             </div>
@@ -488,8 +501,13 @@ export default function TerritorialSelector({
               {selectedEntity.departamento} — {selectedEntity.ciudad} | Código: {selectedEntity.codigo_entidad}
             </div>
           </div>
-          <div className="text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800/30 inline-flex items-center gap-1 font-semibold self-start shrink-0">
-            <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span> Listo
+
+          <div className="shrink-0">
+            <TerritoryFlagBadge 
+              ciudad={selectedEntity.ciudad} 
+              departamento={selectedEntity.departamento} 
+              variant="hero"
+            />
           </div>
         </div>
       )}

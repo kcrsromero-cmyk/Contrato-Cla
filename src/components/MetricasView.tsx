@@ -152,7 +152,7 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
         </div>
         
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {/* Tab 1: General */}
+          {/* Tab 1: General (Finanzas y Tipos) */}
           <button
             onClick={() => setActiveMainTab('general')}
             className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group shadow-3xs ${
@@ -175,7 +175,30 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
             </div>
           </button>
 
-          {/* Tab 2: Simultaneidad */}
+          {/* Tab 2: Contratación Mensual */}
+          <button
+            onClick={() => setActiveMainTab('mensual')}
+            className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group shadow-3xs ${
+              activeMainTab === 'mensual'
+                ? 'border-indigo-600 bg-indigo-50/20 text-indigo-900 dark:text-indigo-200 ring-2 ring-indigo-600/10 dark:bg-indigo-950/25 dark:border-indigo-500'
+                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2 w-full">
+              <Calendar className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeMainTab === 'mensual' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+              <span className={`text-[10px] font-extrabold font-mono px-2 py-0.5 rounded-full border ${
+                activeMainTab === 'mensual' ? 'bg-indigo-100/60 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900 text-indigo-700 dark:text-indigo-300' : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
+              }`}>
+                {monthlyData.length}
+              </span>
+            </div>
+            <div className="mt-4">
+              <span className="font-extrabold text-xs block font-sans tracking-tight">Contratación Mensual</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 block leading-tight font-medium">Variación y análisis</span>
+            </div>
+          </button>
+
+          {/* Tab 3: Simultaneidad */}
           <button
             onClick={() => setActiveMainTab('simultaneidad')}
             className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group shadow-3xs ${
@@ -198,7 +221,7 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
             </div>
           </button>
 
-          {/* Tab 3: Objetos Idénticos */}
+          {/* Tab 4: Objetos Idénticos */}
           <button
             onClick={() => setActiveMainTab('exactas')}
             className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group shadow-3xs ${
@@ -221,7 +244,7 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
             </div>
           </button>
 
-          {/* Tab 4: Similitud Léxica */}
+          {/* Tab 5: Similitud Léxica */}
           <button
             onClick={() => setActiveMainTab('similares')}
             className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group shadow-3xs ${
@@ -244,7 +267,7 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
             </div>
           </button>
 
-          {/* Tab 5: Alertas */}
+          {/* Tab 6: Alertas */}
           <button
             onClick={() => setActiveMainTab('alertas')}
             className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group shadow-3xs ${
@@ -266,29 +289,6 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
               <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 block leading-tight font-medium">Plazos, adiciones y saldos</span>
             </div>
           </button>
-
-          {/* Tab 6: Contratación Mensual */}
-          <button
-            onClick={() => setActiveMainTab('mensual')}
-            className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group shadow-3xs ${
-              activeMainTab === 'mensual'
-                ? 'border-indigo-600 bg-indigo-50/20 text-indigo-900 dark:text-indigo-200 ring-2 ring-indigo-600/10 dark:bg-indigo-950/25 dark:border-indigo-500'
-                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2 w-full">
-              <Calendar className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeMainTab === 'mensual' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
-              <span className={`text-[10px] font-extrabold font-mono px-2 py-0.5 rounded-full border ${
-                activeMainTab === 'mensual' ? 'bg-indigo-100/60 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900 text-indigo-700 dark:text-indigo-300' : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
-              }`}>
-                {monthlyData.length}
-              </span>
-            </div>
-            <div className="mt-4">
-              <span className="font-extrabold text-xs block font-sans tracking-tight">Contratación Mensual</span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 block leading-tight font-medium">Variación y análisis</span>
-            </div>
-          </button>
         </div>
       </div>
 
@@ -304,6 +304,15 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
             setChartType={setChartType}
             setSelectedTopContractor={setSelectedTopContractor}
             allContractorsCount={allSortedContractors.length}
+          />
+        )}
+
+        {activeMainTab === 'mensual' && (
+          <ComparativaMensual 
+            monthlyData={monthlyData} 
+            contratos={contratos} 
+            selectedMonthKey={selectedMonthKey}
+            onSelectMonthKey={setSelectedMonthKey}
           />
         )}
 
@@ -332,15 +341,6 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
           <AlertasYPlazosTab 
             citizenIndicators={citizenIndicators}
             setSelectedIndicatorList={setSelectedIndicatorList}
-          />
-        )}
-
-        {activeMainTab === 'mensual' && (
-          <ComparativaMensual 
-            monthlyData={monthlyData} 
-            contratos={contratos} 
-            selectedMonthKey={selectedMonthKey}
-            onSelectMonthKey={setSelectedMonthKey}
           />
         )}
       </div>
