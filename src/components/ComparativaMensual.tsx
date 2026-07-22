@@ -1,27 +1,21 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
   Calendar, 
   ArrowRightLeft, 
-  ArrowUpRight, 
-  ArrowDownRight, 
   Info,
   CalendarDays,
-  Coins,
-  FileText,
   Sparkles,
   Scale,
   Activity,
-  AlertTriangle,
   CheckCircle2,
-  Users,
   PieChart,
   HelpCircle,
   ShieldAlert,
   Sliders,
   Clock,
-  Briefcase
+  ArrowRight
 } from 'lucide-react';
 import { formatCOP, formatCurrencyMillions } from '../utils/helpers';
 import { Contrato } from '../types';
@@ -44,54 +38,43 @@ interface ComparativaMensualProps {
 export function ComparativaMensual({ 
   monthlyData, 
   contratos,
-  selectedMonthKey,
+  selectedMonthKey = 'all',
   onSelectMonthKey
 }: ComparativaMensualProps) {
-  // Find the last month that has some contracting, to pre-select it (avoid selecting empty months)
-  const defaultIndex = useMemo(() => {
-    let lastWithData = 0;
-    for (let i = 0; i < monthlyData.length; i++) {
-      if (monthlyData[i]['Cantidad Contratos'] > 0) {
-        lastWithData = i;
-      }
-    }
-    return lastWithData;
-  }, [monthlyData]);
 
-  const [localSelectedIndex, setLocalSelectedIndex] = useState<number>(defaultIndex);
-
-  const selectedIndex = useMemo(() => {
-    if (selectedMonthKey && selectedMonthKey !== 'all') {
-      const idx = monthlyData.findIndex(m => m.key === selectedMonthKey);
-      if (idx !== -1) return idx;
-    }
-    return localSelectedIndex;
-  }, [monthlyData, selectedMonthKey, localSelectedIndex]);
-
-  // Sync selected index if default index changes (e.g., when switching entity)
-  useEffect(() => {
-    setLocalSelectedIndex(defaultIndex);
-  }, [defaultIndex]);
-
-  const setSelectedIndex = (index: number) => {
-    setLocalSelectedIndex(index);
-    if (onSelectMonthKey && monthlyData[index]) {
-      onSelectMonthKey(monthlyData[index].key);
-    }
+  const fullMonthNames: { [key: string]: string } = {
+    'Ene': 'Enero', 'Feb': 'Febrero', 'Mar': 'Marzo', 'Abr': 'Abril',
+    'May': 'Mayo', 'Jun': 'Junio', 'Jul': 'Julio', 'Ago': 'Agosto',
+    'Sep': 'Septiembre', 'Oct': 'Octubre', 'Nov': 'Noviembre', 'Dic': 'Diciembre'
   };
 
-  const selectedMonth = monthlyData[selectedIndex];
+  // Helper for Millions COP
+  const formatCOPInMillones = (cop: number): string => {
+    return formatCurrencyMillions(cop);
+  };
 
-  // Run deep statistical citizen analysis for the selected month
+  // Is "Todos los meses" selected?
+  const isAllMonthsSelected = selectedMonthKey === 'all';
+
+  // Find index of selected month when a specific month is chosen
+  const selectedIndex = useMemo(() => {
+    if (isAllMonthsSelected) return -1;
+    const idx = monthlyData.findIndex(m => m.key === selectedMonthKey);
+    return idx !== -1 ? idx : 0;
+  }, [monthlyData, selectedMonthKey, isAllMonthsSelected]);
+
+  const selectedMonth = selectedIndex >= 0 ? monthlyData[selectedIndex] : null;
+
+  // Run deep statistical citizen analysis for the selected month (if specific month is active)
   const analysisResult = useMemo<MonthlyAnalysisResult | null>(() => {
     if (!selectedMonth || !contratos || contratos.length === 0) return null;
     return analyzeMonth(contratos, selectedMonth.key);
   }, [selectedMonth, contratos]);
 
-  // Calculations for PREVIOUS Month (Basic comparison)
+  // Calculations for PREVIOUS Month
   const prevMonth = selectedIndex > 0 ? monthlyData[selectedIndex - 1] : null;
   const prevStats = useMemo(() => {
-    if (!prevMonth || prevMonth['Cantidad Contratos'] === 0 || !selectedMonth || selectedMonth['Cantidad Contratos'] === 0) return null;
+    if (!prevMonth || !selectedMonth) return null;
     const currentVal = selectedMonth['Valor Contratado'];
     const currentCount = selectedMonth['Cantidad Contratos'];
     const prevVal = prevMonth['Valor Contratado'];
@@ -103,18 +86,21 @@ export function ComparativaMensual({
     const countDiff = currentCount - prevCount;
     const countPercent = prevCount > 0 ? (countDiff / prevCount) * 100 : currentCount > 0 ? 100 : 0;
 
+    const prevAvgPerContract = prevCount > 0 ? prevVal / prevCount : 0;
+
     return {
       valDiff,
       valPercent,
       countDiff,
       countPercent,
+      prevAvgPerContract
     };
   }, [selectedMonth, prevMonth]);
 
-  // Calculations for NEXT Month (Basic comparison)
-  const nextMonth = selectedIndex < monthlyData.length - 1 ? monthlyData[selectedIndex + 1] : null;
+  // Calculations for NEXT Month
+  const nextMonth = selectedIndex >= 0 && selectedIndex < monthlyData.length - 1 ? monthlyData[selectedIndex + 1] : null;
   const nextStats = useMemo(() => {
-    if (!nextMonth || nextMonth['Cantidad Contratos'] === 0 || !selectedMonth || selectedMonth['Cantidad Contratos'] === 0) return null;
+    if (!nextMonth || !selectedMonth) return null;
     const currentVal = selectedMonth['Valor Contratado'];
     const currentCount = selectedMonth['Cantidad Contratos'];
     const nextVal = nextMonth['Valor Contratado'];
@@ -126,105 +112,116 @@ export function ComparativaMensual({
     const countDiff = nextCount - currentCount;
     const countPercent = currentCount > 0 ? (countDiff / currentCount) * 100 : nextCount > 0 ? 100 : 0;
 
+    const nextAvgPerContract = nextCount > 0 ? nextVal / nextCount : 0;
+
     return {
       valDiff,
       valPercent,
       countDiff,
       countPercent,
+      nextAvgPerContract
     };
   }, [selectedMonth, nextMonth]);
 
-  const annualAvgValue = analysisResult?.avgValuePerMonth || 0;
-  const annualAvgContracts = analysisResult?.avgContractsPerMonth || 0;
+  // Annual Totals and Metrics for "Todos los meses" view
+  const annualSummary = useMemo(() => {
+    let totalContracts = 0;
+    let totalValue = 0;
+    let maxContractsMonth: MonthlyItem | null = null;
+    let maxBudgetMonth: MonthlyItem | null = null;
+    let minContractsMonth: MonthlyItem | null = null;
+    let monthsWithDataCount = 0;
 
-  const prevMonthRelationToAvg = useMemo(() => {
-    if (!prevMonth) return null;
-    const valPercent = annualAvgValue > 0 ? ((prevMonth['Valor Contratado'] - annualAvgValue) / annualAvgValue) * 100 : 0;
-    const countPercent = annualAvgContracts > 0 ? ((prevMonth['Cantidad Contratos'] - annualAvgContracts) / annualAvgContracts) * 100 : 0;
-    return { valPercent, countPercent };
-  }, [prevMonth, annualAvgValue, annualAvgContracts]);
+    monthlyData.forEach(m => {
+      const cnt = m['Cantidad Contratos'];
+      const val = m['Valor Contratado'];
+      totalContracts += cnt;
+      totalValue += val;
 
-  const nextMonthRelationToAvg = useMemo(() => {
-    if (!nextMonth) return null;
-    const valPercent = annualAvgValue > 0 ? ((nextMonth['Valor Contratado'] - annualAvgValue) / annualAvgValue) * 100 : 0;
-    const countPercent = annualAvgContracts > 0 ? ((nextMonth['Cantidad Contratos'] - annualAvgContracts) / annualAvgContracts) * 100 : 0;
-    return { valPercent, countPercent };
-  }, [nextMonth, annualAvgValue, annualAvgContracts]);
+      if (cnt > 0) {
+        monthsWithDataCount++;
+        if (!maxContractsMonth || cnt > maxContractsMonth['Cantidad Contratos']) {
+          maxContractsMonth = m;
+        }
+        if (!maxBudgetMonth || val > maxBudgetMonth['Valor Contratado']) {
+          maxBudgetMonth = m;
+        }
+        if (!minContractsMonth || cnt < minContractsMonth['Cantidad Contratos']) {
+          minContractsMonth = m;
+        }
+      }
+    });
 
-  const fullMonthNames: { [key: string]: string } = {
-    'Ene': 'Enero', 'Feb': 'Febrero', 'Mar': 'Marzo', 'Abr': 'Abril',
-    'May': 'Mayo', 'Jun': 'Junio', 'Jul': 'Julio', 'Ago': 'Agosto',
-    'Sep': 'Septiembre', 'Oct': 'Octubre', 'Nov': 'Noviembre', 'Dic': 'Diciembre'
-  };
+    const avgValuePerContract = totalContracts > 0 ? totalValue / totalContracts : 0;
+    const activeMonths = monthsWithDataCount > 0 ? monthsWithDataCount : 12;
+    const avgContractsPerMonth = totalContracts / activeMonths;
+    const avgValuePerMonth = totalValue / activeMonths;
 
-  // Friendly formatter for currency in millions of COP (Colombian Spanish notation)
-  const formatCOPInMillones = (cop: number): string => {
-    return formatCurrencyMillions(cop);
-  };
+    // Build Month-over-Month comparison table data
+    const monthlyTable = monthlyData.map((m, idx) => {
+      const prev = idx > 0 ? monthlyData[idx - 1] : null;
+      const cnt = m['Cantidad Contratos'];
+      const val = m['Valor Contratado'];
+      const avgVal = cnt > 0 ? val / cnt : 0;
 
-  if (!selectedMonth) return null;
+      let cntDiffPrev = 0;
+      let cntPercentPrev = 0;
+      let valDiffPrev = 0;
+      let valPercentPrev = 0;
 
-  const currentMonthName = fullMonthNames[selectedMonth.name] || selectedMonth.name;
+      if (prev) {
+        cntDiffPrev = cnt - prev['Cantidad Contratos'];
+        cntPercentPrev = prev['Cantidad Contratos'] > 0 ? (cntDiffPrev / prev['Cantidad Contratos']) * 100 : cnt > 0 ? 100 : 0;
+        valDiffPrev = val - prev['Valor Contratado'];
+        valPercentPrev = prev['Valor Contratado'] > 0 ? (valDiffPrev / prev['Valor Contratado']) * 100 : val > 0 ? 100 : 0;
+      }
 
-  // Render variables derived from the deep statistical analysis
-  const hasAnalysis = analysisResult !== null && analysisResult.count > 0;
+      return {
+        ...m,
+        avgVal,
+        cntDiffPrev,
+        cntPercentPrev,
+        valDiffPrev,
+        valPercentPrev,
+        hasPrev: idx > 0
+      };
+    });
 
-  // Format percent difference nicely with sign
-  const formatDiffText = (diff: number) => {
-    const formatted = Math.abs(diff).toFixed(1);
-    return diff >= 0 ? `▲ ${formatted}% superior` : `▼ ${formatted}% inferior`;
-  };
+    return {
+      totalContracts,
+      totalValue,
+      avgValuePerContract,
+      avgContractsPerMonth,
+      avgValuePerMonth,
+      maxContractsMonth,
+      maxBudgetMonth,
+      minContractsMonth,
+      monthlyTable
+    };
+  }, [monthlyData]);
 
-  // Status colors helper
-  const getStatusColorClasses = (color: 'emerald' | 'amber' | 'rose') => {
-    switch (color) {
-      case 'emerald':
-        return {
-          bg: 'bg-emerald-50 dark:bg-emerald-950/20',
-          border: 'border-emerald-200 dark:border-emerald-900/30',
-          text: 'text-emerald-800 dark:text-emerald-300',
-          indicator: 'bg-emerald-500',
-          icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-        };
-      case 'amber':
-        return {
-          bg: 'bg-amber-50 dark:bg-amber-950/20',
-          border: 'border-amber-200 dark:border-amber-900/30',
-          text: 'text-amber-800 dark:text-amber-300',
-          indicator: 'bg-amber-500',
-          icon: <Info className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-        };
-      case 'rose':
-        return {
-          bg: 'bg-rose-50 dark:bg-rose-950/20',
-          border: 'border-rose-200 dark:border-rose-900/30',
-          text: 'text-rose-800 dark:text-rose-300',
-          indicator: 'bg-rose-500',
-          icon: <ShieldAlert className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-        };
-    }
-  };
+  const currentMonthName = selectedMonth ? (fullMonthNames[selectedMonth.name] || selectedMonth.name) : '';
 
-  const statusStyle = analysisResult ? getStatusColorClasses(analysisResult.statusColor) : null;
-
-  // Activity score colors
-  const getActivityColor = (level: string) => {
-    if (level === 'muy-baja' || level === 'baja') return 'bg-amber-500';
-    if (level === 'normal') return 'bg-indigo-600 dark:bg-indigo-500';
-    return 'bg-rose-500';
-  };
-
-  const renderDiffMetric = (label: string, percent: number) => {
-    const isPositive = percent >= 0;
-    const formatted = Math.abs(percent).toFixed(1);
-    const colorClass = isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+  // Render helper for metric variations
+  const renderVariationBadge = (label: string, diff: number, percent: number, isCurrency: boolean = false) => {
+    const isPositive = diff >= 0;
     const Icon = isPositive ? TrendingUp : TrendingDown;
+    const colorClass = isPositive 
+      ? 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900/50 dark:text-emerald-300' 
+      : 'text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-300';
+
+    const formattedDiff = isCurrency 
+      ? formatCOPInMillones(Math.abs(diff))
+      : `${Math.abs(diff)} ${Math.abs(diff) === 1 ? 'contrato' : 'contratos'}`;
+
+    const formattedPercent = `${isPositive ? '+' : '-'}${Math.abs(percent).toFixed(1)}%`;
+
     return (
-      <div className="flex items-center justify-between text-[11px] font-medium py-1 border-b border-slate-100/55 dark:border-slate-800/40 last:border-0">
-        <span className="text-slate-500 dark:text-slate-400">{label}:</span>
-        <span className={`font-bold font-mono flex items-center gap-1 ${colorClass}`}>
+      <div className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-mono ${colorClass}`}>
+        <span className="font-sans font-medium text-slate-700 dark:text-slate-300 text-[11px]">{label}:</span>
+        <span className="font-bold flex items-center gap-1">
           <Icon className="w-3.5 h-3.5 shrink-0" />
-          {isPositive ? '+' : ''}{formatted}%
+          <span>{isPositive ? 'Aumentó' : 'Disminuyó'} {formattedDiff} ({formattedPercent})</span>
         </span>
       </div>
     );
@@ -232,7 +229,8 @@ export function ComparativaMensual({
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-8" id="comparativa-mensual-panel">
-      {/* Header */}
+      
+      {/* Header & Month Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase font-mono tracking-wider flex items-center gap-2">
@@ -240,682 +238,647 @@ export function ComparativaMensual({
             Variación y Análisis de Contratación Mensual
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Compare la evolución directa e interprete el comportamiento contractual del mes seleccionado frente al promedio de la vigencia.
+            Explore el comportamiento temporal, el valor promedio por contrato y las variaciones presupuestales mes a mes.
           </p>
         </div>
 
-        {/* Month Selector Carousel/Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        {/* Month Selector Dropdown with "Todos los meses" */}
+        <div className="flex items-center gap-2 shrink-0">
           <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0">
             Mes seleccionado:
           </span>
           <select
-            value={selectedIndex}
-            onChange={(e) => setSelectedIndex(Number(e.target.value))}
+            value={selectedMonthKey}
+            onChange={(e) => {
+              if (onSelectMonthKey) {
+                onSelectMonthKey(e.target.value);
+              }
+            }}
             className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold font-mono focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-450 transition-all cursor-pointer shadow-2xs"
           >
-            {monthlyData.map((m, idx) => (
-              <option key={m.key} value={idx}>
-                {fullMonthNames[m.name] || m.name} ({m['Cantidad Contratos'] > 0 ? `${m['Cantidad Contratos']} contratos` : 'sin datos'})
+            <option value="all">📅 Todos los meses (Resumen General)</option>
+            {monthlyData.map((m) => (
+              <option key={m.key} value={m.key}>
+                {fullMonthNames[m.name] || m.name} ({m['Cantidad Contratos']} {m['Cantidad Contratos'] === 1 ? 'contrato' : 'contratos'})
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Main Grid: Prev, Selected, Next */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* 1. PREVIOUS MONTH CARD */}
-        <div className="bg-slate-50/40 dark:bg-slate-950/20 border border-slate-150 dark:border-slate-850 rounded-2xl p-5 flex flex-col justify-between min-h-[380px] relative overflow-hidden transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700">
-          {prevMonth ? (
-            <>
-              <div className="space-y-4">
-                <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Mes Anterior</span>
+      {/* ========================================================================= */}
+      {/* VIEW 1: TODOS LOS MESES (RESUMEN GENERAL ANUAL Y TABLA MES A MES)        */}
+      {/* ========================================================================= */}
+      {isAllMonthsSelected ? (
+        <div className="space-y-8 animate-fade-in">
+          
+          {/* Key Annual KPI Indicators */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            {/* Presupuesto Total */}
+            <div className="bg-slate-50/60 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800 p-4.5 rounded-2xl">
+              <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-slate-400 block mb-1">
+                💰 Presupuesto Total
+              </span>
+              <span className="text-base font-extrabold text-slate-900 dark:text-slate-100 font-mono block">
+                {formatCOP(annualSummary.totalValue)} COP
+              </span>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block mt-0.5">
+                {formatCOPInMillones(annualSummary.totalValue)}
+              </span>
+            </div>
+
+            {/* Total Contratos */}
+            <div className="bg-slate-50/60 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800 p-4.5 rounded-2xl">
+              <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-slate-400 block mb-1">
+                🟢 Total Contratos Firmados
+              </span>
+              <span className="text-xl font-black text-slate-800 dark:text-slate-100 block">
+                {annualSummary.totalContracts} {annualSummary.totalContracts === 1 ? 'contrato' : 'contratos'}
+              </span>
+              <span className="text-xs font-medium text-slate-500 block mt-0.5">
+                Promedio: {annualSummary.avgContractsPerMonth.toFixed(1)} contratos/mes
+              </span>
+            </div>
+
+            {/* Promedio por Contrato */}
+            <div className="bg-indigo-50/30 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 p-4.5 rounded-2xl">
+              <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-indigo-650 dark:text-indigo-400 block mb-1">
+                ⚖️ Promedio por Contrato
+              </span>
+              <span className="text-base font-extrabold text-indigo-950 dark:text-indigo-200 font-mono block">
+                {formatCOPInMillones(annualSummary.avgValuePerContract)}
+              </span>
+              <span className="text-xs font-medium text-slate-500 block mt-0.5">
+                Valor medio general por firma
+              </span>
+            </div>
+
+            {/* Promedio Mensual */}
+            <div className="bg-slate-50/60 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800 p-4.5 rounded-2xl">
+              <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-slate-400 block mb-1">
+                📊 Promedio Mensual
+              </span>
+              <span className="text-base font-extrabold text-slate-800 dark:text-slate-200 font-mono block">
+                {formatCOPInMillones(annualSummary.avgValuePerMonth)}
+              </span>
+              <span className="text-xs font-medium text-slate-500 block mt-0.5">
+                Presupuesto promedio por mes
+              </span>
+            </div>
+
+          </div>
+
+          {/* Highlights Cards (Meses con mayor presupuesto y contratos) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {annualSummary.maxBudgetMonth && (
+              <div className="bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-3xs">
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block">
+                    Pico de Presupuesto
+                  </span>
+                  <span className="text-sm font-extrabold text-slate-850 dark:text-slate-200 block mt-0.5">
+                    {fullMonthNames[annualSummary.maxBudgetMonth.name] || annualSummary.maxBudgetMonth.name}
+                  </span>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono block mt-0.5">
+                    {formatCOPInMillones(annualSummary.maxBudgetMonth['Valor Contratado'])}
+                  </span>
                 </div>
-                <h4 className="text-base font-extrabold text-slate-850 dark:text-slate-200">
-                  {fullMonthNames[prevMonth.name] || prevMonth.name}
-                </h4>
-
-                {prevMonth['Cantidad Contratos'] > 0 ? (
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 block font-medium">
-                        💰 Valor total contratado
-                      </span>
-                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block font-mono">
-                        {formatCOP(prevMonth['Valor Contratado'])} COP
-                      </span>
-                      <span className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                        {formatCOPInMillones(prevMonth['Valor Contratado'])}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 block font-medium">
-                        🟢 Contratos firmados
-                      </span>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                        {prevMonth['Cantidad Contratos']} {prevMonth['Cantidad Contratos'] === 1 ? 'contrato' : 'contratos'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 block font-medium">
-                        ⚖️ Valor promedio por contrato
-                      </span>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">
-                        {formatCOPInMillones(prevMonth['Valor Contratado'] / prevMonth['Cantidad Contratos'])}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-4 p-4 bg-slate-100/50 dark:bg-slate-900/40 rounded-xl border border-slate-200/40 dark:border-slate-800/40 text-center">
-                    <span className="text-xs font-mono font-bold text-slate-500 block">Sin información disponible</span>
-                    <span className="text-[9px] text-slate-400 mt-0.5 block">Mes aún no consolidado</span>
-                  </div>
-                )}
+                <button
+                  onClick={() => onSelectMonthKey && onSelectMonthKey(annualSummary.maxBudgetMonth!.key)}
+                  className="px-2.5 py-1.5 text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-400 rounded-xl transition-colors cursor-pointer shrink-0"
+                >
+                  Ver Mes →
+                </button>
               </div>
+            )}
 
-              {prevMonth['Cantidad Contratos'] > 0 && (
-                <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-850 text-xs space-y-3">
-                  {/* vs Annual Avg */}
-                  {prevMonthRelationToAvg && (
-                    <div className="bg-white dark:bg-slate-900/40 border border-slate-150 dark:border-slate-800/40 p-2.5 rounded-xl">
-                      <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider block mb-1">
-                        Frente al Promedio Anual:
-                      </span>
-                      {renderDiffMetric('Presupuesto', prevMonthRelationToAvg.valPercent)}
-                      {renderDiffMetric('Contratación', prevMonthRelationToAvg.countPercent)}
+            {annualSummary.maxContractsMonth && (
+              <div className="bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-3xs">
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block">
+                    Pico de Contratos Firmados
+                  </span>
+                  <span className="text-sm font-extrabold text-slate-850 dark:text-slate-200 block mt-0.5">
+                    {fullMonthNames[annualSummary.maxContractsMonth.name] || annualSummary.maxContractsMonth.name}
+                  </span>
+                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 font-mono block mt-0.5">
+                    {annualSummary.maxContractsMonth['Cantidad Contratos']} contratos
+                  </span>
+                </div>
+                <button
+                  onClick={() => onSelectMonthKey && onSelectMonthKey(annualSummary.maxContractsMonth!.key)}
+                  className="px-2.5 py-1.5 text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-400 rounded-xl transition-colors cursor-pointer shrink-0"
+                >
+                  Ver Mes →
+                </button>
+              </div>
+            )}
+
+            {annualSummary.minContractsMonth && (
+              <div className="bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-3xs">
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block">
+                    Menor Volumen
+                  </span>
+                  <span className="text-sm font-extrabold text-slate-850 dark:text-slate-200 block mt-0.5">
+                    {fullMonthNames[annualSummary.minContractsMonth.name] || annualSummary.minContractsMonth.name}
+                  </span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 font-mono block mt-0.5">
+                    {annualSummary.minContractsMonth['Cantidad Contratos']} contratos ({formatCOPInMillones(annualSummary.minContractsMonth['Valor Contratado'])})
+                  </span>
+                </div>
+                <button
+                  onClick={() => onSelectMonthKey && onSelectMonthKey(annualSummary.minContractsMonth!.key)}
+                  className="px-2.5 py-1.5 text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-400 rounded-xl transition-colors cursor-pointer shrink-0"
+                >
+                  Ver Mes →
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Month-by-Month Comparison Table for Citizens */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest font-mono flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                Tabla de Variación Mensual de la Vigencia
+              </h4>
+              <span className="text-[10px] text-slate-400 font-mono">Haga clic en cualquier mes para analizarlo en detalle</span>
+            </div>
+
+            <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl shadow-3xs bg-white dark:bg-slate-950">
+              <table className="w-full text-left text-xs font-mono">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">
+                    <th className="p-3">Mes</th>
+                    <th className="p-3 text-right">Contratos</th>
+                    <th className="p-3 text-right">Valor Total</th>
+                    <th className="p-3 text-right">Promedio / Contrato</th>
+                    <th className="p-3 text-right">Variación Contratos</th>
+                    <th className="p-3 text-right">Variación Presupuesto</th>
+                    <th className="p-3 text-center">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                  {annualSummary.monthlyTable.map((row) => {
+                    const isPositiveCnt = row.cntDiffPrev >= 0;
+                    const isPositiveVal = row.valDiffPrev >= 0;
+
+                    return (
+                      <tr 
+                        key={row.key} 
+                        className="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-colors cursor-pointer group"
+                        onClick={() => onSelectMonthKey && onSelectMonthKey(row.key)}
+                      >
+                        <td className="p-3 font-bold text-slate-850 dark:text-slate-200">
+                          {fullMonthNames[row.name] || row.name}
+                        </td>
+                        <td className="p-3 text-right font-bold text-slate-700 dark:text-slate-300">
+                          {row['Cantidad Contratos']}
+                        </td>
+                        <td className="p-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                          {formatCOPInMillones(row['Valor Contratado'])}
+                        </td>
+                        <td className="p-3 text-right text-slate-600 dark:text-slate-400">
+                          {row['Cantidad Contratos'] > 0 ? formatCOPInMillones(row.avgVal) : '-'}
+                        </td>
+                        <td className="p-3 text-right">
+                          {row.hasPrev ? (
+                            <span className={`font-bold ${isPositiveCnt ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {isPositiveCnt ? '▲ +' : '▼ '}{row.cntDiffPrev} ({row.cntPercentPrev > 0 ? '+' : ''}{row.cntPercentPrev.toFixed(1)}%)
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[10px]">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right">
+                          {row.hasPrev ? (
+                            <span className={`font-bold ${isPositiveVal ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {isPositiveVal ? '▲ +' : '▼ '}{formatCOPInMillones(Math.abs(row.valDiffPrev))} ({row.valPercentPrev > 0 ? '+' : ''}{row.valPercentPrev.toFixed(1)}%)
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[10px]">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onSelectMonthKey) onSelectMonthKey(row.key);
+                            }}
+                            className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-1 mx-auto"
+                          >
+                            Analizar <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      ) : (
+        /* ========================================================================= */
+        /* VIEW 2: MES ESPECÍFICO SELECCIONADO (COMPARATIVA TRIANGULAR PREV/CURR/NEXT) */
+        /* ========================================================================= */
+        <div className="space-y-8 animate-fade-in">
+          
+          {/* Main Grid: Prev, Selected, Next */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* 1. PREVIOUS MONTH CARD */}
+            <div className="bg-slate-50/40 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between min-h-[360px] relative overflow-hidden transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700">
+              {prevMonth ? (
+                <div className="space-y-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Mes Anterior</span>
+                      </div>
+                      <button
+                        onClick={() => onSelectMonthKey && onSelectMonthKey(prevMonth.key)}
+                        className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                      >
+                        Ir a este mes →
+                      </button>
                     </div>
-                  )}
 
-                  {/* progression to selected */}
-                  {prevStats && selectedMonth['Cantidad Contratos'] > 0 && (
-                    <div className="bg-indigo-50/30 dark:bg-indigo-950/15 border border-indigo-100/40 dark:border-indigo-900/30 p-2.5 rounded-xl">
-                      <span className="text-[9px] font-mono text-indigo-650 dark:text-indigo-400 uppercase font-bold tracking-wider block mb-1">
+                    <h4 className="text-lg font-extrabold text-slate-850 dark:text-slate-200 mt-3">
+                      {fullMonthNames[prevMonth.name] || prevMonth.name}
+                    </h4>
+
+                    {prevMonth['Cantidad Contratos'] > 0 ? (
+                      <div className="mt-4 space-y-3.5">
+                        <div>
+                          <span className="text-[10px] font-mono text-slate-400 block font-medium">
+                            💰 Valor total contratado
+                          </span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block font-mono">
+                            {formatCOP(prevMonth['Valor Contratado'])} COP
+                          </span>
+                          <span className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                            {formatCOPInMillones(prevMonth['Valor Contratado'])}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-mono text-slate-400 block font-medium">
+                            🟢 Contratos firmados
+                          </span>
+                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                            {prevMonth['Cantidad Contratos']} {prevMonth['Cantidad Contratos'] === 1 ? 'contrato' : 'contratos'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-mono text-slate-400 block font-medium">
+                            ⚖️ Valor promedio por contrato
+                          </span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">
+                            {formatCOPInMillones(prevMonth['Valor Contratado'] / prevMonth['Cantidad Contratos'])}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 p-4 bg-slate-100/50 dark:bg-slate-900/40 rounded-xl border border-slate-200/40 dark:border-slate-800/40 text-center">
+                        <span className="text-xs font-mono font-bold text-slate-500 block">Sin contratos registrados</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {prevStats && selectedMonth && (
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                      <span className="text-[9px] font-mono text-slate-400 uppercase font-bold tracking-wider block">
                         Evolución hacia {currentMonthName}:
                       </span>
-                      {renderDiffMetric('Variación Presupuesto', prevStats.valPercent)}
-                      {renderDiffMetric('Variación Contratos', prevStats.countPercent)}
+                      {renderVariationBadge('Contratos', prevStats.countDiff, prevStats.countPercent)}
+                      {renderVariationBadge('Presupuesto', prevStats.valDiff, prevStats.valPercent, true)}
                     </div>
                   )}
                 </div>
-              )}
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-600 font-mono py-12">
-              <CalendarDays className="w-8 h-8 opacity-30 mb-2" />
-              <span className="text-xs font-bold uppercase tracking-wider">No hay mes previo</span>
-              <span className="text-[9px] mt-1 text-slate-450">Enero es el inicio de la vigencia</span>
-            </div>
-          )}
-        </div>
-
-        {/* 2. SELECTED MONTH CARD (Base, Main Highlighted) */}
-        <div className="bg-indigo-50/10 dark:bg-indigo-950/5 border-2 border-indigo-600 dark:border-indigo-500 rounded-2xl p-5 flex flex-col justify-between min-h-[380px] shadow-xs relative overflow-hidden transition-all duration-300">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 dark:bg-indigo-500/20 blur-xl pointer-events-none rounded-full"></div>
-          
-          <div>
-            <div className="flex items-center justify-between gap-1.5 border-b border-indigo-100/50 dark:border-indigo-900/30 pb-2">
-              <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
-                <Calendar className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold">Mes seleccionado</span>
-              </div>
-
-              {/* Semáforo Ciudadano Badge */}
-              {statusStyle && (
-                <div className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[9px] font-extrabold font-mono uppercase tracking-wider ${statusStyle.bg} ${statusStyle.border} ${statusStyle.text}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.indicator} animate-pulse`}></span>
-                  {analysisResult?.statusLabel}
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-600 font-mono py-12">
+                  <CalendarDays className="w-8 h-8 opacity-30 mb-2" />
+                  <span className="text-xs font-bold uppercase tracking-wider">No hay mes previo</span>
+                  <span className="text-[9px] mt-1 text-slate-450">Enero es el inicio del año fiscal</span>
                 </div>
               )}
             </div>
 
-            <h4 className="text-xl font-black text-indigo-950 dark:text-white mt-2.5">
-              {currentMonthName}
-            </h4>
-
-            {selectedMonth['Cantidad Contratos'] > 0 ? (
-              <div className="mt-4 space-y-4">
-                {/* Value block */}
-                <div>
-                  <span className="text-[10px] font-mono text-indigo-900/60 dark:text-indigo-400 block font-bold uppercase tracking-wider">
-                    💰 Monto total reportado
-                  </span>
-                  <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block font-mono">
-                    {formatCOP(selectedMonth['Valor Contratado'])} COP
-                  </span>
-                  <span className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    {formatCOPInMillones(selectedMonth['Valor Contratado'])}
-                  </span>
-                </div>
-
-                {/* Contracts block */}
-                <div>
-                  <span className="text-[10px] font-mono text-indigo-900/60 dark:text-indigo-400 block font-bold uppercase tracking-wider">
-                    🟢 Contratos firmados
-                  </span>
-                  <span className="text-base font-black text-slate-800 dark:text-slate-200 block leading-tight">
-                    {selectedMonth['Cantidad Contratos']} {selectedMonth['Cantidad Contratos'] === 1 ? 'contrato' : 'contratos'}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-6 p-4 bg-amber-50/40 dark:bg-amber-950/10 rounded-xl border border-amber-200/30 dark:border-amber-900/20 text-center">
-                <span className="text-xs font-mono font-bold text-amber-800 dark:text-amber-300 block">Sin información disponible</span>
-                <span className="text-[9px] text-amber-600 dark:text-amber-450 mt-0.5 block">Mes aún no consolidado</span>
-              </div>
-            )}
-          </div>
-
-          {selectedMonth['Cantidad Contratos'] > 0 && (
-            <div className="mt-4 pt-4 border-t border-indigo-100/50 dark:border-indigo-900/30 text-xs space-y-3">
-              {/* vs Annual Avg */}
-              {analysisResult && (
-                <div className="bg-white dark:bg-slate-900/40 border border-indigo-100/30 dark:border-indigo-900/30 p-2.5 rounded-xl">
-                  <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider block mb-1">
-                    Frente al Promedio Anual:
-                  </span>
-                  {renderDiffMetric('Desviación Presupuesto', analysisResult.valuePercentDiff)}
-                  {renderDiffMetric('Desviación Contratos', analysisResult.countPercentDiff)}
-                </div>
-              )}
-
-              {/* vs Prev Month */}
-              {prevMonth && prevStats && (
-                <div className="bg-indigo-50/30 dark:bg-indigo-950/15 border border-indigo-100/40 dark:border-indigo-900/30 p-2.5 rounded-xl">
-                  <span className="text-[9px] font-mono text-indigo-650 dark:text-indigo-400 uppercase font-bold tracking-wider block mb-1">
-                    Evolución desde {fullMonthNames[prevMonth.name] || prevMonth.name}:
-                  </span>
-                  {renderDiffMetric('Variación Presupuesto', prevStats.valPercent)}
-                  {renderDiffMetric('Variación Contratos', prevStats.countPercent)}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 3. NEXT MONTH CARD */}
-        <div className="bg-slate-50/40 dark:bg-slate-950/20 border border-slate-150 dark:border-slate-850 rounded-2xl p-5 flex flex-col justify-between min-h-[380px] relative overflow-hidden transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700">
-          {nextMonth ? (
-            <>
+            {/* 2. SELECTED MONTH CARD (Base, Main Highlighted) */}
+            <div className="bg-indigo-50/15 dark:bg-indigo-950/10 border-2 border-indigo-600 dark:border-indigo-500 rounded-2xl p-5 flex flex-col justify-between min-h-[360px] shadow-sm relative overflow-hidden transition-all duration-300">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 dark:bg-indigo-500/20 blur-xl pointer-events-none rounded-full"></div>
+              
               <div className="space-y-4">
-                <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Mes Siguiente</span>
+                <div className="flex items-center justify-between border-b border-indigo-100 dark:border-indigo-900/40 pb-2">
+                  <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold">Mes seleccionado</span>
+                  </div>
+
+                  {analysisResult && (
+                    <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[9px] font-extrabold font-mono uppercase bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300">
+                      {analysisResult.activityLabel}
+                    </div>
+                  )}
                 </div>
-                <h4 className="text-base font-extrabold text-slate-850 dark:text-slate-200">
-                  {fullMonthNames[nextMonth.name] || nextMonth.name}
+
+                <h4 className="text-xl font-black text-indigo-950 dark:text-white">
+                  {currentMonthName}
                 </h4>
 
-                {nextMonth['Cantidad Contratos'] > 0 ? (
-                  <div className="space-y-3">
+                {selectedMonth && selectedMonth['Cantidad Contratos'] > 0 ? (
+                  <div className="space-y-3.5">
                     <div>
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 block font-medium">
+                      <span className="text-[10px] font-mono text-indigo-900/60 dark:text-indigo-400 block font-bold uppercase tracking-wider">
                         💰 Valor total contratado
                       </span>
-                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block font-mono">
-                        {formatCOP(nextMonth['Valor Contratado'])} COP
+                      <span className="text-base font-extrabold text-slate-900 dark:text-slate-100 block font-mono">
+                        {formatCOP(selectedMonth['Valor Contratado'])} COP
                       </span>
-                      <span className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                        {formatCOPInMillones(nextMonth['Valor Contratado'])}
+                      <span className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        {formatCOPInMillones(selectedMonth['Valor Contratado'])}
                       </span>
                     </div>
+
                     <div>
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 block font-medium">
+                      <span className="text-[10px] font-mono text-indigo-900/60 dark:text-indigo-400 block font-bold uppercase tracking-wider">
                         🟢 Contratos firmados
                       </span>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                        {nextMonth['Cantidad Contratos']} {nextMonth['Cantidad Contratos'] === 1 ? 'contrato' : 'contratos'}
+                      <span className="text-base font-black text-slate-800 dark:text-slate-200 block">
+                        {selectedMonth['Cantidad Contratos']} {selectedMonth['Cantidad Contratos'] === 1 ? 'contrato' : 'contratos'}
                       </span>
                     </div>
+
                     <div>
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 block font-medium">
+                      <span className="text-[10px] font-mono text-indigo-900/60 dark:text-indigo-400 block font-bold uppercase tracking-wider">
                         ⚖️ Valor promedio por contrato
                       </span>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">
-                        {formatCOPInMillones(nextMonth['Valor Contratado'] / nextMonth['Cantidad Contratos'])}
+                      <span className="text-sm font-extrabold text-slate-800 dark:text-slate-200 font-mono block">
+                        {formatCOPInMillones(selectedMonth['Valor Contratado'] / selectedMonth['Cantidad Contratos'])}
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-4 p-4 bg-slate-100/50 dark:bg-slate-900/40 rounded-xl border border-slate-200/40 dark:border-slate-800/40 text-center">
-                    <span className="text-xs font-mono font-bold text-slate-500 block">Sin información disponible</span>
-                    <span className="text-[9px] text-slate-400 mt-0.5 block">Mes aún no consolidado</span>
+                  <div className="p-4 bg-amber-50/40 dark:bg-amber-950/10 rounded-xl border border-amber-200/30 text-center">
+                    <span className="text-xs font-mono font-bold text-amber-800 dark:text-amber-300 block">Sin contratos firmados</span>
                   </div>
                 )}
               </div>
 
-              {nextMonth['Cantidad Contratos'] > 0 && (
-                <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-850 text-xs space-y-3">
-                  {/* vs Annual Avg */}
-                  {nextMonthRelationToAvg && (
-                    <div className="bg-white dark:bg-slate-900/40 border border-slate-150 dark:border-slate-800/40 p-2.5 rounded-xl">
-                      <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider block mb-1">
-                        Frente al Promedio Anual:
-                      </span>
-                      {renderDiffMetric('Presupuesto', nextMonthRelationToAvg.valPercent)}
-                      {renderDiffMetric('Contratación', nextMonthRelationToAvg.countPercent)}
-                    </div>
-                  )}
+              {/* Variation Highlights from previous month */}
+              {prevMonth && prevStats && (
+                <div className="mt-4 pt-3 border-t border-indigo-100 dark:border-indigo-900/40 space-y-1.5">
+                  <span className="text-[9px] font-mono text-indigo-800 dark:text-indigo-300 uppercase font-extrabold tracking-wider block">
+                    Variación respecto a {fullMonthNames[prevMonth.name] || prevMonth.name}:
+                  </span>
+                  {renderVariationBadge('Contratos', prevStats.countDiff, prevStats.countPercent)}
+                  {renderVariationBadge('Presupuesto', prevStats.valDiff, prevStats.valPercent, true)}
+                </div>
+              )}
+            </div>
 
-                  {/* progression from selected */}
-                  {nextStats && selectedMonth['Cantidad Contratos'] > 0 && (
-                    <div className="bg-indigo-50/30 dark:bg-indigo-950/15 border border-indigo-100/40 dark:border-indigo-900/30 p-2.5 rounded-xl">
-                      <span className="text-[9px] font-mono text-indigo-650 dark:text-indigo-400 uppercase font-bold tracking-wider block mb-1">
+            {/* 3. NEXT MONTH CARD */}
+            <div className="bg-slate-50/40 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between min-h-[360px] relative overflow-hidden transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700">
+              {nextMonth ? (
+                <div className="space-y-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Mes Siguiente</span>
+                      </div>
+                      <button
+                        onClick={() => onSelectMonthKey && onSelectMonthKey(nextMonth.key)}
+                        className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                      >
+                        Ir a este mes →
+                      </button>
+                    </div>
+
+                    <h4 className="text-lg font-extrabold text-slate-850 dark:text-slate-200 mt-3">
+                      {fullMonthNames[nextMonth.name] || nextMonth.name}
+                    </h4>
+
+                    {nextMonth['Cantidad Contratos'] > 0 ? (
+                      <div className="mt-4 space-y-3.5">
+                        <div>
+                          <span className="text-[10px] font-mono text-slate-400 block font-medium">
+                            💰 Valor total contratado
+                          </span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block font-mono">
+                            {formatCOP(nextMonth['Valor Contratado'])} COP
+                          </span>
+                          <span className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                            {formatCOPInMillones(nextMonth['Valor Contratado'])}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-mono text-slate-400 block font-medium">
+                            🟢 Contratos firmados
+                          </span>
+                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                            {nextMonth['Cantidad Contratos']} {nextMonth['Cantidad Contratos'] === 1 ? 'contrato' : 'contratos'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-mono text-slate-400 block font-medium">
+                            ⚖️ Valor promedio por contrato
+                          </span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">
+                            {formatCOPInMillones(nextMonth['Valor Contratado'] / nextMonth['Cantidad Contratos'])}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 p-4 bg-slate-100/50 dark:bg-slate-900/40 rounded-xl border border-slate-200/40 dark:border-slate-800/40 text-center">
+                        <span className="text-xs font-mono font-bold text-slate-500 block">Sin contratos registrados</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {nextStats && selectedMonth && (
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                      <span className="text-[9px] font-mono text-slate-400 uppercase font-bold tracking-wider block">
                         Evolución desde {currentMonthName}:
                       </span>
-                      {renderDiffMetric('Variación Presupuesto', nextStats.valPercent)}
-                      {renderDiffMetric('Variación Contratos', nextStats.countPercent)}
+                      {renderVariationBadge('Contratos', nextStats.countDiff, nextStats.countPercent)}
+                      {renderVariationBadge('Presupuesto', nextStats.valDiff, nextStats.valPercent, true)}
                     </div>
                   )}
                 </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-600 font-mono py-12">
+                  <CalendarDays className="w-8 h-8 opacity-30 mb-2" />
+                  <span className="text-xs font-bold uppercase tracking-wider">No hay mes siguiente</span>
+                  <span className="text-[9px] mt-1 text-slate-450">Diciembre es el fin del año fiscal</span>
+                </div>
               )}
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-600 font-mono py-12">
-              <CalendarDays className="w-8 h-8 opacity-30 mb-2" />
-              <span className="text-xs font-bold uppercase tracking-wider">No hay mes siguiente</span>
-              <span className="text-[9px] mt-1 text-slate-450">Diciembre es el fin de la vigencia</span>
             </div>
-          )}
-        </div>
 
-      </div>
-
-      {/* Citizen Index of Contract Activity (Punto 12, 13, 14, 17) */}
-      {analysisResult && (
-        <div className="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-            <div className="space-y-1">
-              <h4 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest font-mono flex items-center gap-1.5">
-                <Activity className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
-                Índice de Actividad Contractual
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
-                Indica el flujo de contratación del mes ponderando el presupuesto comprometido y el volumen de contratos frente al comportamiento histórico de la entidad.
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2 shrink-0 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 px-3 py-1.5 rounded-xl shadow-3xs">
-              <span className="text-[11px] font-bold text-slate-400 font-mono uppercase">Nivel:</span>
-              <span className={`text-xs font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full text-white ${getActivityColor(analysisResult.activityLevel)}`}>
-                {analysisResult.activityLabel}
-              </span>
-              <span className="text-sm font-black text-slate-800 dark:text-slate-100 font-mono">
-                {analysisResult.activityScore}/100
-              </span>
-            </div>
           </div>
 
-          {/* Activity Bar */}
-          <div className="space-y-2">
-            <div className="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex">
-              <div 
-                className={`h-full rounded-full transition-all duration-550 ${getActivityColor(analysisResult.activityLevel)}`} 
-                style={{ width: `${analysisResult.activityScore}%` }}
-              ></div>
-            </div>
-            
-            <div className="flex justify-between text-[9px] font-mono text-slate-400 font-bold uppercase tracking-wider">
-              <span>0% Muy baja</span>
-              <span>25% Baja</span>
-              <span>50% Media</span>
-              <span>75% Alta</span>
-              <span>100% Extrema</span>
-            </div>
-          </div>
-
-          {/* Anomalies alert / narrative detailed summary of the status */}
-          <div className={`p-3.5 rounded-xl border flex items-start gap-3 text-xs leading-relaxed ${statusStyle ? `${statusStyle.bg} ${statusStyle.border} ${statusStyle.text}` : ''}`}>
-            {statusStyle?.icon}
-            <div className="space-y-1.5">
-              <span className="font-extrabold block text-xs uppercase font-mono tracking-wider">
-                Estado: {analysisResult.statusLabel}
-              </span>
-              <p className="font-medium opacity-90">
-                {analysisResult.statusDescription}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Citizen Control Indicators (Punto 6, 7, 11, 17) */}
-      {hasAnalysis && analysisResult && (
-        <div className="space-y-4">
-          <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest font-mono flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-2">
-            <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            Indicadores de Control Ciudadano y Alertas de Concentración
-          </h4>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            
-            {/* Concentration (Top Contracts) */}
-            <div className="bg-slate-50/30 dark:bg-slate-950/10 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between min-h-[220px]">
-              <div>
-                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Concentración del Presupuesto</span>
+          {/* Activity Index & Narrative Conclusion */}
+          {analysisResult && (
+            <div className="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                <div className="space-y-1">
+                  <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest font-mono flex items-center gap-1.5">
+                    <Activity className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
+                    Índice de Actividad Contractual en {currentMonthName}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                    Ponderación del volumen de contratos y presupuesto comprometido frente al promedio anual de la entidad.
+                  </p>
                 </div>
                 
-                <div className="space-y-2">
-                  <span className="text-xl font-black text-slate-800 dark:text-slate-100 block tracking-tight">
-                    {analysisResult.top1Percent.toFixed(1)}%
+                <div className="flex items-center gap-2 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl shadow-3xs">
+                  <span className="text-[11px] font-bold text-slate-400 font-mono uppercase">Nivel:</span>
+                  <span className="text-xs font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full text-indigo-700 bg-indigo-50 border border-indigo-200 dark:bg-indigo-950/60 dark:border-indigo-800 dark:text-indigo-300">
+                    {analysisResult.activityLabel} ({analysisResult.activityScore}/100)
                   </span>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-455 leading-relaxed font-medium">
-                    {analysisResult.top1Percent >= 60 ? (
-                      <span className="text-rose-600 dark:text-rose-400">
-                        ⚠️ Alerta: El mayor contrato captura más del 60% de los recursos totales de este mes.
-                      </span>
-                    ) : (
-                      <span>El contrato más grande representa una proporción moderada del presupuesto mensual de contratación.</span>
-                    )}
-                  </p>
                 </div>
               </div>
 
-              {analysisResult.maxContract && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-3 rounded-xl text-[10px] font-medium text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                  <span className="font-extrabold text-slate-850 dark:text-slate-200 block mb-1 uppercase text-[8px] tracking-wider font-mono">
-                    Contrato Mayor:
-                  </span>
-                  <div className="max-h-[72px] overflow-y-auto pr-1 text-slate-600 dark:text-slate-400 scrollbar-thin">
-                    {analysisResult.maxContract.objeto_del_contrato || 'Objeto no especificado'}
-                  </div>
+              {/* Narrative Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-2">
+                  <h5 className="text-xs font-bold text-indigo-950 dark:text-indigo-200 font-mono flex items-center gap-1.5 uppercase">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    Conclusión del Mes
+                  </h5>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                    Durante <strong>{currentMonthName}</strong> se firmaron <strong>{analysisResult.count} contratos</strong> por un valor total de <strong>{formatCOPInMillones(analysisResult.totalValue)}</strong>, con un promedio de <strong>{formatCOPInMillones(analysisResult.avgValue)} por contrato</strong>.
+                    {prevStats && (
+                      <span className="block mt-1">
+                        Frente al mes anterior, la cantidad de contratos {prevStats.countDiff >= 0 ? `aumentó un ${prevStats.countPercent.toFixed(1)}%` : `disminuyó un ${Math.abs(prevStats.countPercent).toFixed(1)}%`} y el presupuesto {prevStats.valDiff >= 0 ? `aumentó un ${prevStats.valPercent.toFixed(1)}%` : `disminuyó un ${Math.abs(prevStats.valPercent).toFixed(1)}%`}.
+                      </span>
+                    )}
+                  </p>
                 </div>
-              )}
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-2">
+                  <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 font-mono flex items-center gap-1.5 uppercase">
+                    <Scale className="w-3.5 h-3.5 text-slate-500" />
+                    Interpretación Ciudadana
+                  </h5>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                    {analysisResult.statusDescription}
+                  </p>
+                </div>
+
+              </div>
             </div>
+          )}
 
-            {/* Provider Concentration (Top 3) */}
-            <div className="bg-slate-50/30 dark:bg-slate-950/10 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between min-h-[220px]">
-              <div>
-                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-2">
-                  <Users className="w-4 h-4 text-indigo-500 shrink-0" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Concentración por Contratista</span>
-                </div>
+          {/* Contract Structural Distribution (Modalidades, Tipos y Sectores) */}
+          {analysisResult && analysisResult.count > 0 && (
+            <div className="space-y-4">
+              <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest font-mono flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-2">
+                <PieChart className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                Estructura de la Contratación en {currentMonthName}
+              </h4>
 
-                <div className="space-y-2">
-                  <span className="text-xl font-black text-slate-800 dark:text-slate-100 block tracking-tight">
-                    {analysisResult.topProvidersPercent.toFixed(1)}%
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* Modalidad */}
+                <div className="bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-850 rounded-2xl p-4 space-y-2.5">
+                  <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                    Modalidad Principal
                   </span>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-455 leading-relaxed font-medium">
-                    {analysisResult.topProvidersPercent >= 75 ? (
-                      <span className="text-amber-600 dark:text-amber-400">
-                        ⚠️ Concentración de proveedores alta. Los 3 contratistas principales acumulan las tres cuartas partes del presupuesto.
-                      </span>
-                    ) : (
-                      <span>Los tres mayores contratistas presentan un nivel de participación balanceado sobre el gasto total del mes.</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              {analysisResult.topProviders.length > 0 && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-2 rounded-xl text-[9px] font-semibold text-slate-500 dark:text-slate-400 space-y-1 mt-2">
-                  {analysisResult.topProviders.slice(0, 2).map((p, i) => (
-                    <div key={p.name} className="flex justify-between items-center gap-1 truncate">
-                      <span className="truncate text-slate-700 dark:text-slate-300">#{i+1} {p.name}</span>
-                      <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold shrink-0">{p.percent.toFixed(0)}%</span>
+                  {analysisResult.topModalities[0] ? (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[70%]" title={analysisResult.topModalities[0].name}>
+                          {analysisResult.topModalities[0].name}
+                        </span>
+                        <span className="text-xs font-black font-mono text-indigo-600 dark:text-indigo-400">
+                          {analysisResult.topModalities[0].percent.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-indigo-600 h-full rounded-full" style={{ width: `${analysisResult.topModalities[0].percent}%` }}></div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Timeliness (Contracts counter-clock) */}
-            <div className="bg-slate-50/30 dark:bg-slate-950/10 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between min-h-[220px]">
-              <div>
-                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-2">
-                  <Clock className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Firma de Fin de Mes (Contrarreloj)</span>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-mono block">No especificada</span>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <span className="text-xl font-black text-slate-800 dark:text-slate-100 block tracking-tight">
-                    {analysisResult.last5DaysPercent.toFixed(1)}%
+                {/* Tipo */}
+                <div className="bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-850 rounded-2xl p-4 space-y-2.5">
+                  <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                    Tipo de Contrato Principal
                   </span>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-455 leading-relaxed font-medium">
-                    {analysisResult.isLastWeekConcentrated ? (
-                      <span className="text-amber-600 dark:text-amber-400">
-                        ⚠️ Ejecución contrarreloj: Más del 60% de los contratos del mes se firmaron en sus últimos 5 días.
-                      </span>
-                    ) : (
-                      <span>La distribución temporal de firmas de contratos es regular y extendida de manera estable a lo largo del periodo.</span>
-                    )}
-                  </p>
+                  {analysisResult.topTypes[0] ? (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[70%]" title={analysisResult.topTypes[0].name}>
+                          {analysisResult.topTypes[0].name}
+                        </span>
+                        <span className="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400">
+                          {analysisResult.topTypes[0].percent.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${analysisResult.topTypes[0].percent}%` }}></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-mono block">No especificado</span>
+                  )}
                 </div>
+
+                {/* Sector */}
+                <div className="bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-850 rounded-2xl p-4 space-y-2.5">
+                  <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                    Sector Principal
+                  </span>
+                  {analysisResult.topSectors[0] ? (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[70%]" title={analysisResult.topSectors[0].name}>
+                          {analysisResult.topSectors[0].name}
+                        </span>
+                        <span className="text-xs font-black font-mono text-amber-600 dark:text-amber-450">
+                          {analysisResult.topSectors[0].percent.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-amber-500 h-full rounded-full" style={{ width: `${analysisResult.topSectors[0].percent}%` }}></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-mono block">No especificado</span>
+                  )}
+                </div>
+
               </div>
-
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-2.5 rounded-xl text-[9px] text-slate-500 dark:text-slate-400 flex justify-between items-center mt-2">
-                <span>Firmas en últimos 5 días:</span>
-                <span className="font-bold font-mono text-slate-700 dark:text-slate-200">{analysisResult.last5DaysCount} de {analysisResult.count}</span>
-              </div>
             </div>
+          )}
 
-          </div>
         </div>
       )}
 
-      {/* Contract Structural Distribution (Puntos 8, 9, 10, 17) */}
-      {hasAnalysis && analysisResult && (
-        <div className="space-y-4">
-          <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest font-mono flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-2">
-            <PieChart className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            Estructura y Destino de los Recursos
-          </h4>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Modalidad */}
-            <div className="bg-white dark:bg-slate-950 border border-slate-150 dark:border-slate-850 rounded-2xl p-4.5 space-y-3">
-              <span className="text-[9px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                Modalidad de Contratación Mayoritaria
-              </span>
-              {analysisResult.topModalities[0] ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[70%]" title={analysisResult.topModalities[0].name}>
-                      {analysisResult.topModalities[0].name}
-                    </span>
-                    <span className="text-xs font-black font-mono text-indigo-600 dark:text-indigo-400">
-                      {analysisResult.topModalities[0].percent.toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-indigo-600 h-full rounded-full" style={{ width: `${analysisResult.topModalities[0].percent}%` }}></div>
-                  </div>
-                  <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
-                    {analysisResult.primaryModalityLabel}
-                  </p>
-                </div>
-              ) : (
-                <span className="text-[11px] text-slate-400 font-mono block">No especificada</span>
-              )}
-            </div>
-
-            {/* Tipo */}
-            <div className="bg-white dark:bg-slate-950 border border-slate-150 dark:border-slate-850 rounded-2xl p-4.5 space-y-3">
-              <span className="text-[9px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                Tipo de Contrato Principal
-              </span>
-              {analysisResult.topTypes[0] ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[70%]" title={analysisResult.topTypes[0].name}>
-                      {analysisResult.topTypes[0].name}
-                    </span>
-                    <span className="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400">
-                      {analysisResult.topTypes[0].percent.toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${analysisResult.topTypes[0].percent}%` }}></div>
-                  </div>
-                  <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
-                    {analysisResult.primaryTypeLabel}
-                  </p>
-                </div>
-              ) : (
-                <span className="text-[11px] text-slate-400 font-mono block">No especificado</span>
-              )}
-            </div>
-
-            {/* Sector */}
-            <div className="bg-white dark:bg-slate-950 border border-slate-150 dark:border-slate-850 rounded-2xl p-4.5 space-y-3">
-              <span className="text-[9px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                Orientación Sectorial Principal
-              </span>
-              {analysisResult.topSectors[0] ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[70%]" title={analysisResult.topSectors[0].name}>
-                      {analysisResult.topSectors[0].name}
-                    </span>
-                    <span className="text-xs font-black font-mono text-amber-600 dark:text-amber-450">
-                      {analysisResult.topSectors[0].percent.toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-amber-500 h-full rounded-full" style={{ width: `${analysisResult.topSectors[0].percent}%` }}></div>
-                  </div>
-                  <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
-                    {analysisResult.primarySectorLabel}
-                  </p>
-                </div>
-              ) : (
-                <span className="text-[11px] text-slate-400 font-mono block">No especificado</span>
-              )}
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* Citizen Derived Indicators Block (Punto 17) */}
-      {hasAnalysis && analysisResult && (
-        <div className="bg-slate-50/20 dark:bg-slate-950/10 border border-slate-200/50 dark:border-slate-800/80 p-4 rounded-xl">
-          <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-3">
-            📋 Resumen Estadístico Mensual (Indicadores Derivados)
-          </span>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
-            <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-2 rounded-lg">
-              <span className="text-[9px] font-bold text-slate-400 uppercase block">Valor Promedio:</span>
-              <span className="font-extrabold text-slate-800 dark:text-slate-200">{formatCOPInMillones(analysisResult.avgValue)}</span>
-            </div>
-            <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-2 rounded-lg">
-              <span className="text-[9px] font-bold text-slate-400 uppercase block">Valor Mediano:</span>
-              <span className="font-extrabold text-slate-800 dark:text-slate-200">{formatCOPInMillones(analysisResult.medianValue)}</span>
-            </div>
-            <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-2 rounded-lg">
-              <span className="text-[9px] font-bold text-slate-400 uppercase block">Contrato Máximo:</span>
-              <span className="font-extrabold text-slate-850 dark:text-slate-200" title={analysisResult.maxContract ? formatCOP(Number(analysisResult.maxContract.valor_del_contrato)) + ' COP' : ''}>
-                {analysisResult.maxContract ? formatCOPInMillones(Number(analysisResult.maxContract.valor_del_contrato)) : 'N/A'}
-              </span>
-            </div>
-            <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-2 rounded-lg">
-              <span className="text-[9px] font-bold text-slate-400 uppercase block">Contrato Mínimo:</span>
-              <span className="font-extrabold text-slate-850 dark:text-slate-200" title={analysisResult.minContract ? formatCOP(Number(analysisResult.minContract.valor_del_contrato)) + ' COP' : ''}>
-                {analysisResult.minContract ? formatCOPInMillones(Number(analysisResult.minContract.valor_del_contrato)) : 'N/A'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Dynamic Summary Panel (Paso 15, 4, 5) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-        
-        {/* Dynamic Conclusion Paragraph (Conclusión del mes) */}
-        <div className="bg-indigo-50/15 dark:bg-indigo-950/5 border border-indigo-100/60 dark:border-indigo-900/40 rounded-2xl p-5 space-y-3">
-          <h4 className="text-xs font-black text-indigo-950 dark:text-indigo-200 uppercase tracking-widest font-mono flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
-            Conclusión del mes
-          </h4>
-          <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-            {analysisResult && (
-              <>
-                Durante <strong>{currentMonthName}</strong> se consolidaron <strong>{analysisResult.count} contratos</strong> por un valor total de <strong>{formatCOPInMillones(analysisResult.totalValue)}</strong>. 
-                {analysisResult.count > 0 ? (
-                  <span>
-                    {' '}Este comportamiento representa una variación del {analysisResult.countPercentDiff >= 0 ? `+${analysisResult.countPercentDiff.toFixed(1)}%` : `${analysisResult.countPercentDiff.toFixed(1)}%`} en cantidad de firmas y un {analysisResult.valuePercentDiff >= 0 ? `+${analysisResult.valuePercentDiff.toFixed(1)}%` : `${analysisResult.valuePercentDiff.toFixed(1)}%`} en el presupuesto total asignado en comparación con el promedio mensual consolidado de la vigencia ({formatCOPInMillones(analysisResult.avgValuePerMonth)} en promedio).
-                    {analysisResult.hasHighConcentration && (
-                      <span className="text-rose-600 dark:text-rose-400 font-bold block mt-2">
-                        ⚠️ Se detecta una alta concentración de recursos en un grupo reducido de contratos durante este periodo, representando un factor clave a monitorear por la ciudadanía.
-                      </span>
-                    )}
-                  </span>
-                ) : (
-                  <span> Este periodo se muestra inactivo sin firmas contractuales ingresadas al sistema de contratación del SECOP II.</span>
-                )}
-              </>
-            )}
-          </p>
-        </div>
-
-        {/* Dynamic Interpretation Advice (¿Qué significa esto?) */}
-        <div className="bg-slate-50/60 dark:bg-slate-950/20 border border-slate-150 dark:border-slate-800/80 rounded-2xl p-5 space-y-3">
-          <h4 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest font-mono flex items-center gap-1.5">
-            <Scale className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-            ¿Qué significa esto?
-          </h4>
-          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-            {analysisResult && (
-              <>
-                {analysisResult.status === 'atípicamente-baja' && (
-                  <span>
-                    La inactividad o volumen extremadamente bajo en este mes suele deberse a demoras en la publicación del SECOP II por parte de la entidad, o la coincidencia con periodos de veda contractual legal. No necesariamente implica irregularidades, sino una menor intensidad en el compromiso formal de nuevos fondos públicos.
-                  </span>
-                )}
-                {analysisResult.status === 'pico-extremo' && (
-                  <span>
-                    Se evidencia un comportamiento altamente concentrado e inusual de firmas financieras. Un pico de contratación de esta magnitud suele estar justificado por la adjudicación formal de licitaciones públicas de infraestructura, o compras de suministros de gran envergadura. Se aconseja revisar el contrato mayor de este periodo para constatar su objeto legal.
-                  </span>
-                )}
-                {analysisResult.status === 'superior-promedio' && (
-                  <span>
-                    Existe un incremento de gasto público por encima de la media de la entidad. Esto sugiere una etapa de fuerte avance en la ejecución de programas de gobierno, o la contratación estacional de personal y servicios de apoyo técnico.
-                  </span>
-                )}
-                {analysisResult.status === 'inferior-promedio' && (
-                  <span>
-                    El flujo de nuevos contratos y desembolsos estuvo moderadamente por debajo del promedio. Representa un periodo de transición ordinaria, donde los comités y oficinas de adquisiciones suelen estructurar los pliegos de condiciones de futuras licitaciones.
-                  </span>
-                )}
-                {analysisResult.status === 'normal' && (
-                  <span>
-                    El volumen contractual y de recursos sigue un curso regular, lo que denota una ejecución programada y previsible de las metas institucionales de la entidad, sin picos ni anomalías presupuestales inusuales en este mes.
-                  </span>
-                )}
-              </>
-            )}
-          </p>
-        </div>
-
-      </div>
-
-      {/* Static Pedagogical Footer (¿Qué nos dicen estos datos?) */}
+      {/* Pedagogical Footer */}
       <div className="p-4 bg-amber-50/30 dark:bg-amber-950/10 border border-amber-200/30 dark:border-amber-900/20 rounded-xl text-xs text-amber-800 dark:text-amber-300 space-y-2">
         <div className="flex items-start gap-2.5">
           <HelpCircle className="w-4.5 h-4.5 text-amber-600 dark:text-amber-450 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <p className="font-bold">¿Qué nos dicen estos datos?</p>
-            <p className="leading-relaxed">
-              Monitorear la variación de contratación mes a mes permite a los ciudadanos detectar comportamientos fuera de lo habitual que ameriten explicaciones oficiales por parte de los funcionarios de la entidad.
+            <p className="font-bold">¿Cómo utilizar este análisis?</p>
+            <p className="leading-relaxed text-[11px]">
+              La comparación mensual permite a la ciudadanía identificar tendencias de incremento o desaceleración en el número de contratos y los montos comprometidos. Para consultar el detalle individual de cada contrato firmado, diríjase a la pestaña de <strong>Contratos</strong> en el menú principal.
             </p>
           </div>
         </div>
-        
-        {analysisResult && analysisResult.possibleCauses.length > 0 && (
-          <div className="pl-7 pt-1 space-y-1">
-            <p className="font-semibold text-[11px] text-amber-700 dark:text-amber-400">Posibles explicaciones de la variación observada:</p>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] opacity-90">
-              {analysisResult.possibleCauses.map((cause, index) => (
-                <li key={index}>{cause}</li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
 
     </div>

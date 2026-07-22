@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface VersionInfo {
   version: string;
@@ -6,53 +6,82 @@ export interface VersionInfo {
   changelog: string[];
 }
 
+const TWO_HOURS_MS = 2 * 60 * 60 * 1000; // 7,200,000 ms (2 hours)
+const INSTALLED_VERSION_KEY = 'contrato-claro-installed-version';
+const LAST_CHECK_KEY = 'contrato-claro-last-version-check';
+
 export function useVersionUpdate() {
   const [localVersion, setLocalVersion] = useState(() => {
-    return localStorage.getItem('contrato-claro-installed-version') || 'v1.2.9';
+    return localStorage.getItem(INSTALLED_VERSION_KEY) || 'v1.2.9';
   });
   const [latestVersionInfo, setLatestVersionInfo] = useState<VersionInfo | null>(null);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [upToDateNotice, setUpToDateNotice] = useState(false);
+  const [lastChecked, setLastChecked] = useState<Date | null>(() => {
+    const saved = localStorage.getItem(LAST_CHECK_KEY);
+    return saved ? new Date(Number(saved)) : null;
+  });
 
-  const checkVersion = async () => {
+  const checkVersion = useCallback(async (isManual: boolean = false) => {
     if (checking) return;
+
+    const now = Date.now();
+    const savedLastCheck = localStorage.getItem(LAST_CHECK_KEY);
+    const lastCheckTime = savedLastCheck ? Number(savedLastCheck) : 0;
+
+    // For automatic checks, verify if 2 hours have elapsed since the last check
+    if (!isManual && lastCheckTime > 0 && (now - lastCheckTime) < TWO_HOURS_MS) {
+      return;
+    }
+
     setChecking(true);
+    setUpToDateNotice(false);
+
     try {
-      // Fetch the version.json from the server with a cache-buster timestamp
-      const response = await fetch('/version.json?t=' + Date.now(), {
+      // Fetch version.json from server with cache-busting parameter
+      const response = await fetch('/version.json?t=' + now, {
         cache: 'no-store'
       });
+
       if (response.ok) {
         const data: VersionInfo = await response.json();
         setLatestVersionInfo(data);
         
-        // Check if there is a version mismatch
+        localStorage.setItem(LAST_CHECK_KEY, now.toString());
+        setLastChecked(new Date(now));
+
+        // Check if version in repository differs from client version
         if (data.version !== localVersion) {
           setHasUpdate(true);
+          setUpToDateNotice(false);
         } else {
           setHasUpdate(false);
+          if (isManual) {
+            setUpToDateNotice(true);
+          }
         }
       }
     } catch (error) {
       console.error('[Version Checker] Error fetching version.json:', error);
     } finally {
       setChecking(false);
-      setLastChecked(new Date());
     }
-  };
+  }, [checking, localVersion]);
 
   useEffect(() => {
-    // Initial check
-    checkVersion();
+    // Initial check on mount (respects the 2-hour window)
+    checkVersion(false);
 
-    // Periodically check every 5 minutes (300000 ms)
-    const interval = setInterval(checkVersion, 300000);
+    // Periodically check every 2 hours
+    const interval = setInterval(() => {
+      checkVersion(false);
+    }, TWO_HOURS_MS);
 
-    // Also check when the document becomes visible again (tab focus)
+    // Check on tab focus if 2 hours have passed
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        checkVersion();
+        checkVersion(false);
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -61,17 +90,16 @@ export function useVersionUpdate() {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [localVersion]);
+  }, [checkVersion]);
 
   const applyUpdate = () => {
     if (!latestVersionInfo) return;
     
-    // Set the installed version in localStorage to match the retrieved one
-    localStorage.setItem('contrato-claro-installed-version', latestVersionInfo.version);
+    localStorage.setItem(INSTALLED_VERSION_KEY, latestVersionInfo.version);
     setLocalVersion(latestVersionInfo.version);
     setHasUpdate(false);
+    setUpToDateNotice(false);
     
-    // Smoothly reload the window to complete simulated asset update
     setTimeout(() => {
       window.location.reload();
     }, 800);
@@ -81,14 +109,21 @@ export function useVersionUpdate() {
     setHasUpdate(false);
   };
 
+  const dismissUpToDateNotice = () => {
+    setUpToDateNotice(false);
+  };
+
   return {
     localVersion,
     latestVersionInfo,
     hasUpdate,
     checking,
+    upToDateNotice,
     lastChecked,
     checkVersion,
     applyUpdate,
-    skipUpdate
+    skipUpdate,
+    dismissUpToDateNotice
   };
 }
+

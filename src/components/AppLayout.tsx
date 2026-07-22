@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X } from 'lucide-react';
+import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X, CheckCircle2 } from 'lucide-react';
 import { useVersionUpdate } from '../hooks/useVersionUpdate';
 
 interface AppLayoutProps {
@@ -25,9 +25,12 @@ export default function AppLayout({
     latestVersionInfo,
     hasUpdate,
     checking,
+    upToDateNotice,
+    lastChecked,
     checkVersion,
     applyUpdate,
-    skipUpdate
+    skipUpdate,
+    dismissUpToDateNotice
   } = useVersionUpdate();
   const [updating, setUpdating] = useState(false);
 
@@ -146,12 +149,12 @@ export default function AppLayout({
 
             {/* Check for Updates Button */}
             <button
-              onClick={() => checkVersion()}
+              onClick={() => checkVersion(true)}
               disabled={checking}
               className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 hover:border-indigo-600 dark:hover:border-indigo-400 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 rounded-xl text-xs font-medium bg-white dark:bg-slate-900 transition-all shadow-xs disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-              title="Buscar actualizaciones de la aplicación"
+              title="Buscar actualizaciones (verificación automática cada 2 horas)"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${checking ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${checking ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
               <span className="hidden sm:inline">{checking ? 'Buscando...' : 'Actualizaciones'}</span>
             </button>
 
@@ -296,6 +299,37 @@ export default function AppLayout({
               Luego
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Up-To-Date Toast Notification */}
+      {upToDateNotice && !hasUpdate && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm w-[90vw] bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 rounded-2xl shadow-xl p-4 animate-fade-in flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0 mt-0.5">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                ¡Aplicación Actualizada!
+              </h4>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                Estás en la versión más reciente <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">({localVersion})</span>. No hay nuevas actualizaciones pendientes.
+              </p>
+              {lastChecked && (
+                <p className="text-[10px] font-mono text-slate-400 dark:text-slate-500 mt-1">
+                  Comprobado a las: {lastChecked.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={dismissUpToDateNotice}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+            title="Cerrar aviso"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
     </div>
