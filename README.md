@@ -36,9 +36,11 @@ Contrato-Claro está diseñado bajo un paradigma de alta legibilidad, respuesta 
    * **Procesamiento fuera del Hilo Principal (Web Worker):** Análisis ejecutado en segundo plano (`similarityWorker.ts`) para prevenir congelamientos de la interfaz gráfica.
    * **Alertas Cívicas:** Detección de contratos modificados, días adicionados, contratos vencidos en ejecución y adelantos de pago reportados.
 
-4. 🔍 **Explorador y Buscador de Contratos:**
-   * Búsqueda en tiempo real por objeto contractual, nombre de contratista, NIT o supervisor.
-   * Ficha técnica interactiva con enlace oficial a la plataforma SECOP II.
+4. 🔍 **Explorador y Buscador de Contratos Avanzado:**
+   * **Búsqueda Predictiva en Tiempo Real (`PredictiveSearchBar`):** Sugerencias inteligentes clasificadas por proveedor, objeto contractual, supervisor y referencia/ID con navegación por teclado y etiquetas de coincidencias.
+   * **Búsqueda por Texto General & Palabras Clave Separadas:** Módulos de filtrado independientes para búsqueda exacta y etiquetado múltiple de palabras clave (hasta 10 etiquetas).
+   * **Gestión de Historial Cívico Privado:** Almacenamiento local de búsquedas recientes con botón de **"Borrar Historial"** para permitir la eliminación inmediata por decisión del ciudadano.
+   * **Ficha Técnica Interactiva:** Ficha extendida por contrato con desglose financiero, estados y enlace directo al expediente oficial en SECOP II.
 
 ---
 

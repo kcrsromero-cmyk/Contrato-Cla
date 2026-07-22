@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, X, Building, FileText, User, Hash, Sparkles, Clock, ArrowRight } from 'lucide-react';
+import { Search, X, Building, FileText, User, Hash, Sparkles, Clock, ArrowRight, Trash2 } from 'lucide-react';
 import { Contrato } from '../types';
 
 interface PredictiveSuggestion {
@@ -91,6 +91,16 @@ export default function PredictiveSearchBar({
     });
   };
 
+  const clearAllRecentSearches = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem(RECENT_SEARCHES_KEY);
+    } catch (e) {
+      // ignore
+    }
+  };
+
   // Predictive Engine: Extract matching suggestions from active contracts dataset
   const suggestions = useMemo<PredictiveSuggestion[]>(() => {
     const qNorm = normalizeStr(searchTerm);
@@ -119,15 +129,15 @@ export default function PredictiveSearchBar({
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
 
-    for (const p of topProveedores) {
+    topProveedores.forEach((p, idx) => {
       items.push({
-        id: `prov-${p.original}`,
+        id: `prov-${idx}-${p.original}`,
         type: 'proveedor',
         label: p.original,
         matchCount: p.count,
         searchValue: p.original,
       });
-    }
+    });
 
     // 2. Match Objeto del Contrato
     const objetoMatches: { original: string; count: number }[] = [];
@@ -148,15 +158,15 @@ export default function PredictiveSearchBar({
       if (objetoMatches.length >= 3) break;
     }
 
-    for (const o of objetoMatches) {
+    objetoMatches.forEach((o, idx) => {
       items.push({
-        id: `obj-${o.original.substring(0, 20)}`,
+        id: `obj-${idx}-${o.original}`,
         type: 'objeto',
         label: o.original,
         searchValue: o.original,
         matchCount: 1,
       });
-    }
+    });
 
     // 3. Match Supervisors
     const supervisorMap = new Map<string, { original: string; count: number }>();
@@ -177,15 +187,15 @@ export default function PredictiveSearchBar({
       .sort((a, b) => b.count - a.count)
       .slice(0, 2);
 
-    for (const s of topSupervisores) {
+    topSupervisores.forEach((s, idx) => {
       items.push({
-        id: `sup-${s.original}`,
+        id: `sup-${idx}-${s.original}`,
         type: 'supervisor',
         label: s.original,
         matchCount: s.count,
         searchValue: s.original,
       });
-    }
+    });
 
     // 4. Match Referencias or IDs
     const refMatches: { ref: string; type: 'referencia' | 'id' }[] = [];
@@ -198,15 +208,15 @@ export default function PredictiveSearchBar({
       if (refMatches.length >= 2) break;
     }
 
-    for (const r of refMatches) {
+    refMatches.forEach((r, idx) => {
       items.push({
-        id: `ref-${r.ref}`,
+        id: `ref-${idx}-${r.ref}`,
         type: 'referencia',
         label: r.ref,
         searchValue: r.ref,
         matchCount: 1,
       });
-    }
+    });
 
     return items;
   }, [searchTerm, contratos]);
@@ -366,8 +376,19 @@ export default function PredictiveSearchBar({
           {/* Recent Searches / Popular Suggestions */}
           {recentSearches.length > 0 && (
             <div className="p-3 bg-slate-50/50 dark:bg-slate-950/50">
-              <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2 flex items-center gap-1.5">
-                <Clock className="w-3 h-3 text-slate-400" /> Búsquedas Recientes / Populares
+              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 text-slate-400" /> Búsquedas Recientes / Populares
+                </span>
+                <button
+                  type="button"
+                  onClick={clearAllRecentSearches}
+                  className="text-[10px] text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 font-bold hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Borrar todo el historial de búsquedas anteriores"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Borrar Historial</span>
+                </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {recentSearches.map((item, idx) => (

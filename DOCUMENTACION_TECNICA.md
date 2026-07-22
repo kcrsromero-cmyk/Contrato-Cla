@@ -16,6 +16,7 @@
    * 2.4 [Análisis Algorítmico de Similitud Léxica de Objetos (Jaccard + Inverted Index)](#24-análisis-algorítmico-de-similitud-léxica-de-objetos-jaccard--inverted-index)
    * 2.5 [Indicadores de Riesgo y Control Ciudadano](#25-indicadores-de-riesgo-y-control-ciudadano)
    * 2.6 [Consolidación y Recurrencia de Contratistas](#26-consolidación-y-recurrencia-de-contratistas)
+   * 2.7 [Motor de Búsqueda Predictiva en Tiempo Real y Gestión de Historial Local](#27-motor-de-búsqueda-predictiva-en-tiempo-real-y-gestión-de-historial-local)
 3. 💻 [Procesamiento fuera del Hilo Principal (Web Worker)](#3-procesamiento-fuera-del-hilo-principal-web-worker)
 4. 🔗 [Enlaces Oficiales y Documentación de la API Socrata (SECOP II)](#4-enlaces-oficiales-y-documentación-de-la-api-socrata-secop-ii)
 5. 📋 [Campos Consumidos y Política de Minimización de Datos](#5-campos-consumidos-y-política-de-minimización-de-datos)
@@ -147,6 +148,33 @@ Para evitar duplicidad de nombres o discrepancias de tipeo por parte de las enti
 * **Llave Unívoca de Contratista:**
   $$K_{\text{contratista}} = \text{MAYUSCULAS}(\text{proveedor\_adjudicado}) \mathbin{\Vert} \text{documento\_proveedor}$$
 * **Contratistas Recurrentes:** Se agrupan los contratos por $K_{\text{contratista}}$ y se filtran aquellos con $N_{\text{contratos}} > 1$.
+
+---
+
+### 2.7 Motor de Búsqueda Predictiva en Tiempo Real y Gestión de Historial Local
+
+Para facilitar la navegación acelerada y autónoma de los ciudadanos dentro del listado de contrataciones públicas, el módulo `src/components/PredictiveSearchBar.tsx` implementa un motor predictivo reactivo en tiempo real:
+
+1. **Estructura de Indexación Predictiva Multicriterio:**
+   El motor escanea los contratos cargados en memoria y extrae sugerencias dinámicas categorizadas en cuatro tipos de coincidencias:
+   * **Proveedores / Adjudicatarios:** Agrupa razones sociales o nombres de contratistas coincidentes, contabilizando el número total de contratos asociados ($N_{\text{coincidencias}}$).
+   * **Objetos Contractuales:** Indexa frases y resúmenes descriptivos de las contrataciones que contienen la cadena de consulta.
+   * **Supervisores Asignados:** Extrae nombres de los funcionarios o contratistas de supervisión pública.
+   * **Referencias e Identificadores (ID / Ref):** Identifica códigos únicos de expedientes en SECOP II.
+
+2. **Normalización Léxica e Inmunidad a Acentos:**
+   Todas las comparaciones utilizan la función de normalización unicode `NFD` para remover tildes y diacríticos, convirtiendo las cadenas a minúsculas limpias:
+   $$\text{NORM}(S) = \text{REEMPLAZAR\_DIACRITICOS}(\text{MINUSCULAS}(\text{NFD}(S)))$$
+
+3. **Arquitectura Modular de Filtros Separados:**
+   La barra de herramientas del panel de control organiza los mecanismos de filtrado en capas independientes:
+   * **1ª Fila — Búsqueda por Texto General & Palabras Clave:** Permite la búsqueda libre no predictiva y la adición de etiquetas de palabras clave (hasta 10 etiquetas con eliminación individual).
+   * **2ª Fila — Búsqueda Predictiva Auto:** Componente dedicado con menú desplegable de sugerencias automáticas en tiempo real.
+   * **3ª Fila — Barra de Estado de Filtros Activos & Reset General:** Resumen visual de filtros aplicados con opción de restablecimiento completo.
+
+4. **Persistencia e Historial Cívico Privado (`localStorage`):**
+   * Las búsquedas seleccionadas se almacenan localmente en el dispositivo del usuario bajo la clave `contrato_claro_recent_searches_v1`.
+   * **Control de Privacidad del Ciudadano:** Incluye un botón explícito de **"Borrar Historial"** (`clearAllRecentSearches`) que elimina de forma inmediata la totalidad del historial guardado en el almacenamiento local del navegador.
 
 ---
 

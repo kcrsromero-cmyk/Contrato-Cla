@@ -244,6 +244,7 @@ export default function ContratosView({
   setSelectedModalidad: propSetSelectedModalidad
 }: ContratosViewProps) {
   // Advanced filters state
+  const [predictiveSearchTerm, setPredictiveSearchTerm] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [keywordsInput, setKeywordsInput] = useState('');
   const [appliedKeywords, setAppliedKeywords] = useState<string[]>([]);
@@ -313,7 +314,21 @@ export default function ContratosView({
   // 2. Apply filtering
   const filteredContratos = useMemo(() => {
     return contratos.filter(c => {
-      // Free-text filter on key fields (accent and case insensitive)
+      // Predictive search filter
+      if (predictiveSearchTerm.trim() !== '') {
+        const predNorm = normalizeText(predictiveSearchTerm);
+        const matchesObjeto = normalizeText(c.objeto_del_contrato).includes(predNorm);
+        const matchesProveedor = normalizeText(c.proveedor_adjudicado).includes(predNorm);
+        const matchesSupervisor = normalizeText(c.nombre_supervisor).includes(predNorm);
+        const matchesReferencia = normalizeText(c.referencia_del_contrato).includes(predNorm);
+        const matchesId = normalizeText(c.id_contrato).includes(predNorm);
+
+        if (!matchesObjeto && !matchesProveedor && !matchesSupervisor && !matchesReferencia && !matchesId) {
+          return false;
+        }
+      }
+
+      // Free-text general search filter on key fields (accent and case insensitive)
       if (searchTerm.trim() !== '') {
         const textNorm = normalizeText(searchTerm);
         const matchesObjeto = normalizeText(c.objeto_del_contrato).includes(textNorm);
@@ -357,7 +372,7 @@ export default function ContratosView({
 
       return true;
     });
-  }, [contratos, searchTerm, appliedKeywords, selectedEstado, selectedTipo, selectedModalidad, selectedCategory, minValor, maxValor]);
+  }, [contratos, predictiveSearchTerm, searchTerm, appliedKeywords, selectedEstado, selectedTipo, selectedModalidad, selectedCategory, minValor, maxValor]);
 
   // 3. Paginate filtered list
   const totalPages = Math.ceil(filteredContratos.length / ITEMS_PER_PAGE) || 1;
@@ -365,7 +380,7 @@ export default function ContratosView({
   // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, appliedKeywords, selectedEstado, selectedTipo, selectedModalidad, selectedCategory, minValor, maxValor]);
+  }, [predictiveSearchTerm, searchTerm, appliedKeywords, selectedEstado, selectedTipo, selectedModalidad, selectedCategory, minValor, maxValor]);
 
   // Clamp current page if it exceeds totalPages
   useEffect(() => {
@@ -417,6 +432,7 @@ export default function ContratosView({
   };
 
   const resetFilters = () => {
+    setPredictiveSearchTerm('');
     setSearchTerm('');
     setKeywordsInput('');
     setAppliedKeywords([]);
@@ -448,35 +464,51 @@ export default function ContratosView({
       
       {/* Filtering Toolbar */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-xs">
-        <div className="flex flex-col lg:flex-row gap-4 items-stretch">
+        
+        {/* Top Row: General Text Search & Keywords Search */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
           
-          {/* Predictive Text Search */}
-          <div className="flex-1 space-y-1">
-            <label htmlFor="predictive-search-input" className="block text-[11px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              Búsqueda Predictiva en Tiempo Real
+          {/* 1. General Text Search */}
+          <div className="space-y-1">
+            <label htmlFor="general-text-search-input" className="block text-[11px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              Búsqueda por Texto
             </label>
-            <PredictiveSearchBar
-              contratos={contratos}
-              searchTerm={searchTerm}
-              onSearchChange={(val) => {
-                setSearchTerm(val);
-                setCurrentPage(1);
-              }}
-              placeholder="Buscar por objeto, proveedor, supervisor, ID o referencia..."
-              id="predictive-search-input"
-            />
+            <div className="relative">
+              <input
+                id="general-text-search-input"
+                type="text"
+                placeholder="Buscar en todo el documento o texto..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl pl-10 pr-10 py-3 text-sm focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-600/20 transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs font-sans"
+              />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Limpiar búsqueda por texto"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Keywords Search */}
-          <div className="flex-1 space-y-1">
+          {/* 2. Keywords Search */}
+          <div className="space-y-1">
             <label className="block text-[11px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              Filtrar por Palabras Clave (Máx 10, ignora acentos/tildes)
+              Filtrar por Palabras Clave
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <input
                   type="text"
-                  placeholder="Ej: obra, salud, consultoria, interventoria... (Máx. 10)"
+                  placeholder="Ej: obra, salud, consultoria... (Máx. 10)"
                   value={keywordsInput}
                   onChange={(e) => setKeywordsInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -485,14 +517,14 @@ export default function ContratosView({
                       handleApplyKeywords();
                     }
                   }}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-500 focus:ring-1 focus:ring-indigo-600 transition-all text-slate-800 dark:text-slate-100"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-600/20 transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs font-sans"
                 />
-                <SlidersHorizontal className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 dark:text-slate-550" />
+                <SlidersHorizontal className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
               </div>
               <button
                 type="button"
                 onClick={handleApplyKeywords}
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-xs rounded-xl shadow-2xs hover:shadow-xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-xs rounded-2xl shadow-2xs hover:shadow-xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
               >
                 <Search className="w-3.5 h-3.5" />
                 <span>Buscar</span>
@@ -500,39 +532,87 @@ export default function ContratosView({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 lg:self-end">
-            {/* Quick Clear */}
-            {(searchTerm || appliedKeywords.length > 0 || selectedEstado || selectedTipo || selectedModalidad || minValor || maxValor) && (
-              <button
-                onClick={resetFilters}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-mono font-bold text-slate-700 dark:text-slate-300 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs self-end h-[42px]"
-              >
-                <RefreshCw className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Reestablecer
-              </button>
-            )}
+        </div>
+
+        {/* Second Row: Predictive Search */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="space-y-1">
+            <label htmlFor="predictive-search-input" className="block text-[11px] font-bold font-mono text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
+              <span>Búsqueda Predictiva</span>
+              <span className="text-[9px] bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.2 rounded font-mono font-bold border border-indigo-200 dark:border-indigo-800">Sugerencias Automáticas</span>
+            </label>
+            <PredictiveSearchBar
+              contratos={contratos}
+              searchTerm={predictiveSearchTerm}
+              onSearchChange={(val) => {
+                setPredictiveSearchTerm(val);
+                setCurrentPage(1);
+              }}
+              placeholder="Buscar con sugerencias por proveedor, objeto, supervisor, ID o referencia..."
+              id="predictive-search-input"
+            />
           </div>
         </div>
 
-        {/* Applied Keywords Badges */}
-        {appliedKeywords.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 animate-fade-in">
-            <span className="text-[10px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">Palabras clave activas:</span>
-            {appliedKeywords.map((kw, idx) => (
-              <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-350 border border-indigo-100 dark:border-indigo-900/30 text-xs font-mono font-medium">
-                {kw}
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    const newList = appliedKeywords.filter((_, i) => i !== idx);
-                    setAppliedKeywords(newList);
-                    setKeywordsInput(newList.join(', '));
-                  }}
-                  className="hover:bg-indigo-100 dark:hover:bg-indigo-900/60 p-0.5 rounded-sm cursor-pointer"
-                >
-                  <X className="w-3 h-3 text-indigo-500 hover:text-indigo-700 dark:text-indigo-400" />
-                </button>
-              </span>
-            ))}
+        {/* Applied Filters & Quick Reset Bar */}
+        {(predictiveSearchTerm || searchTerm || appliedKeywords.length > 0 || selectedEstado || selectedTipo || selectedModalidad || selectedCategory || minValor || maxValor) && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 animate-fade-in">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">Filtros Activos:</span>
+              
+              {predictiveSearchTerm && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 text-xs font-mono font-medium">
+                  <strong>Predictiva:</strong> {predictiveSearchTerm}
+                  <button 
+                    type="button" 
+                    onClick={() => setPredictiveSearchTerm('')}
+                    className="hover:bg-indigo-100 dark:hover:bg-indigo-900/60 p-0.5 rounded cursor-pointer"
+                    title="Remover filtro predictivo"
+                  >
+                    <X className="w-3 h-3 text-indigo-500 hover:text-indigo-700 dark:text-indigo-400" />
+                  </button>
+                </span>
+              )}
+
+              {searchTerm && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-mono font-medium">
+                  <strong>Texto:</strong> {searchTerm}
+                  <button 
+                    type="button" 
+                    onClick={() => setSearchTerm('')}
+                    className="hover:bg-amber-100 dark:hover:bg-amber-900/60 p-0.5 rounded cursor-pointer"
+                    title="Remover filtro de texto"
+                  >
+                    <X className="w-3 h-3 text-amber-500 hover:text-amber-700 dark:text-amber-400" />
+                  </button>
+                </span>
+              )}
+
+              {appliedKeywords.map((kw, idx) => (
+                <span key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-mono font-medium">
+                  <strong>Palabra:</strong> {kw}
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const newList = appliedKeywords.filter((_, i) => i !== idx);
+                      setAppliedKeywords(newList);
+                      setKeywordsInput(newList.join(', '));
+                    }}
+                    className="hover:bg-emerald-100 dark:hover:bg-emerald-900/60 p-0.5 rounded cursor-pointer"
+                    title="Remover palabra clave"
+                  >
+                    <X className="w-3 h-3 text-emerald-500 hover:text-emerald-700 dark:text-emerald-400" />
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            <button
+              onClick={resetFilters}
+              className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-mono font-bold text-slate-700 dark:text-slate-300 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Reestablecer todo
+            </button>
           </div>
         )}
 
