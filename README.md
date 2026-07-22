@@ -1,120 +1,122 @@
-# Contrato-Claro 🇨🇴
+# 🇨🇴 Contrato-Claro — Fiscalización y Transparencia Contractual
 
-> **Plataforma ciudadana para consultar, comparar y analizar la contratación pública en Colombia**
-
-**Contrato-Claro** es una iniciativa independiente y de código abierto para la transparencia y la veeduría ciudadana. Su misión es democratizar, simplificar y hacer inteligible la información del **Sistema Electrónico de Contratación Pública (SECOP II)** de Colombia, transformando datos complejos y estructurados en visualizaciones, comparativas y análisis fáciles de comprender para cualquier ciudadano.
-
----
-
-### ⚠️ AVISO IMPORTANTE: No Oficialidad
-**Contrato-Claro es un proyecto 100% independiente de carácter cívico, educativo y social.**
-No tiene ninguna afiliación, patrocinio, asociación ni aval oficial de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente, ni de ninguna otra entidad del Estado colombiano. Toda la información presentada proviene de los conjuntos de datos abiertos provistos por el portal oficial **Datos Abiertos Colombia (datos.gov.co)**. 
-
-*Para consultar los términos completos y el alcance del proyecto, por favor consulte el [Descargo de Responsabilidad](DESCARGO_DE_RESPONSABILIDAD.md) y los [Términos de Uso](TERMINOS_DE_USO.md).*
+> **Plataforma ciudadana independiente para consultar, comparar y analizar la contratación pública en Colombia**  
+> 👨‍💻 **Autoría e Idea Original:** **EDWIN MAURICIO CACERES ROMERO**  
+> ⚖️ **Licencia de Software Libre:** **GNU Affero General Public License v3.0 (GNU AGPLv3)**
 
 ---
 
-## 🎨 Características de la Plataforma
-
-Contrato-Claro está diseñado bajo un paradigma de diseño limpio, de alta legibilidad, intuitivo y responsivo, ofreciendo una experiencia interactiva sin complejidades innecesarias:
-
-1. **Dashboard de Resumen General:**
-   * Visualización agregada del número de contratos, valor total contratado, valor total desembolsado e importes pendientes.
-   * Gráficas de tendencia temporal de contratación y desglose porcentual por estado contractual y modalidad de selección legal.
-   * Filtros territoriales rápidos y selectores avanzados por rango de fechas de vigencia.
-
-2. **Comparativa Mensual Avanzada (Evolución de Contratación):**
-   * Vista comparativa detallada de tres columnas: *Mes Anterior*, *Mes Seleccionado* y *Mes Siguiente*.
-   * Cálculo automático de métricas de desviación presupuestaria y volumen de contratación en relación con el promedio anual consolidado.
-   * Análisis de la evolución porcentual del presupuesto y contratos firmados hacia el mes actual y desde el mes actual hacia el mes siguiente.
-   * Caja de auditoría con scroll que resalta el **Contrato Mayor** de cada periodo de tiempo con su objeto correspondiente de forma clara.
-
-3. **Métricas Avanzadas de Integridad e Inteligencia:**
-   * **Objetos Idénticos:** Detección de patrones de duplicación literal u objetos idénticos adjudicados a contratistas del mismo grupo para auditorías ciudadanas.
-   * **Similitud Léxica:** Agrupación algorítmica de contratos con coincidencias textuales altas en el objeto que podrían sugerir fragmentación contractual.
-   * **Alertas Tempranas:** Alertas automatizadas basadas en variables operativas, como contratos con plazos inusualmente cortos o firmas en periodos de alto riesgo.
-
-4. **Visualizador de Contratos Detallado:**
-   * Listado completo con filtros fluidos (Estado, Tipo de Proceso, Modalidad de Selección y Rangos de Cuantía).
-   * Búsqueda instantánea en tiempo real por objeto de contrato o nombre de contratista.
-   * Modales interactivos de ficha técnica que expanden el objeto completo del contrato, supervisor a cargo, valor, forma de pago y enlaces a la documentación de origen.
+**Contrato-Claro** es una iniciativa de código abierto y desarrollo cívico para la transparencia presupuestal y la veeduría ciudadana en Colombia. Su propósito es democratizar, simplificar y hacer inteligible la información del **Sistema Electrónico de Contratación Pública (SECOP II)** de Colombia Compra Eficiente, transformando datos complejos y estructurados en visualizaciones intuitivas, comparativas mensuales y análisis algorítmicos al alcance de cualquier ciudadano.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## ⚠️ AVISO IMPORTANTE: No Oficialidad e Independencia 🛡️
 
-La arquitectura del proyecto está construida sobre tecnologías modernas, garantizando velocidad de carga y modularidad para los desarrolladores:
+**Contrato-Claro es un proyecto 100% independiente de carácter cívico, educativo, analítico y social.**
 
-* **Framework:** React 18+ (con TypeScript para un tipado estricto y seguro).
-* **Herramienta de Construcción:** Vite (optimizando tiempos de recarga y empaquetado de producción).
-* **Diseño y Estilos:** Tailwind CSS (diseño adaptable a móviles y computadores, consistente en modos claro y oscuro).
-* **Librería de Gráficas:** Recharts & D3 (visualizaciones interactivas de líneas, barras y áreas).
-* **Iconografía:** Lucide React (paquete consistente de vectores geométricos de alta accesibilidad).
-* **Análisis Inteligente (IA):** Google Gemini API (utilizando la SDK `@google/genai` en servidores seguros para la generación de resúmenes de contratos legales complejos y análisis asistidos).
+* **Sin Afiliación Oficial:** No tiene ninguna relación, patrocinio, asociación ni aval oficial con la Agencia Nacional de Contratación Pública — Colombia Compra Eficiente, el Departamento Nacional de Planeación (DNP) ni ninguna otra entidad gubernamental de la República de Colombia.
+* **Fuente Oficial de Datos:** Toda la información provista proviene de los conjuntos de datos abiertos de la plataforma estatal **Datos Abiertos Colombia (`datos.gov.co`)** a través de la API SODA del dataset SECOP II.
+* **Términos Completos:** Para consultar el alcance legal del proyecto, revise el [Descargo de Responsabilidad](DESCARGO_DE_RESPONSABILIDAD.md) y los [Términos de Uso](TERMINOS_DE_USO.md).
 
 ---
 
-## 🚀 Inicio Rápido y Configuración
+## 🎨 Características Principales de la Plataforma
 
-Siga las siguientes instrucciones para configurar y ejecutar la aplicación en su entorno de desarrollo local:
+Contrato-Claro está diseñado bajo un paradigma de alta legibilidad, respuesta en tiempo real y accesibilidad cívica:
 
-### Requisitos Previos
-* Tener instalado **Node.js** (versión 18 o superior).
-* Tener un gestor de paquetes de Node instalado (`npm` o `yarn`).
+1. 📊 **Dashboard de Resumen General:**
+   * Agregación instantánea del valor total contratado, valor ejecutado/pagado y saldos pendientes.
+   * Gráficas interactivas de tendencia mensual de contratación y distribución porcentual por estado del contrato y modalidad legal de selección.
+   * Filtros dinámicos por departamento, municipio, entidad contratante y rangos de fechas de vigencia.
 
-### Instalación
+2. 📈 **Evolución y Comparativa Mensual Avanzada:**
+   * Vista comparativa estructurada de tres columnas (*Mes Anterior*, *Mes Seleccionado* y *Mes Siguiente*).
+   * Cálculo de desviaciones presupuestarias respecto al promedio mensual anual y variaciones periodo a periodo ($\Delta\%$).
+   * Módulo de auditoría que destaca el **Contrato Mayor** de cada periodo con su objeto y cuantía oficial.
 
-1. Clone el repositorio principal:
-   ```bash
-   git clone https://github.com/tu-usuario/contrato-claro.git
-   cd contrato-claro
-   ```
+3. 🧮 **Motor Algorítmico e Indicadores de Integridad:**
+   * **Objetos Repetidos (Copia Literal):** Identificación automática de contratos con redacción 100% idéntica en su objeto.
+   * **Similitud Léxica de Objetos (Jaccard Index):** Agrupación algorítmica de contratos con alta coincidencia textual para detectar posible fraccionamiento de contratos.
+   * **Procesamiento fuera del Hilo Principal (Web Worker):** Análisis ejecutado en segundo plano (`similarityWorker.ts`) para prevenir congelamientos de la interfaz gráfica.
+   * **Alertas Cívicas:** Detección de contratos modificados, días adicionados, contratos vencidos en ejecución y adelantos de pago reportados.
 
-2. Instale todas las dependencias del proyecto:
-   ```bash
-   npm install
-   ```
-
-3. Configure el archivo de variables de entorno:
-   * Cree una copia del archivo de ejemplo:
-     ```bash
-     cp .env.example .env
-     ```
-   * Abra el archivo `.env` recién creado y agregue su clave de la API de Gemini si planea utilizar las funciones de resumen inteligente:
-     ```env
-     GEMINI_API_KEY=tu-clave-secreta-aqui
-     ```
-
-4. Inicie el servidor de desarrollo local:
-   ```bash
-   npm run dev
-   ```
-   Abra su navegador web en [http://localhost:3000](http://localhost:3000) para interactuar con la plataforma.
+4. 🔍 **Explorador y Buscador de Contratos:**
+   * Búsqueda en tiempo real por objeto contractual, nombre de contratista, NIT o supervisor.
+   * Ficha técnica interactiva con enlace oficial a la plataforma SECOP II.
 
 ---
 
-## 📋 Comandos Útiles
+## 📚 Documentación Técnica, Métodos y API Socrata 📖
 
-El proyecto cuenta con scripts preparados para facilitar la calidad de desarrollo:
+Para una descripción detallada sobre la arquitectura técnica, las fórmulas matemáticas y los canales de integración con datos abiertos, consulte la **[Documentación Técnica Completa (`DOCUMENTACION_TECNICA.md`)](DOCUMENTACION_TECNICA.md)**:
 
-* **Iniciar Servidor de Desarrollo:** `npm run dev`
-* **Ejecutar Linter (Verificar Errores):** `npm run lint`
-* **Compilar para Producción (Build):** `npm run build`
-* **Iniciar Vista Previa de Producción:** `npm run preview`
-
----
-
-## 🤝 Comunidad y Colaboración
-
-¡Las contribuciones de la comunidad son invaluables! Si desea corregir una falla, sugerir mejoras visuales o proponer nuevas integraciones con APIs de datos abiertos:
-
-1. Lea nuestro [Código de Conducta](CODE_OF_CONDUCT.md) para comprender la atmósfera pacífica e inclusiva que fomentamos en la comunidad.
-2. Siga los pasos de configuración y envío descritos en la [Guía de Contribución](CONTRIBUTING.md).
+* 🧮 **[Motor de Cálculo Matemático](DOCUMENTACION_TECNICA.md#2-motor-de-cálculo-matemático-y-cruces-de-datos):** Fórmulas exactas para agregaciones financieras, desviaciones presupuestales, coeficiente de Jaccard ($J(A,B) = \frac{|A \cap B|}{|A \cup B|}$), filtrado de stopwords en contratación colombiana e índice invertido.
+* 📋 **[Tabla de Campos Consumidos (SECOP II)](DOCUMENTACION_TECNICA.md#4-campos-consumidos-de-la-api-socrata-secop-ii):** Mapeo de más de 35 campos de la API Socrata (`jbjy-vk9h.json`) hacia la aplicación React/TypeScript.
+* 📡 **[Encabezados HTTP Socrata (SODA API v2.1)](DOCUMENTACION_TECNICA.md#5-encabezados-http-de-socrata-soda-api-v21):** Detalle de encabezados HTTP disponibles en Socrata (`X-App-Token`, `X-Soda2-Fields`, `X-Soda2-Types`, `X-Total-Count`, `Cache-Control`) y la estrategia de cliente adoptada por Contrato-Claro.
 
 ---
 
-## 📄 Licencia y Términos
+## 🛠️ Stack Tecnológico ⚙️
 
-Este proyecto es software libre y está bajo los términos de la **[Licencia MIT](LICENSE)** (Community Edition). Ello le permite usar, modificar, distribuir y sublicenciar el código libremente siempre que mantenga el aviso de derechos de autor correspondiente.
+La arquitectura del proyecto garantiza velocidad de procesamiento, tipado seguro y experiencia reactiva:
 
-Para más información sobre el uso responsable de la información ciudadana, consulte nuestros **[Términos de Uso](TERMINOS_DE_USO.md)**.
+* ⚛️ **Framework UI:** React 18+ (TypeScript).
+* ⚡ **Build Tool:** Vite (compilación ultrarrápida).
+* 🎨 **Estilos:** Tailwind CSS v4 (diseño moderno y adaptativo).
+* 📈 **Visualizaciones:** Recharts & D3 (gráficas interactivas).
+* 🧩 **Iconografía:** Lucide React (vectores limpios y accesibles).
+* 🧵 **Concurrencia:** Web Workers (cálculo de similitud léxica sin bloquear la interfaz).
+* 💾 **Persistencia:** IndexedDB (caché multinivel de datos abiertos).
+
+---
+
+## 🚀 Inicio Rápido en Entorno Local
+
+Siga los siguientes pasos para ejecutar la aplicación en su máquina local:
+
+### 1. Requisitos Previos 📋
+* Node.js v18.0 o superior.
+* Gestor de paquetes `npm` o `yarn`.
+
+### 2. Instalación 💻
+```bash
+# Clonar el repositorio
+git clone https://github.com/tu-usuario/contrato-claro.git
+cd contrato-claro
+
+# Instalar dependencias
+npm install
+```
+
+### 3. Ejecución en Desarrollo 🚀
+```bash
+npm run dev
+```
+Abra [http://localhost:3000](http://localhost:3000) en su navegador web.
+
+---
+
+## 📋 Comandos del Proyecto
+
+* 💻 **Modo Desarrollo:** `npm run dev`
+* 🔍 **Verificación de Tipos y Linter:** `npm run lint`
+* 📦 **Compilación de Producción:** `npm run build`
+* 👁️ **Previsualización de Producción:** `npm run preview`
+
+---
+
+## 🤝 Contribuciones y Comunidad 🌐
+
+¡Las contribuciones de la ciudadanía y la comunidad de desarrolladores son bienvenidas!
+Para colaborar:
+1. Revisa nuestro [Código de Conducta](CODE_OF_CONDUCT.md) 🤝.
+2. Consulta la [Guía de Contribución](CONTRIBUTING.md) 🛠️.
+
+---
+
+## 📜 Licencia de Software Libre y Créditos
+
+* 👨‍💻 **Autor Principal:** **EDWIN MAURICIO CACERES ROMERO** (`kcrsromero@gmail.com`)
+* ⚖️ **Licencia:** **[GNU Affero General Public License v3.0 (GNU AGPLv3)](LICENSE)**
+
+Este programa es software libre: usted puede redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General Affero de GNU publicada por la Free Software Foundation.

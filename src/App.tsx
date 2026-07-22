@@ -3,19 +3,51 @@ import { useTheme } from './hooks/useTheme';
 import { usePeriodo } from './hooks/usePeriodo';
 import { useContratos } from './hooks/useContratos';
 import { useEntidad } from './hooks/useEntidad';
-import { useDashboard } from './hooks/useDashboard';
+import { useDashboard, DashboardTab } from './hooks/useDashboard';
 import { useWindowWidth } from './hooks/useWindowWidth';
 
 import AppLayout from './components/AppLayout';
 import TerritorialSelector from './components/TerritorialSelector';
 import PeriodSelector from './components/PeriodSelector';
 import Dashboard from './components/Dashboard';
+import OnboardingModal from './components/OnboardingModal';
 import { ArrowLeft, Sliders, RefreshCw } from 'lucide-react';
 import { formatBytes } from './utils/helpers';
 
 export default function App() {
   const { theme, toggleTheme, easyRead, toggleEasyRead } = useTheme();
   const windowWidth = useWindowWidth();
+  
+  const [isOnboardingOpen, setIsOnboardingOpen] = React.useState(false);
+
+  const handleCloseOnboarding = () => {
+    setIsOnboardingOpen(false);
+  };
+
+  const handleFocusTerritorial = () => {
+    handleCloseOnboarding();
+    const el = document.getElementById('step-territorial-navigation');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleFocusPeriod = () => {
+    handleCloseOnboarding();
+    const el = document.getElementById('period-selector-card');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      window.scrollTo({ top: 300, behavior: 'smooth' });
+    }
+  };
+
+  const handleNavigateTabFromOnboarding = (tab: DashboardTab) => {
+    handleCloseOnboarding();
+    navigateToTab(tab);
+  };
   
   const { 
     selectedEntity, 
@@ -70,13 +102,15 @@ export default function App() {
   }, [contratos]);
 
   return (
-    <AppLayout
-      theme={theme}
-      toggleTheme={toggleTheme}
-      easyRead={easyRead}
-      toggleEasyRead={toggleEasyRead}
-      handleClearCache={handleClearCache}
-    >
+    <>
+      <AppLayout
+        theme={theme}
+        toggleTheme={toggleTheme}
+        easyRead={easyRead}
+        toggleEasyRead={toggleEasyRead}
+        handleClearCache={handleClearCache}
+        onOpenOnboarding={() => setIsOnboardingOpen(true)}
+      >
       {/* If an entity is selected and we are on a wide screen, render the Dual Column Sidebar layout */}
       {selectedEntity && isWideLayout ? (
         <div className="grid grid-cols-1 [@media(min-width:1900px)]:grid-cols-[420px_1fr] gap-8 items-start animate-fade-in">
@@ -231,5 +265,15 @@ export default function App() {
         </>
       )}
     </AppLayout>
+
+    <OnboardingModal
+      isOpen={isOnboardingOpen}
+      onClose={handleCloseOnboarding}
+      onNavigateTab={handleNavigateTabFromOnboarding}
+      onFocusTerritorial={handleFocusTerritorial}
+      onFocusPeriod={handleFocusPeriod}
+      easyRead={easyRead}
+    />
+    </>
   );
 }

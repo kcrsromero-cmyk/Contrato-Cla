@@ -71,6 +71,7 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
     repeatedObjects,
     similarObjectsGroups,
     citizenIndicators,
+    isCalculatingSimilar,
   } = useMetricas(filteredContratos);
 
   const {
@@ -334,6 +335,7 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
           <SimilitudLexicaTab 
             similarObjectsGroups={similarObjectsGroups}
             setSelectedSimilarGroup={setSelectedSimilarGroup}
+            isCalculatingSimilar={isCalculatingSimilar}
           />
         )}
 

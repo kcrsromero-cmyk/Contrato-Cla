@@ -1,41 +1,39 @@
-# Política de Seguridad - Contrato-Claro
+# 🔒 Política de Seguridad - Contrato-Claro 🇨🇴
 
-La seguridad y privacidad de la información son pilares fundamentales para **Contrato-Claro**. Como plataforma de veeduría y análisis de datos de contratación pública, estamos comprometidos con la integridad, disponibilidad y confidencialidad del servicio.
+> 👨‍💻 **Autoría e Idea Original:** **EDWIN MAURICIO CACERES ROMERO**  
+> ⚖️ **Licencia:** **GNU Affero General Public License v3.0 (GNU AGPLv3)**
 
-## Versiones Soportadas
+La seguridad, la integridad de los datos y la resiliencia tecnológica son pilares fundamentales para **Contrato-Claro**. Como plataforma cívica de fiscalización de la contratación pública, estamos comprometidos con la disponibilidad de las herramientas y la protección contra vulnerabilidades.
 
-Actualmente, solo se brinda soporte de seguridad activo a la versión en desarrollo dentro de este repositorio principal:
+---
 
-| Versión | Soportada |
-| ------- | --------- |
-| > 1.0.x | Sí (Rama Principal) |
-| < 1.0.0 | No |
+## 🛡️ Versiones Soportadas
 
-## Reportar una Vulnerabilidad
+Actualmente se brinda soporte de seguridad activo a la versión principal en este repositorio:
+
+| Versión | Estado de Soporte |
+| ------- | ----------------- |
+| ≥ 1.0.0 | 🟢 Activo (Rama Principal) |
+| < 1.0.0 | 🔴 Inactivo |
+
+---
+
+## 🚨 Reportar una Vulnerabilidad
 
 **Por favor, no reportes vulnerabilidades de seguridad a través de issues públicos en GitHub.**
 
-Si descubres una falla de seguridad en este proyecto, te solicitamos que la reportes de manera responsable siguiendo estos pasos:
+Si descubres una falla de seguridad en la aplicación, la infraestructura de datos o la sanitización de consultas, te solicitamos reportarla siguiendo estos pasos:
 
-1. Envía un correo electrónico detallado a los mantenedores del proyecto (puedes consultar el contacto en el perfil de la organización o creadores).
-2. Describe la vulnerabilidad detectada, incluyendo:
-   * Tipo de vulnerabilidad (ej: XSS, divulgación de credenciales, inyección de código).
-   * Pasos detallados para reproducir el problema (Proof of Concept).
-   * Impacto potencial y escenarios donde podría ser explotado.
-   * Si es posible, sugerencias para mitigar o solucionar la falla.
+1. 📧 Envía un correo privado al autor y mantenedor principal: **EDWIN MAURICIO CACERES ROMERO** (`kcrsromero@gmail.com`).
+2. 📝 Incluye detalles técnicos del hallazgo:
+   * Tipo de vulnerabilidad (Cross-Site Scripting, fuga de credenciales, vulnerabilidades en dependencias, etc.).
+   * Pasos reproducibles (Proof of Concept - PoC).
+   * Impacto potencial e ideas para la remediación.
 
-## Nuestro Compromiso de Respuesta
+---
 
-Una vez recibido el reporte:
+## 🔒 Buenas Prácticas de Seguridad en Contrato-Claro
 
-* Acusaremos recibo del reporte de vulnerabilidad dentro de las **48 horas** hábiles siguientes.
-* Trabajaremos de forma prioritaria en una solución o parche de seguridad.
-* Mantendremos una comunicación constante y transparente contigo sobre el progreso de la resolución.
-* Una vez mitigado el riesgo, realizaremos el anuncio público correspondiente y, si lo deseas, te daremos el crédito respectivo por el hallazgo en nuestras notas de versión.
-
-## Buenas Prácticas de Seguridad en Contrato-Claro
-
-Al ser una aplicación que utiliza datos públicos integrados y consultas enriquecidas, recordamos a los desarrolladores y usuarios locales:
-
-* **Gestión de API Keys:** Jamás incluyas credenciales, tokens ni claves de la API de Gemini u otros servicios en el código cliente. Asegúrate de declarar las variables requeridas en el archivo `.env` local basándote en `.env.example`.
-* **Sanitización de Datos:** Todas las consultas y datos cargados de SECOP II son procesados y renderizados en la interfaz de forma segura para evitar ataques de inyección (*Cross-Site Scripting* - XSS).
+* 🔑 **Gestión Segura de Tokens de API:** Ninguna clave privada o token sensible de la API de Socrata o Gemini se incluye en el código fuente ni se expone en el cliente.
+* 🧼 **Sanitización de Consultas SoQL:** Todas las cadenas de texto ingresadas por el usuario en los parámetros de búsqueda o selección territorial son tratadas con escapado estricto (`escapeSoQL`) para prevenir inyecciones en consultas a Datos Abiertos Socrata.
+* 🛡️ **Sanitización de Renderizado HTML:** Los datos provenientes del dataset gubernamental son renderizados usando componentes seguros en React para evitar inyección de scripts (XSS).

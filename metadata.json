@@ -2,5 +2,5 @@
   "name": "Contrato-Claro",
   "description": "Plataforma ciudadana para consultar, comparar y analizar la contratación pública en Colombia",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

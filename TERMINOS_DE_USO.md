@@ -1,55 +1,57 @@
-# Términos de Uso - Contrato-Claro
+# 📜 Términos de Uso - Contrato-Claro 🇨🇴
 
-**Última actualización:** Julio de 2026
+> 👨‍💻 **Autoría e Idea Original:** **EDWIN MAURICIO CACERES ROMERO**  
+> ⚖️ **Licencia:** **GNU Affero General Public License v3.0 (GNU AGPLv3)**  
+> 📅 **Última actualización:** Julio de 2026
 
-Bienvenido a **Contrato-Claro**. Al acceder, navegar o utilizar esta plataforma (en adelante, "el Servicio"), usted acepta cumplir y estar sujeto a los siguientes Términos de Uso. Si no está de acuerdo con alguna parte de estos términos, le solicitamos que no utilice la plataforma.
-
----
-
-## 1. Aceptación de los Términos
-
-El Servicio es de libre acceso y está destinado a la ciudadanía, veedurías ciudadanas, periodistas, investigadores y el público en general. El uso de la plataforma constituye su consentimiento expreso a estos Términos de Uso y a nuestro Descargo de Responsabilidad.
+Bienvenido a **Contrato-Claro**. Al acceder, navegar o utilizar esta plataforma (en adelante, "el Servicio"), usted acepta cumplir y estar sujeto a los siguientes Términos de Uso. Si no está de acuerdo con alguna parte de estos términos, le solicitamos que abstenga su uso de la plataforma.
 
 ---
 
-## 2. Propósito y Naturaleza del Servicio
+## 1. 🤝 Aceptación de los Términos
 
-* **Herramienta Cívica e Independiente:** Contrato-Claro es un visor y analizador de contratación pública independiente. Su propósito exclusivo es facilitar la comprensión de las compras públicas mediante visualizaciones de datos estructurados, detección de patrones y simplificación de términos.
-* **Sin Carácter Oficial:** Usted comprende y acepta que este Servicio no representa a la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente ni a ningún otro organismo del Estado colombiano. Los datos presentados deben ser contrastados con el portal oficial del SECOP II para cualquier efecto formal o legal.
-
----
-
-## 3. Uso Permitido del Servicio y los Datos
-
-Usted se compromete a hacer un uso lícito y ético del Servicio. 
-
-### Actividades Permitidas:
-* Consultar los contratos públicos, estadísticas, resúmenes y comparativas mensuales de contratación para actividades de control social, periodismo, investigación académica, veeduría ciudadana o conocimiento general.
-* Compartir capturas de pantalla, enlaces o análisis generados por la plataforma con fines informativos, de debate democrático y transparencia pública.
-* Descargar o referenciar código del proyecto conforme a los términos de la Licencia MIT.
-
-### Actividades Prohibidas:
-* Utilizar el Servicio para acosar, calumniar, difamar, intimidar o amenazar de forma infundada a personas naturales o jurídicas contratistas mencionadas en los datos abiertos.
-* Intentar sobrecargar, vulnerar, desestabilizar o realizar ataques de denegación de servicio (DoS) a la infraestructura tecnológica de la plataforma.
-* Suplantar la identidad de la plataforma o hacer creer a terceros que está operando en nombre del Estado colombiano, de Colombia Compra Eficiente, o que los resúmenes y alertas automáticas de Contrato-Claro son fallos, sanciones o pronunciamientos de carácter legal u oficial emitidos por la Contraloría, Fiscalía o Procuraduría de Colombia.
+El Servicio es de libre acceso y está destinado a la ciudadanía, veedurías cívicas, periodistas de investigación, la academia y el público en general. El uso de la plataforma constituye su consentimiento expreso a estos Términos de Uso y a nuestro [Descargo de Responsabilidad](DESCARGO_DE_RESPONSABILIDAD.md).
 
 ---
 
-## 4. Limitación de Responsabilidad de Datos
+## 2. 🎯 Propósito y Naturaleza del Servicio
 
-El Servicio recopila y organiza datos agregados del SECOP II de Socrata (Datos Abiertos Colombia). 
-* No garantizamos que los conjuntos de datos de origen estén 100% libres de errores tipográficos, datos desactualizados o clasificaciones erróneas hechas por los funcionarios estatales al momento de subir la información.
-* Los análisis de texto generados automáticamente con ayuda de modelos lingüísticos de Inteligencia Artificial (IA) son experimentales y orientativos. Contrato-Claro no asume responsabilidad alguna por interpretaciones erróneas u omisiones derivadas de dichos resúmenes automáticos.
-
----
-
-## 5. Propiedad Intelectual
-
-* **Código de la Plataforma:** El diseño, la estructura de código TypeScript/React y la lógica de análisis del frontend de Contrato-Claro están protegidos bajo la **Licencia MIT** (Community Edition). El código fuente está abierto para auditoría y mejora por parte de la comunidad de desarrolladores.
-* **Derechos sobre los Datos:** Los datos contractuales son de naturaleza pública y pertenecen al dominio público y a los conjuntos de datos abiertos del Estado de Colombia.
+* 🏛️ **Herramienta Cívica e Independiente:** Contrato-Claro es un visor y analizador de contratación pública independiente ideado por **EDWIN MAURICIO CACERES ROMERO**. Su propósito exclusivo es democratizar la comprensión de las compras públicas mediante visualizaciones interactivas, algoritmos de detección de patrones y simplificación de términos.
+* 🚫 **Sin Carácter Oficial:** Este Servicio no representa a la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente ni a ningún otro organismo del Estado colombiano. Los datos presentados deben ser contrastados con el portal oficial del SECOP II para cualquier trámite legal o formal.
 
 ---
 
-## 6. Modificaciones al Servicio y a los Términos
+## 3. 🛡️ Uso Permitido del Servicio y los Datos
 
-Los desarrolladores y mantenedores se reservan el derecho de modificar, suspender o descontinuar temporal o permanentemente cualquier parte del Servicio, así como actualizar estos Términos de Uso, en cualquier momento y sin previo aviso, con el objetivo de adaptar la plataforma a cambios normativos o mejoras técnicas del portal oficial de datos públicos.
+Usted se compromete a hacer un uso lícito, ético y cívico del Servicio.
+
+### ✅ Actividades Permitidas:
+* 📊 Consultar contratos públicos, estadísticas, comparativas mensuales e indicadores de riesgo para actividades de veeduría ciudadana, periodismo, investigación o conocimiento cívico.
+* 📸 Compartir capturas de pantalla, enlaces o reportes generados por la plataforma en debates públicos sobre transparencia presupuestal.
+* 💻 Descargar, auditar y contribuir al código fuente conforme a los términos de la **Licencia GNU AGPLv3**.
+
+### ❌ Actividades Prohibidas:
+* 🚫 Utilizar el Servicio para acosar, calumniar, difamar o intimidar de forma infundada a contratistas o funcionarios públicos.
+* ⚡ Intentar sobrecargar, vulnerar o realizar ataques de denegación de servicio (DoS) contra la infraestructura de la plataforma.
+* 🎭 Suplantar la identidad de la plataforma o hacer creer a terceros que los reportes automáticos de Contrato-Claro son pronunciamientos, sanciones o dictámenes legales oficiales emitidos por entes de control (Contraloría, Procuraduría o Fiscalía).
+
+---
+
+## 4. 🧮 Limitación de Responsabilidad de Datos y Algoritmos
+
+El Servicio recopila y procesa datos agregados del dataset de SECOP II en Datos Abiertos Colombia:
+* No garantizamos que los datos de origen estén 100% libres de errores de digitación realizados por los funcionarios de las entidades contratantes.
+* Los análisis de similitud léxica y cálculos matemáticos (detallados en la [Documentación Técnica](DOCUMENTACION_TECNICA.md)) son herramientas informáticas orientativas que deben ser acompañadas de la revisión directa del expediente contractual en SECOP II.
+
+---
+
+## 5. ⚖️ Propiedad Intelectual y Licencia GNU AGPLv3
+
+* ⚖️ **Código Fuente de la Plataforma:** El diseño, la arquitectura React/TypeScript, los algoritmos y los trabajadores en segundo plano de Contrato-Claro están licenciados bajo la **GNU Affero General Public License v3.0 (GNU AGPLv3)**, reconociendo la autoría original de **EDWIN MAURICIO CACERES ROMERO**.
+* 🌐 **Derechos sobre los Datos:** Los datos contractuales son de libre acceso y pertenecen al dominio público y a las plataformas de Datos Abiertos del Estado de Colombia.
+
+---
+
+## 6. 🔄 Modificaciones al Servicio
+
+Los mantenedores se reservan el derecho de modificar o actualizar la plataforma y estos Términos de Uso en cualquier momento para adaptar el servicio a cambios en las APIs gubernamentales o mejoras tecnológicas.

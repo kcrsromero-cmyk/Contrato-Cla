@@ -1,51 +1,53 @@
-# Descargo de Responsabilidad e Información sobre No Oficialidad
+# 🛡️ Descargo de Responsabilidad e Información sobre No Oficialidad
 
-**Última actualización:** Julio de 2026
+> 👨‍💻 **Autoría e Idea Original:** **EDWIN MAURICIO CACERES ROMERO**  
+> ⚖️ **Licencia:** **GNU Affero General Public License v3.0 (GNU AGPLv3)**  
+> 📅 **Última actualización:** Julio de 2026
 
 Por favor, lea atentamente este documento de descargo de responsabilidad antes de utilizar la plataforma **Contrato-Claro**.
 
 ---
 
-## 1. Declaración de No Oficialidad e Independencia
+## 1. 🏛️ Declaración de No Oficialidad e Independencia
 
-**Contrato-Claro es un proyecto de carácter estrictamente ciudadano, educativo, independiente y sin fines de lucro.** 
+**Contrato-Claro es un proyecto de carácter estrictamente ciudadano, cívico, educativo, analítico, independiente y sin fines de lucro, ideado por EDWIN MAURICIO CACERES ROMERO.** 
 
-* **No afiliación:** Esta plataforma **NO** está afiliada, asociada, patrocinada, avalada ni autorizada oficialmente por ninguna entidad gubernamental de la República de Colombia, incluyendo de manera enunciativa pero no limitativa a:
+* 🚫 **Sin Afiliación Oficial:** Esta plataforma **NO** está afiliada, asociada, patrocinada, avalada ni autorizada oficialmente por ninguna entidad gubernamental de la República de Colombia, incluyendo de manera enunciativa pero no limitativa a:
+  * La Agencia Nacional de Contratación Pública — Colombia Compra Eficiente.
   * El Departamento Nacional de Planeación (DNP).
-  * La Agencia Nacional de Contratación Pública - Colombia Compra Eficiente.
   * El Sistema Electrónico para la Contratación Pública (SECOP I, SECOP II o TVEC).
-  * Cualquier ministerio, alcaldía, gobernación o ente de control nacional o territorial.
-* **Marca y Nombre:** El nombre "Contrato-Claro" y sus logotipos asociados son propiedad de la comunidad de código abierto y desarrollo cívico que mantiene el proyecto, y se utilizan únicamente con fines informativos para describir la función de simplificación y claridad de contratos públicos que ofrece la aplicación.
+  * Cualquier ministerio, alcaldía, gobernación, secretaría o ente de control nacional o territorial.
+* 🏷️ **Marca y Nombre:** El nombre "Contrato-Claro" y sus distintivos visuales se utilizan únicamente con fines informativos y cívicos para describir la función de simplificación y fiscalización de contratos públicos que ofrece la aplicación.
 
 ---
 
-## 2. Origen de los Datos y Licencia Pública
+## 2. 🌐 Origen de los Datos y Datos Abiertos
 
-Los datos contractuales mostrados en esta plataforma provienen exclusivamente de los conjuntos de datos abiertos de la República de Colombia, específicamente de la infraestructura del portal **Datos Abiertos Colombia** (Socrata) y la API oficial del **SECOP II**:
-* **Fuente Oficial:** Portal de Datos Abiertos de Colombia (https://www.datos.gov.co)
-* **API de Datos:** API de SECOP II de Colombia Compra Eficiente.
+Los datos contractuales consultados en esta plataforma provienen exclusivamente de los conjuntos de datos abiertos de la República de Colombia, específicamente de la infraestructura del portal **Datos Abiertos Colombia (`datos.gov.co`)** y la API pública de datos del **SECOP II**:
+* 🏛️ **Fuente Oficial:** Portal de Datos Abiertos de Colombia (https://www.datos.gov.co)
+* 📡 **API de Datos:** Endpoint API SODA del dataset SECOP II (`jbjy-vk9h.json`).
 
-Toda la información consultada se rige bajo los términos de las licencias de datos abiertos del Estado colombiano, las cuales permiten el libre acceso, uso, transformación y distribución de los datos públicos con fines informativos y de transparencia ciudadana.
-
----
-
-## 3. Exactitud, Integridad y Actualización de la Información
-
-Aunque realizamos nuestros mejores esfuerzos técnicos para garantizar que las consultas, agregaciones, estadísticas y análisis reflejen con precisión los registros originales:
-* **Responsabilidad de la Fuente:** Contrato-Claro actúa únicamente como un visor e intérprete de la información. No modificamos ni alteramos los registros contractuales originales. Si un registro presenta inconsistencias, errores de digitación, omisiones o falta de actualización en el SECOP II por parte de la entidad pública contratante, dichos errores se verán reflejados en nuestra interfaz de manera idéntica.
-* **Retardo en Sincronización:** Las consultas y sincronizaciones pueden presentar demoras o desfases de tiempo respecto a la publicación en tiempo real de los contratos en el portal transaccional de SECOP II.
-* **Análisis Asistidos:** Las valoraciones, métricas automáticas, agrupaciones de similitud de objetos y resúmenes generados por herramientas de procesamiento de lenguaje natural o inteligencia artificial (como Gemini API) son de carácter meramente indicativo y exploratorio. No deben considerarse pruebas definitivas ni dictámenes de auditoría legal o fiscal.
+Toda la información consultada se rige bajo los términos de las licencias de datos abiertos del Estado colombiano, las cuales permiten el libre acceso, uso, transformación y redistribución con fines de transparencia y control social.
 
 ---
 
-## 4. Uso No Comercial e Informativo
+## 3. 🧮 Exactitud, Integridad y Procesamiento Algorítmico
 
-Toda la información y las herramientas proporcionadas por Contrato-Claro se ofrecen "tal cual" (*as is*) y "según disponibilidad" (*as available*):
-* **No asesoría:** Ningún gráfico, análisis o dato presentado constituye asesoramiento legal, financiero, de contratación, ni una recomendación para participar en procesos de licitación pública.
-* **Verificación Obligatoria:** Los usuarios que deseen tomar decisiones legales, comerciales o de control social formal (denuncias ante entes de control) deben verificar y contrastar la información directamente en el portal oficial transaccional de **Colombia Compra Eficiente (SECOP II)** utilizando el número de proceso o enlace oficial suministrado.
+Aunque aplicamos modelos matemáticos y algoritmos rigurosos (documentados en la [Documentación Técnica](DOCUMENTACION_TECNICA.md)) para garantizar que las consultas, agregaciones, estadísticas y agrupaciones reflejen la información disponible:
+* ⚠️ **Responsabilidad de la Fuente:** Contrato-Claro actúa únicamente como un visor e intérprete de la información. No modificamos ni alteramos los registros contractuales originales. Si un registro presenta inconsistencias, errores de digitación, omisiones o falta de actualización en el SECOP II por parte de la entidad pública contratante, dichos errores se reflejarán en nuestra interfaz de manera idéntica.
+* ⏳ **Desfase Temporal:** Las consultas y sincronizaciones pueden presentar demoras o diferimientos de tiempo respecto a la publicación en tiempo real en la plataforma transaccional de SECOP II.
+* 🤖 **Análisis Algorítmico:** Las valoraciones, métricas automáticas, agrupaciones de similitud léxica y resúmenes son de carácter indicativo, exploratorio y pedagógico. No constituyen pruebas definitivas ni dictámenes de auditoría legal o fiscal.
 
 ---
 
-## 5. Exclusión de Responsabilidad
+## 4. ⚖️ Uso Informativo y Verificación Obligatoria
 
-Los creadores, desarrolladores, colaboradores y mantenedores de **Contrato-Claro** no serán responsables en ningún caso por daños directos, indirectos, incidentales, consecuenciales, especiales o punitivos derivados del acceso, uso o incapacidad de usar esta plataforma, ni por cualquier error u omisión en el contenido de los datos públicos expuestos.
+Toda la información proporcionada por Contrato-Claro se ofrece "tal cual" (*as is*) y "según disponibilidad" (*as available*):
+* ⚖️ **Sin Asesoría Legal:** Ningún gráfico, análisis o dato presentado constituye asesoramiento legal, financiero, de contratación, ni una recomendación formal para procesos licitatorios.
+* 🔎 **Verificación Obligatoria:** Los usuarios que deseen adelantar actuaciones legales, comerciales o de veeduría formal (denuncias ante Contraloría, Fiscalía o Procuraduría) deben verificar y contrastar los datos directamente en el portal oficial transaccional de **Colombia Compra Eficiente (SECOP II)** con la ficha oficial del proceso.
+
+---
+
+## 5. 📜 Exclusión de Responsabilidad y Licencia Software Libre
+
+Los creadores, desarrolladores y mantenedores de **Contrato-Claro** no serán responsables en ningún caso por daños directos, indirectos, incidentales o consecuenciales derivados del uso de esta plataforma. El código fuente está disponible públicamente bajo la licencia **GNU AGPLv3**.

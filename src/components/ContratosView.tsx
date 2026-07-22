@@ -35,12 +35,21 @@ const parseFormattedAmount = (val: string): string => {
   return val.replace(/\D/g, '');
 };
 
+const normCache = new Map<string, string>();
+
 const normalizeText = (text: string | null | undefined): string => {
   if (!text) return '';
-  return text
+  const cached = normCache.get(text);
+  if (cached !== undefined) return cached;
+  
+  const res = text
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+    
+  if (normCache.size > 20000) normCache.clear();
+  normCache.set(text, res);
+  return res;
 };
 
 function maskDocument(document: string, tipoDoc?: string): string {

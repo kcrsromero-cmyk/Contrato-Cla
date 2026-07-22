@@ -1,39 +1,32 @@
-# Código de Conducta de Contrato-Claro
+# 🤝 Código de Conducta - Contrato-Claro 🇨🇴
 
-## Nuestro Compromiso
+> 👨‍💻 **Proyecto de Software Libre Cívico impulsado por EDWIN MAURICIO CACERES ROMERO**  
+> ⚖️ **Licencia:** **GNU Affero General Public License v3.0 (GNU AGPLv3)**
 
-En el interés de fomentar un ambiente abierto y acogedor, nosotros como colaboradores y mantenedores nos comprometemos a hacer de la participación en nuestro proyecto y nuestra comunidad una experiencia libre de acoso para todos, independientemente de la edad, dimensión corporal, discapacidad, etnia, identidad y expresión de género, nivel de experiencia, nacionalidad, apariencia física, raza, religión, identidad u orientación sexual.
+## 🌟 Nuestro Compromiso
 
-## Nuestras Normas
+En el interés de fomentar un ambiente abierto, profesional y acogedor, la comunidad de colaboradores y mantenedores de **Contrato-Claro** se compromete a hacer de la participación en este proyecto una experiencia libre de acoso para todos, independientemente de la edad, dimensión corporal, discapacidad, etnia, identidad de género, nivel de experiencia, nacionalidad, apariencia física, raza, religión u orientación sexual.
 
-Ejemplos de comportamiento que contribuyen a crear un ambiente positivo:
+---
 
-* El uso de lenguaje acogedor e inclusivo.
-* El respeto a los diferentes puntos de vista y experiencias.
-* La aceptación de críticas constructivas de manera amable.
-* Centrarse en lo que es mejor para la comunidad.
-* Mostrar empatía hacia otros miembros de la comunidad.
+## 📜 Nuestras Normas Cívicas
 
-Ejemplos de comportamiento inaceptable por parte de los participantes:
+Ejemplos de comportamiento que contribuyen a crear un entorno cívico y constructivo:
 
-* El uso de lenguaje o imágenes sexuales y atención sexual no deseada de cualquier tipo.
-* Comentarios despectivos (*trolling*), insultos personales, o ataques políticos y personales.
-* El acoso público o privado.
-* La publicación de información privada de terceros sin su consentimiento explícito (como direcciones físicas o de correo electrónico).
-* Cualquier otra conducta que pueda ser razonablemente considerada como inapropiada en un entorno profesional.
+* 💬 **Lenguaje respetuoso:** Uso de lenguaje acogedor e inclusivo.
+* ⚖️ **Imparcialidad y Objetividad:** Enfoque en la evidencia de los datos abiertos y la veeduría transparente.
+* 🤝 **Recepción de críticas:** Aceptación amable de comentarios constructivos sobre el código o los cálculos.
+* 🎯 **Propósito común:** Centrarse en lo que es mejor para la ciudadanía y la transparencia de la contratación pública en Colombia.
 
-## Responsabilidades de los Moderadores
+Ejemplos de comportamiento inaceptable:
 
-Los mantenedores del proyecto son responsables de aclarar las normas de comportamiento aceptable y se espera que tomen medidas correctivas apropiadas y justas ante cualquier comportamiento inaceptable.
+* 🚫 Comentarios despectivos (*trolling*), insultos personales o descalificaciones ad hominem.
+* 🚫 Acoso público o privado.
+* 🚫 Publicación de información privada de terceros sin su consentimiento explícito (*doxxing*).
+* 🚫 Uso de la plataforma con fines de difamación infundada o manipulación malintencionada de datos públicos.
 
-Los mantenedores del proyecto tienen el derecho y la responsabilidad de eliminar, editar o rechazar comentarios, *commits*, código, ediciones de wiki, *issues* y otras contribuciones que no estén alineadas con este Código de Conducta, o de prohibir temporal o permanentemente la participación de cualquier colaborador por comportamientos que consideren inapropiados, amenazantes, ofensivos o dañinos.
+---
 
-## Aplicación
+## 🛡️ Aplicación
 
-Este Código de Conducta se aplica tanto dentro de los espacios del proyecto como en espacios públicos donde un individuo esté representando al proyecto o a su comunidad. Ejemplos de representación incluyen el uso de una dirección de correo electrónico oficial, publicaciones a través de las cuentas oficiales en redes sociales, o actuar como representante designado en un evento presencial u online.
-
-Los casos de comportamiento abusivo, acosador o inaceptable de otra manera podrán ser reportados contactando a los mantenedores del proyecto. Todas las quejas serán examinadas e investigadas, dando como resultado una respuesta apropiada a las circunstancias. El equipo del proyecto se compromete a mantener la confidencialidad respecto a la persona que reporta el incidente.
-
-## Atribución
-
-Este Código de Conducta está adaptado del [Contributor Covenant](https://www.contributor-covenant.org), versión 1.4, disponible en [https://www.contributor-covenant.org/es/version/1/4/code-of-conduct.html](https://www.contributor-covenant.org/es/version/1/4/code-of-conduct.html).
+Este Código de Conducta se aplica a todos los espacios del proyecto. Casos de comportamiento inaceptable podrán ser reportados a los mantenedores del proyecto.

@@ -1,21 +1,22 @@
-# Guía de Contribución a Contrato-Claro
+# 🛠️ Guía de Contribución a Contrato-Claro 🇨🇴
 
-¡Gracias por tu interés en colaborar con **Contrato-Claro**! Tu aporte es fundamental para fortalecer la transparencia y la participación ciudadana en la contratación pública de Colombia.
+> 👨‍💻 **Autoría e Idea Original:** **EDWIN MAURICIO CACERES ROMERO**  
+> ⚖️ **Licencia:** **GNU Affero General Public License v3.0 (GNU AGPLv3)**
 
-Como proyecto de código abierto y enfoque cívico, damos la bienvenida a todo tipo de contribuciones: desde reportes de fallas (*bugs*), mejoras en la documentación, optimizaciones en los algoritmos de análisis, hasta el diseño de nuevas interfaces ciudadanas.
+¡Gracias por tu interés en colaborar con **Contrato-Claro**! Tu aporte es fundamental para fortalecer la transparencia, el control social y la veeduría ciudadana en la contratación pública de Colombia.
+
+Como proyecto de **Software Libre (GNU AGPLv3)**, damos la bienvenida a todo tipo de contribuciones: desde reportes de fallas (*bugs*), mejoras en la documentación, optimización de algoritmos de cálculo, hasta el diseño de nuevas interfaces.
 
 ---
 
-## ¿Cómo puedo contribuir?
+## 🤝 ¿Cómo puedo contribuir?
 
-### 1. Reportar Errores o Sugerir Características
-Si encuentras un error en el procesamiento de datos o tienes una idea para mejorar la experiencia de usuario:
-* Revisa primero los *Issues* existentes para verificar si alguien ya reportó el mismo caso.
-* Si no existe, abre un nuevo *Issue* usando un título descriptivo.
-* Proporciona detalles técnicos: pasos para reproducir el error, capturas de pantalla si aplica, y tu sistema operativo o navegador.
+### 1. 🐛 Reportar Errores o Sugerir Características
+Si encuentras un error en el procesamiento de datos o tienes una propuesta de mejora:
+* Revisa los *Issues* existentes para verificar si el tema ya ha sido reportado.
+* Si no existe, abre un nuevo *Issue* describiendo los pasos para reproducir la falla o la nueva funcionalidad sugerida.
 
-### 2. Contribuir con Código (Pull Requests)
-Si deseas implementar una corrección o una funcionalidad nueva, sigue este flujo de trabajo:
+### 2. 💻 Contribuir con Código (Pull Requests)
 
 #### Paso 1: Configurar el Entorno de Desarrollo
 1. Realiza un **Fork** de este repositorio en tu cuenta de GitHub.
@@ -28,54 +29,34 @@ Si deseas implementar una corrección o una funcionalidad nueva, sigue este fluj
    ```bash
    npm install
    ```
-4. Configura las variables de entorno:
-   * Copia `.env.example` como `.env`:
-     ```bash
-     cp .env.example .env
-     ```
-   * Completa las variables necesarias (como `GEMINI_API_KEY` para las funciones de análisis asistido si corresponde).
 
 #### Paso 2: Crear una Rama de Trabajo
-Crea una rama específica y descriptiva para tu cambio:
 ```bash
-git checkout -b feature/nueva-visualizacion
+git checkout -b feature/nueva-grafica-metrica
 # o para correcciones
-git checkout -b fix/error-formato-moneda
+git checkout -b fix/calculo-promedio-mensual
 ```
 
-#### Paso 3: Escribir Código Limpio
-* Sigue las convenciones de estilo del proyecto (TypeScript, React funcional y Tailwind CSS).
-* Asegúrate de no incluir claves secretas ni tokens de API en el código.
-* Organiza los componentes de forma modular en `src/components/`.
+#### Paso 3: Respetar la Licencia GNU AGPLv3 ⚖️
+Cualquier código o mejora agregada a la plataforma pasa a ser parte de la obra derivada bajo la **GNU Affero General Public License v3.0**. Si despliegas una versión modificada en la red, debes publicar el código fuente completo correspondiente.
 
-#### Paso 4: Validar antes de Enviar
-Antes de realizar tu *commit*, ejecuta el linter para comprobar que el código cumple con las reglas estáticas y compila perfectamente:
+#### Paso 4: Validar antes de Enviar 🔍
+Antes de realizar tu *commit*, ejecuta el verificador estático y la compilación:
 ```bash
-# Validar linter y tipos TypeScript
+# Validar linter y tipos de TypeScript
 npm run lint
 
-# Construir la aplicación localmente
+# Compilar para producción
 npm run build
 ```
 
-#### Paso 5: Enviar tu Pull Request (PR)
-1. Realiza el *commit* con un mensaje claro y en presente (ej: `feat: agrega comparativa del promedio mensual de contratación`).
-2. Sube la rama a tu fork:
-   ```bash
-   git push origin feature/nueva-visualizacion
-   ```
-3. Ve al repositorio original en GitHub y abre un **Pull Request**. Describe detalladamente qué cambios introduce tu código y a qué *issue* está asociado.
+#### Paso 5: Enviar tu Pull Request (PR) 🚀
+Abre un **Pull Request** describiendo los cambios introducidos y referenciando el *issue* relacionado.
 
 ---
 
-## Lineamientos de Código y Diseño
+## 🧮 Lineamientos de Código y Arquitectura
 
-Para garantizar la consistencia visual y de rendimiento en la plataforma, te pedimos respetar los siguientes principios:
-
-* **Arquitectura de Componentes:** Divide la lógica en archivos separados y modulares. Evita condensar toda la visualización en un único archivo gigante para facilitar el mantenimiento.
-* **Diseño e Interfaz ("Anti-Slop"):** 
-  * Prioriza temas limpios, claros y sofisticados con un esquema de color claro por defecto.
-  * No abuses de degradados excesivos o sombras muy pesadas.
-  * Todos los textos y etiquetas en pantalla deben ser de fácil comprensión para un ciudadano del común, reduciendo la jerga legal o técnica excesiva.
-* **Tipado Estricto:** Usa TypeScript de manera adecuada. Evita el uso deliberado de `any` a menos que sea estrictamente indispensable.
-* **Accesibilidad:** Mantén un contraste de color adecuado para asegurar la legibilidad del texto en cualquier dispositivo y bajo normas WCAG AA.
+* 📁 **Separación de Capas:** Los cálculos matemáticos y estadísticos deben agregarse en `src/utils/metricsEngine.ts` o archivos equivalentes en `src/utils/`, manteniendo las vistas de React libres de lógica pesada de procesamiento.
+* 🧵 **Trabajadores en Segundo Plano (Web Workers):** Los cálculos de complejidad computacional superior (como similitud léxica o procesamiento de lenguaje natural) deben ejecutarse en `src/workers/similarityWorker.ts` para no bloquear el hilo principal de la UI.
+* 📖 **Documentación Técnica:** Cualquier cambio en la forma de calcular métricas o consumir la API de Socrata debe reflejarse en **[`DOCUMENTACION_TECNICA.md`](DOCUMENTACION_TECNICA.md)**.

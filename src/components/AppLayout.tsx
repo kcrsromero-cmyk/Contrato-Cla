@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X, CheckCircle2, Eye } from 'lucide-react';
+import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X, CheckCircle2, Eye, Compass, HelpCircle } from 'lucide-react';
 import { useVersionUpdate } from '../hooks/useVersionUpdate';
 
 interface AppLayoutProps {
@@ -9,6 +9,7 @@ interface AppLayoutProps {
   easyRead?: boolean;
   toggleEasyRead?: () => void;
   handleClearCache: () => Promise<void>;
+  onOpenOnboarding?: () => void;
 }
 
 export default function AppLayout({
@@ -18,6 +19,7 @@ export default function AppLayout({
   easyRead = false,
   toggleEasyRead,
   handleClearCache,
+  onOpenOnboarding,
 }: AppLayoutProps) {
   const [scrollY, setScrollY] = useState(0);
   const [isScrollingUp, setIsScrollingUp] = useState(true);
@@ -185,6 +187,19 @@ export default function AppLayout({
               <span className="hidden sm:inline">{checking ? 'Buscando...' : 'Actualizaciones'}</span>
             </button>
 
+            {/* Guía / Onboarding Tutorial Button */}
+            {onOpenOnboarding && (
+              <button
+                onClick={onOpenOnboarding}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-indigo-200 dark:border-indigo-900/60 hover:border-indigo-600 dark:hover:border-indigo-400 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer group"
+                title="Abrir Tutorial Interactivo y Guía de Uso"
+                id="onboarding-guide-header-btn"
+              >
+                <Compass className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:rotate-45 transition-transform duration-300" />
+                <span className="hidden sm:inline">Guía de Uso</span>
+              </button>
+            )}
+
             {/* Clear Cache Button */}
             <button
               onClick={handleClearCache}
@@ -245,12 +260,12 @@ export default function AppLayout({
 
           {/* Parte Inferior */}
           <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-400 dark:text-slate-500 text-[11px]">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 font-mono">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-2 font-mono">
               <span className="font-bold text-slate-650 dark:text-slate-400">Community Edition ({localVersion})</span>
               <span className="hidden sm:inline text-slate-300 dark:text-slate-800">•</span>
-              <span>MIT License</span>
+              <span>GNU AGPLv3 License</span>
               <span className="hidden sm:inline text-slate-300 dark:text-slate-800">•</span>
-              <span>© 2026 Contrato-Claro</span>
+              <span>© 2026 EDWIN MAURICIO CACERES ROMERO</span>
             </div>
             <div className="text-center md:text-right">
               <span>No afiliado al Gobierno de Colombia.</span>
@@ -358,6 +373,19 @@ export default function AppLayout({
             <X className="w-4 h-4" />
           </button>
         </div>
+      )}
+
+      {/* Floating Interactive Guide Launcher Button */}
+      {onOpenOnboarding && (
+        <button
+          onClick={onOpenOnboarding}
+          className="fixed bottom-6 left-6 z-40 px-3.5 py-2.5 bg-slate-900/90 dark:bg-slate-800/90 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-white rounded-2xl shadow-xl border border-slate-700/80 dark:border-slate-600/80 backdrop-blur-md flex items-center gap-2 text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
+          title="Abrir Tutorial Interactivo y Guía del Dashboard"
+          id="onboarding-guide-floating-btn"
+        >
+          <Compass className="w-4 h-4 text-indigo-400 group-hover:text-white group-hover:rotate-45 transition-transform duration-300" />
+          <span className="hidden md:inline font-mono text-[11px] uppercase tracking-wider">Guía Interactiva</span>
+        </button>
       )}
     </div>
   );

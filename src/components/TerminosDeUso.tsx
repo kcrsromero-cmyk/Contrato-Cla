@@ -91,6 +91,12 @@ export default function TerminosDeUso() {
       title: "Aceptación",
       icon: <FileCheck2 className="w-3.5 h-3.5 text-slate-500" />,
       content: "El uso de la herramienta implica la aceptación de estos Términos."
+    },
+    {
+      num: 13,
+      title: "Autoría y Licencia de Software Libre",
+      icon: <Award className="w-3.5 h-3.5 text-indigo-500" />,
+      content: "Esta aplicación es una creación original de EDWIN MAURICIO CACERES ROMERO y está distribuida bajo la licencia libre GNU Affero General Public License v3.0 (GNU AGPLv3). Todo despliegue en red o modificación debe publicar el código fuente correspondiente bajo la misma licencia."
     }
   ];
 

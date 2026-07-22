@@ -19,6 +19,7 @@ import { formatBytes } from '../utils/helpers';
 // Subcomponents
 import PeriodSelector from './PeriodSelector';
 import ParallaxHero from './ParallaxHero';
+import DashboardSkeleton from './DashboardSkeleton';
 import ResumenView from './ResumenView';
 import ContratosView from './ContratosView';
 import SupervisoresView from './SupervisoresView';
@@ -199,15 +200,10 @@ export default function Dashboard({
 
       {/* Step 3: Loading / Error States */}
       {loading ? (
-        <div className="py-24 flex flex-col items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-3xl space-y-4 shadow-xs animate-fade-in">
-          <RefreshCw className="w-8 h-8 animate-spin text-indigo-600 dark:text-indigo-400" />
-          <div className="text-center">
-            <h4 className="font-semibold text-sm text-slate-800 dark:text-slate-200">Descargando registros desde SECOP II...</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto leading-normal">
-              Se están descargando y deduplicando los datos en su IndexedDB para acelerar los filtros y reportes analíticos.
-            </p>
-          </div>
-        </div>
+        <DashboardSkeleton 
+          entityName={selectedEntity?.nombre_entidad} 
+          periodLabel={periodLabel} 
+        />
       ) : error ? (
         <div className="p-8 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-2xl text-center space-y-4 shadow-xs">
           <p className="text-sm font-semibold text-red-800 dark:text-red-400">{error}</p>

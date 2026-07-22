@@ -309,9 +309,25 @@ export default function TerritorialSelector({
               </div>
 
               {loadingEntities ? (
-                <div className="flex flex-col items-center justify-center py-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
-                  <RotateCw className="w-5 h-5 animate-spin text-indigo-600" />
-                  <p className="text-[10px] text-slate-500 font-mono mt-2">Consultando entidades en Datos Abiertos...</p>
+                <div 
+                  className={`grid gap-2 ${
+                    isSidebarMode 
+                      ? 'grid-cols-1' 
+                      : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                  }`}
+                >
+                  {[1, 2, 3, 4, 5, 6].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 animate-pulse"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-md bg-slate-200 dark:bg-slate-800 shrink-0" />
+                        <div className="h-3.5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
+                      </div>
+                      <div className="h-2.5 w-1/2 bg-slate-100 dark:bg-slate-850 rounded" />
+                    </div>
+                  ))}
                 </div>
               ) : entities.length === 0 ? (
                 <div className="py-6 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20">
@@ -436,9 +452,25 @@ export default function TerritorialSelector({
           {/* Resultados de búsqueda avanzada */}
           <div className="space-y-2 mt-3">
             {loadingAdvanced ? (
-              <div className="flex flex-col items-center justify-center py-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                <RotateCw className="w-5 h-5 animate-spin text-indigo-600" />
-                <p className="text-[10px] text-slate-500 font-mono mt-1.5">Consultando en SECOP II...</p>
+              <div 
+                className={`grid gap-2 ${
+                  isSidebarMode 
+                    ? 'grid-cols-1' 
+                    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                }`}
+              >
+                {[1, 2, 3].map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 animate-pulse"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-md bg-slate-200 dark:bg-slate-800 shrink-0" />
+                      <div className="h-3.5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
+                    </div>
+                    <div className="h-2.5 w-1/2 bg-slate-100 dark:bg-slate-850 rounded" />
+                  </div>
+                ))}
               </div>
             ) : advancedEntities.length > 0 ? (
               <div className="space-y-1.5">
