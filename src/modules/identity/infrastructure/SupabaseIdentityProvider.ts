@@ -3,6 +3,7 @@ import { IdentityProvider } from '../domain/IdentityProvider';
 import { AuthResult, LoginCredentials, RegisterCredentials } from '../domain/dtos';
 import { AuthenticatedUser } from '../domain/AuthenticatedUser';
 import { IdentityMapper } from '../application/IdentityMapper';
+import { SupabaseIdentityMapper } from './SupabaseIdentityMapper';
 
 export class SupabaseIdentityProvider implements IdentityProvider {
   private client: SupabaseClient;
@@ -33,7 +34,7 @@ export class SupabaseIdentityProvider implements IdentityProvider {
     if (error) throw new Error(error.message);
     if (!data.session || !data.user) throw new Error('Registration failed to return session data');
 
-    const authUser = IdentityMapper.fromProviderPayload(data.user);
+    const authUser = SupabaseIdentityMapper.fromProviderPayload(data.user);
 
     return {
       accessToken: data.session.access_token,
@@ -52,7 +53,7 @@ export class SupabaseIdentityProvider implements IdentityProvider {
     if (error) throw new Error(error.message);
     if (!data.session || !data.user) throw new Error('Login failed to return session data');
 
-    const authUser = IdentityMapper.fromProviderPayload(data.user);
+    const authUser = SupabaseIdentityMapper.fromProviderPayload(data.user);
 
     return {
       accessToken: data.session.access_token,
@@ -73,7 +74,7 @@ export class SupabaseIdentityProvider implements IdentityProvider {
     if (error) throw new Error(error.message);
     if (!data.session || !data.user) throw new Error('Refresh failed to return session data');
 
-    const authUser = IdentityMapper.fromProviderPayload(data.user);
+    const authUser = SupabaseIdentityMapper.fromProviderPayload(data.user);
 
     return {
       accessToken: data.session.access_token,
@@ -95,7 +96,7 @@ export class SupabaseIdentityProvider implements IdentityProvider {
   async getUser(token: string): Promise<AuthenticatedUser | null> {
     try {
       const payload = await this.verifyToken(token);
-      return IdentityMapper.fromProviderPayload(payload);
+      return SupabaseIdentityMapper.fromProviderPayload(payload);
     } catch {
       return null;
     }
