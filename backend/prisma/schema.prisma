@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users     User[]
+  // In the future: Workspaces, Subscriptions, APIKeys
+
+  @@map("organizations")
+}
+
+model User {
+  id             String        @id @db.Uuid // Must match Supabase auth.users UUID
+  email          String        @unique
+  name           String?
+  organizationId String?       @map("organization_id") @db.Uuid
+  roles          String[]      @default(["USER"]) // PostgreSQL supports arrays
+
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  @@map("users")
+}
