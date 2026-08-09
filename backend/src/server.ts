@@ -19,9 +19,11 @@ app.get('/api/health', (req, res) => {
 });
 
 import { authRouter } from './modules/identity/presentation/routes';
+import { contractRouter } from './modules/contracts/presentation/routes';
 
 // Mount API routes
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/contracts', contractRouter);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

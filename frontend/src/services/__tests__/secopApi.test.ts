@@ -28,31 +28,25 @@ describe('SecopApiService', () => {
         }));
       };
 
-      const page1 = makePage(5000, 0); // Full page
-      const page2 = makePage(2000, 5000); // Partial page (ends loop)
+      // The frontend no longer paginates, the backend does.
+      // So the mock just returns all the data from the backend.
+      const allData = makePage(7000, 0);
 
       global.fetch = vi.fn()
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => page1,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => page2,
+          json: async () => allData,
         });
 
       const contratos = await SecopApiService.getContratos('ENT123', '2023-01-01', '2023-12-31', true);
 
       // Total should be 7000 unique records
       expect(contratos.length).toBe(7000);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
 
-      // Check offset increments
+      // Check url matches backend API
       const firstCallUrl = (global.fetch as any).mock.calls[0][0];
-      const secondCallUrl = (global.fetch as any).mock.calls[1][0];
-
-      expect(firstCallUrl).toContain('&$offset=0');
-      expect(secondCallUrl).toContain('&$offset=5000');
+      expect(firstCallUrl).toContain('http://localhost:4000/api/v1/contracts');
     });
 
     it('should return stale data from cache when fetch fails', async () => {

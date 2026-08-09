@@ -379,129 +379,16 @@ export class SecopApiService {
       if (cached) return cached;
     }
 
-    // Select only required fields to keep the payload lightweight (Principle of minimization of data)
-    const selectFields = [
-      'nombre_entidad',
-      'codigo_entidad',
-      'nit_entidad',
-      'departamento',
-      'ciudad',
-      'id_contrato',
-      'referencia_del_contrato',
-      'proceso_de_compra',
-      'urlproceso',
-      'estado_contrato',
-      'tipo_de_contrato',
-      'modalidad_de_contratacion',
-      'justificacion_modalidad_de',
-      'objeto_del_contrato',
-      'descripcion_del_proceso',
-      'condiciones_de_entrega',
-      'fecha_de_firma',
-      'fecha_de_inicio_del_contrato',
-      'fecha_de_fin_del_contrato',
-      'ultima_actualizacion',
-      'tipodocproveedor',
-      'documento_proveedor',
-      'proveedor_adjudicado',
-      'codigo_proveedor',
-      'valor_del_contrato',
-      'valor_de_pago_adelantado',
-      'valor_facturado',
-      'valor_pagado',
-      'valor_pendiente_de_pago',
-      'valor_pendiente_de_ejecucion',
-      'saldo_cdp',
-      'nombre_supervisor',
-      'nombre_ordenador_del_gasto',
-      'duraci_n_del_contrato',
-      'dias_adicionados',
-      'el_contrato_puede_ser_prorrogado',
-      'localizaci_n',
-      'entidad_centralizada',
-      'orden',
-      'sector',
-      'rama'
-    ].join(',');
-
-    const escapedCodigo = escapeSoQL(codigoEntidad);
-    
-    // SoQL Date Filters
-    // Socrata floating_timestamp comparisons work with ISO formats
-    const whereClause = [
-      `codigo_entidad='${escapedCodigo}'`,
-      `fecha_de_firma >= '${fechaDesde}T00:00:00.000'`,
-      `fecha_de_firma <= '${fechaHasta}T23:59:59.999'`
-    ].join(' and ');
-
-    const orderClause = `fecha_de_firma DESC, id_contrato ASC`;
-    const limit = 5000;
-
     try {
-      let allData: Contrato[] = [];
-      let offset = 0;
-      let hasMore = true;
+      const BACKEND_URL = 'http://localhost:4000/api/v1/contracts';
+      const url = `${BACKEND_URL}?codigoEntidad=${encodeURIComponent(codigoEntidad)}&fechaDesde=${encodeURIComponent(fechaDesde)}&fechaHasta=${encodeURIComponent(fechaHasta)}`;
 
-      while (hasMore) {
-        const query = `?$select=${selectFields}&$where=${whereClause}&$order=${orderClause}&$limit=${limit}&$offset=${offset}`;
-        const url = `${BASE_URL}${encodeURI(query)}`;
-
-        const response = await SecopApiService.fetchWithRetry(url);
-        if (!response.ok) {
-          throw new Error(`HTTP error ${response.status}: ${await response.text()}`);
-        }
-
-        const data = (await response.json()) as Contrato[];
-        allData = allData.concat(data);
-
-        if (data.length < limit) {
-          hasMore = false;
-        } else {
-          offset += limit;
-        }
+      const response = await SecopApiService.fetchWithRetry(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}: ${await response.text()}`);
       }
 
-      // Clean/deduplicate and parse numbers
-      const deduplicated: Contrato[] = [];
-      const seenIds = new Set<string>();
-
-      for (const item of allData) {
-        if (!item.id_contrato) continue;
-        const cleanId = item.id_contrato.trim();
-        if (seenIds.has(cleanId)) continue;
-        seenIds.add(cleanId);
-
-        // Normalize numeric fields
-        const parseNum = (val: any) => {
-          if (val === undefined || val === null) return 0;
-          const num = Number(val);
-          return isNaN(num) ? 0 : num;
-        };
-
-        item.valor_del_contrato = parseNum(item.valor_del_contrato);
-        item.valor_de_pago_adelantado = parseNum(item.valor_de_pago_adelantado);
-        item.valor_facturado = parseNum(item.valor_facturado);
-        item.valor_pagado = parseNum(item.valor_pagado);
-        item.valor_pendiente_de_pago = parseNum(item.valor_pendiente_de_pago);
-        item.valor_pendiente_de_ejecucion = parseNum(item.valor_pendiente_de_ejecucion);
-        item.saldo_cdp = parseNum(item.saldo_cdp);
-        item.dias_adicionados = parseNum(item.dias_adicionados);
-        item.duraci_n_del_contrato = parseNum(item.duraci_n_del_contrato);
-
-        // Clean text fields
-        item.nombre_supervisor = item.nombre_supervisor?.trim() || 'No especificado';
-        item.proveedor_adjudicado = item.proveedor_adjudicado?.trim() || 'No especificado';
-        item.estado_contrato = item.estado_contrato?.trim() || 'No especificado';
-        item.tipo_de_contrato = item.tipo_de_contrato?.trim() || 'No especificado';
-        item.modalidad_de_contratacion = item.modalidad_de_contratacion?.trim() || 'No especificado';
-        item.localizaci_n = item.localizaci_n?.trim() || '';
-        item.entidad_centralizada = item.entidad_centralizada?.trim() || 'No especificado';
-        item.orden = item.orden?.trim() || 'No especificado';
-        item.sector = item.sector?.trim() || 'No especificado';
-        item.rama = item.rama?.trim() || 'No especificado';
-
-        deduplicated.push(item);
-      }
+      const deduplicated = (await response.json()) as Contrato[];
 
       await CacheService.set(cacheKey, deduplicated, TTL_CONTRATOS);
       return deduplicated;
