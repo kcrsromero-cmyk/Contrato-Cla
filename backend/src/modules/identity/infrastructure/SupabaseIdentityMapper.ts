@@ -1,26 +1,9 @@
 import { AuthenticatedUser } from '../domain/AuthenticatedUser';
-import { UserProfile } from '../domain/dtos';
 import { Role } from '../domain/types';
 
-export class IdentityMapper {
+export class SupabaseIdentityMapper {
   /**
-   * Maps an internal AuthenticatedUser domain entity to a UserProfile DTO
-   * suitable for exposure to external layers (like the frontend).
-   */
-  static toUserProfile(user: AuthenticatedUser): UserProfile {
-    return {
-      id: user.id,
-      email: user.email,
-      organizationId: user.organizationId,
-      roles: user.roles,
-      permissions: user.permissions,
-      name: user.name,
-      avatarUrl: user.avatarUrl,
-    };
-  }
-
-  /**
-   * Maps a generic provider user payload to the domain AuthenticatedUser entity.
+   * Maps a Supabase user payload to the domain AuthenticatedUser entity.
    */
   static fromProviderPayload(payload: any): AuthenticatedUser {
     return {
