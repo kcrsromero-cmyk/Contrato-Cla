@@ -1,15 +1,55 @@
 import { AuthenticatedUser } from '../domain/AuthenticatedUser';
 import { AuthResult, LoginCredentials, RegisterCredentials, UserProfile } from '../domain/dtos';
 import { IdentityProvider } from '../domain/IdentityProvider';
+import { IUserRepository } from '../domain/IUserRepository';
+import { IOrganizationRepository } from '../domain/IOrganizationRepository';
+import { randomUUID } from 'crypto';
 
 export class IdentityService {
-  constructor(private readonly provider: IdentityProvider) {}
+  constructor(
+    private readonly provider: IdentityProvider,
+    private readonly userRepository: IUserRepository,
+    private readonly organizationRepository: IOrganizationRepository
+  ) {}
 
   /**
-   * Registers a new user via the configured identity provider.
+   * Registers a new user via the configured identity provider and synchronizes with local database.
    */
   async register(credentials: RegisterCredentials): Promise<AuthResult> {
-    return this.provider.register(credentials);
+    // 1. Register with the Identity Provider (e.g. Supabase)
+    const result = await this.provider.register(credentials);
+
+    try {
+      // 2. Synchronization: Create Organization if not provided
+      let orgId = credentials.organizationId;
+      if (!orgId) {
+        const newOrg = await this.organizationRepository.create({
+          id: randomUUID(),
+          name: `${credentials.name || 'Default'}'s Organization`,
+        });
+        orgId = newOrg.id;
+      }
+
+      // 3. Synchronization: Create User in local database with the UUID from Identity Provider
+      await this.userRepository.create({
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.name,
+        roles: result.user.roles,
+        permissions: result.user.permissions,
+        organizationId: orgId,
+      });
+
+      // Attach organization ID to the returned result for consistency
+      result.user.organizationId = orgId;
+
+      return result;
+    } catch (dbError) {
+      console.error('Failed to synchronize user to local database:', dbError);
+      // In a production system, you might want to rollback the Identity Provider registration here
+      // or implement a retry mechanism.
+      throw dbError;
+    }
   }
 
   /**

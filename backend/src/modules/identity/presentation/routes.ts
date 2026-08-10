@@ -6,6 +6,9 @@ import { IdentityService } from '../application/IdentityService';
 import { SupabaseIdentityProvider } from '../infrastructure/SupabaseIdentityProvider';
 import { IdentityProviderRegistry } from '../infrastructure/IdentityProviderRegistry';
 import { JWTValidator } from '../infrastructure/JWTValidator';
+import { PrismaUserRepository } from '../infrastructure/PrismaUserRepository';
+import { PrismaOrganizationRepository } from '../infrastructure/PrismaOrganizationRepository';
+import { PrismaClient } from '@prisma/client';
 
 // Initialize router
 const authRouter = Router();
@@ -13,6 +16,10 @@ const authRouter = Router();
 // 1. Setup Dependencies (Wiring)
 // In a real application, this might be handled by a DI container (like Awilix or NestJS)
 // For now, we wire them manually.
+
+const prisma = new PrismaClient();
+const userRepository = new PrismaUserRepository(prisma);
+const organizationRepository = new PrismaOrganizationRepository(prisma);
 
 const supabaseProvider = new SupabaseIdentityProvider();
 // Register the provider
@@ -22,7 +29,7 @@ IdentityProviderRegistry.register('supabase', supabaseProvider);
 const activeProvider = IdentityProviderRegistry.resolve();
 
 // Create application service
-const identityService = new IdentityService(activeProvider);
+const identityService = new IdentityService(activeProvider, userRepository, organizationRepository);
 
 // Create infrastructure validator
 const jwtValidator = new JWTValidator();

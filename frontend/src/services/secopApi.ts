@@ -380,8 +380,8 @@ export class SecopApiService {
     }
 
     try {
-      const BACKEND_URL = 'http://localhost:4000/api/v1/contracts';
-      const url = `${BACKEND_URL}?codigoEntidad=${encodeURIComponent(codigoEntidad)}&fechaDesde=${encodeURIComponent(fechaDesde)}&fechaHasta=${encodeURIComponent(fechaHasta)}`;
+      const BASE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const url = `${BASE_API_URL}/api/v1/contracts?codigoEntidad=${encodeURIComponent(codigoEntidad)}&fechaDesde=${encodeURIComponent(fechaDesde)}&fechaHasta=${encodeURIComponent(fechaHasta)}`;
 
       const response = await SecopApiService.fetchWithRetry(url);
       if (!response.ok) {
