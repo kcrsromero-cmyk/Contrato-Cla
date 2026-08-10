@@ -18,9 +18,9 @@ export class SecopApiService {
   /**
    * Wrapper for fetch with exponential backoff on 429 Too Many Requests
    */
-  private static async fetchWithRetry(url: string, retries = 3, backoff = 300): Promise<Response> {
+  private static async fetchWithRetry(url: string, options: RequestInit = {}, retries = 3, backoff = 300): Promise<Response> {
     for (let i = 0; i < retries; i++) {
-      const response = await fetch(url);
+      const response = await fetch(url, options);
       if (response.status === 429) {
         if (i < retries - 1) {
           console.warn(`Rate limit exceeded (429). Retrying in ${backoff}ms...`);
@@ -31,7 +31,7 @@ export class SecopApiService {
       }
       return response;
     }
-    return fetch(url); // final attempt
+    return fetch(url, options); // final attempt
   }
 
   /**
@@ -383,7 +383,19 @@ export class SecopApiService {
       const BASE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
       const url = `${BASE_API_URL}/api/v1/contracts?codigoEntidad=${encodeURIComponent(codigoEntidad)}&fechaDesde=${encodeURIComponent(fechaDesde)}&fechaHasta=${encodeURIComponent(fechaHasta)}`;
 
-      const response = await SecopApiService.fetchWithRetry(url);
+      // Try to get token if auth system is configured
+      // Fallback for tests where localStorage is undefined
+      let token = null;
+      if (typeof localStorage !== 'undefined') {
+        token = localStorage.getItem('contrata360_access_token');
+      }
+
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await SecopApiService.fetchWithRetry(url, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}: ${await response.text()}`);
       }

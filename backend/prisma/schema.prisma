@@ -15,10 +15,35 @@ model Organization {
   name      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  users     User[]
-  // In the future: Workspaces, Subscriptions, APIKeys
+  users         User[]
+  subscriptions Subscription[]
+  // In the future: Workspaces, APIKeys
 
   @@map("organizations")
+}
+
+model Plan {
+  id      String @id
+  name    String
+  limites Json
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  planId         String       @map("plan_id")
+  limites        Json
+  consumo        Json
+  vigencia       DateTime
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  plan           Plan         @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
 }
 
 model User {
