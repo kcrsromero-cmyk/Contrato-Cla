@@ -17,6 +17,7 @@ model Organization {
 
   users         User[]
   subscriptions Subscription[]
+  aiRequests    AIRequest[]
   // In the future: Workspaces, APIKeys
 
   @@map("organizations")
@@ -56,6 +57,23 @@ model User {
   createdAt      DateTime      @default(now()) @map("created_at")
 
   organization   Organization? @relation(fields: [organizationId], references: [id])
+  aiRequests     AIRequest[]
 
   @@map("users")
+}
+
+model AIRequest {
+  id             String       @id @default(uuid()) @db.Uuid
+  proveedor      String
+  modelo         String
+  tokens         Int
+  costo          Float
+  userId         String       @map("user_id") @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("ai_requests")
 }

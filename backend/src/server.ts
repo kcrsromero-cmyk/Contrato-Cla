@@ -25,11 +25,13 @@ app.get('/api/health', (req, res) => {
 import { authRouter } from './modules/identity/presentation/routes';
 import { contractRouter } from './modules/contracts/presentation/routes';
 import { billingRouter } from './modules/billing/presentation/routes';
+import { aiRouter } from './modules/ai/presentation/routes';
 
 // Mount API routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/contracts', contractRouter);
 app.use('/api/v1/billing', billingRouter);
+app.use('/api/v1/ai', aiRouter);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
