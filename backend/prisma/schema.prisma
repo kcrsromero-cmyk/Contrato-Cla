@@ -15,22 +15,34 @@ model Organization {
   name      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  users     User[]
+  users User[]
   // In the future: Workspaces, Subscriptions, APIKeys
 
   @@map("organizations")
 }
 
 model User {
-  id             String        @id @db.Uuid // Must match Supabase auth.users UUID
-  email          String        @unique
+  id             String   @id @db.Uuid // Must match Supabase auth.users UUID
+  email          String   @unique
   name           String?
-  organizationId String?       @map("organization_id") @db.Uuid
-  roles          String[]      @default(["USER"]) // PostgreSQL supports arrays
+  organizationId String?  @map("organization_id") @db.Uuid
+  roles          String[] @default(["USER"]) // PostgreSQL supports arrays
 
-  createdAt      DateTime      @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
 
   @@map("users")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  action    String
+  userId    String?  @map("user_id") @db.Uuid
+  resource  String?
+  details   Json?
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
 }

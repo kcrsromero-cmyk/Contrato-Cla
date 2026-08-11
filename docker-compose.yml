@@ -23,9 +23,49 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
-  # Backend and Frontend are typically run locally via `npm run dev`
-  # or can be containerized here for a full production-like local setup.
-  # For now, we provide the infrastructure dependencies.
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: contrata360_backend
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/contrata360
+      - REDIS_URL=redis://redis:6379
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - LOG_LEVEL=info
+      - PORT=4000
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
+    container_name: contrata360_frontend
+    environment:
+      - VITE_API_URL=/api
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  reverse-proxy:
+    image: nginx:alpine
+    container_name: contrata360_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
 
 volumes:
   postgres_data:

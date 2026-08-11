@@ -1,14 +1,33 @@
 import { Request, Response } from 'express';
 import { IdentityService } from '../application/IdentityService';
 
+import { AuditService } from '../../audit/application/AuditService';
+
 export class AuthController {
-  constructor(private readonly identityService: IdentityService) {}
+  constructor(
+    private readonly identityService: IdentityService,
+    private readonly auditService: AuditService
+  ) {}
 
   async register(req: Request, res: Response) {
     try {
       const result = await this.identityService.register(req.body);
+
+      await this.auditService.logAction({
+        action: 'REGISTER_SUCCESS',
+        userId: result.user.id,
+        resource: 'identity/register',
+        ipAddress: req.ip || req.socket.remoteAddress,
+      });
+
       res.status(201).json(result);
     } catch (error: any) {
+      await this.auditService.logAction({
+        action: 'REGISTER_FAILED',
+        details: { error: error.message, body: req.body },
+        resource: 'identity/register',
+        ipAddress: req.ip || req.socket.remoteAddress,
+      });
       res.status(400).json({ error: error.message });
     }
   }
@@ -16,8 +35,22 @@ export class AuthController {
   async login(req: Request, res: Response) {
     try {
       const result = await this.identityService.login(req.body);
+
+      await this.auditService.logAction({
+        action: 'LOGIN_SUCCESS',
+        userId: result.user.id,
+        resource: 'identity/login',
+        ipAddress: req.ip || req.socket.remoteAddress,
+      });
+
       res.status(200).json(result);
     } catch (error: any) {
+      await this.auditService.logAction({
+        action: 'LOGIN_FAILED',
+        details: { error: error.message, email: req.body.email },
+        resource: 'identity/login',
+        ipAddress: req.ip || req.socket.remoteAddress,
+      });
       res.status(401).json({ error: error.message });
     }
   }

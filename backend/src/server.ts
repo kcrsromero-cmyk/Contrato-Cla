@@ -1,6 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import morgan from 'morgan';
+import { prisma } from './infrastructure/db/prisma';
+import { logger } from './infrastructure/logger';
+import { AuditService } from './modules/audit/application/AuditService';
+import { AuditMiddleware } from './modules/audit/presentation/AuditMiddleware';
 
 // Load environment variables
 dotenv.config();
@@ -8,10 +13,25 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 4000;
 
+const auditService = new AuditService(prisma);
+const auditMiddleware = new AuditMiddleware(auditService);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Observability: HTTP Request Logging using Morgan and Winston Stream
+app.use(morgan('combined', {
+  stream: {
+    write: (message: string) => {
+      logger.info(message.trim());
+    }
+  }
+}));
+
+// Global Audit Middleware for API Consumption
+app.use(auditMiddleware.logApiConsumption);
 
 // Basic Health Check Route
 app.get('/api/health', (req, res) => {
