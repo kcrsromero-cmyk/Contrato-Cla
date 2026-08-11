@@ -6,6 +6,8 @@ import { IdentityService } from '../application/IdentityService';
 import { SupabaseIdentityProvider } from '../infrastructure/SupabaseIdentityProvider';
 import { IdentityProviderRegistry } from '../infrastructure/IdentityProviderRegistry';
 import { JWTValidator } from '../infrastructure/JWTValidator';
+import { prisma } from '../../../infrastructure/db/prisma';
+import { AuditService } from '../../audit/application/AuditService';
 
 // Initialize router
 const authRouter = Router();
@@ -13,6 +15,8 @@ const authRouter = Router();
 // 1. Setup Dependencies (Wiring)
 // In a real application, this might be handled by a DI container (like Awilix or NestJS)
 // For now, we wire them manually.
+
+const auditService = new AuditService(prisma);
 
 const supabaseProvider = new SupabaseIdentityProvider();
 // Register the provider
@@ -28,7 +32,7 @@ const identityService = new IdentityService(activeProvider);
 const jwtValidator = new JWTValidator();
 
 // Create presentation components
-const authController = new AuthController(identityService);
+const authController = new AuthController(identityService, auditService);
 const authMiddleware = new AuthMiddleware(jwtValidator);
 const currentUserResolver = new CurrentUserResolver(identityService);
 
