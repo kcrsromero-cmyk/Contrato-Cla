@@ -22,9 +22,13 @@ export class AuthController {
 
       res.status(201).json(result);
     } catch (error: any) {
+      // Avoid logging plain text passwords
+      const safeBody = { ...req.body };
+      delete safeBody.password;
+
       await this.auditService.logAction({
         action: 'REGISTER_FAILED',
-        details: { error: error.message, body: req.body },
+        details: { error: error.message, body: safeBody },
         resource: 'identity/register',
         ipAddress: req.ip || req.socket.remoteAddress,
       });

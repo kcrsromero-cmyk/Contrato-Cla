@@ -17,7 +17,7 @@ export class JWTValidator {
    */
   verify(token: string): any {
     try {
-      return jwt.verify(token, this.secret);
+      return jwt.verify(token, this.secret, { algorithms: ['HS256'] });
     } catch (error) {
       throw new Error('Invalid or expired token');
     }
