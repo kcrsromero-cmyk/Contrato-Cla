@@ -8,9 +8,20 @@ import { IdentityProviderRegistry } from '../infrastructure/IdentityProviderRegi
 import { JWTValidator } from '../infrastructure/JWTValidator';
 import { prisma } from '../../../infrastructure/db/prisma';
 import { AuditService } from '../../audit/application/AuditService';
+import rateLimit from 'express-rate-limit';
+import { validateRequest } from './ValidationMiddleware';
+import { RegisterSchema, LoginSchema, RefreshSchema } from './AuthSchemas';
 
 // Initialize router
 const authRouter = Router();
+
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per `window` (here, per 15 minutes)
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 // 1. Setup Dependencies (Wiring)
 // In a real application, this might be handled by a DI container (like Awilix or NestJS)
@@ -39,9 +50,9 @@ const currentUserResolver = new CurrentUserResolver(identityService);
 // 2. Define Routes
 
 // Public routes
-authRouter.post('/register', (req, res) => authController.register(req, res));
-authRouter.post('/login', (req, res) => authController.login(req, res));
-authRouter.post('/refresh', (req, res) => authController.refresh(req, res));
+authRouter.post('/register', authRateLimiter, validateRequest(RegisterSchema), (req, res) => authController.register(req, res));
+authRouter.post('/login', authRateLimiter, validateRequest(LoginSchema), (req, res) => authController.login(req, res));
+authRouter.post('/refresh', authRateLimiter, validateRequest(RefreshSchema), (req, res) => authController.refresh(req, res));
 
 // Protected routes
 authRouter.post('/logout', authMiddleware.handle, (req, res) => authController.logout(req, res));

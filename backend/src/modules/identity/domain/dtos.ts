@@ -19,7 +19,6 @@ export interface RegisterCredentials {
   email: Email;
   password: string;
   name?: string;
-  organizationId?: OrganizationId;
 }
 
 export interface AuthResult {

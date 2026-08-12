@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
+import helmet from 'helmet';
 import { prisma } from './infrastructure/db/prisma';
 import { logger } from './infrastructure/logger';
 import { AuditService } from './modules/audit/application/AuditService';
@@ -12,12 +13,17 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 4000;
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 const auditService = new AuditService(prisma);
 const auditMiddleware = new AuditMiddleware(auditService);
 
 // Middleware
-app.use(cors());
+app.use(helmet());
+app.use(cors({
+  origin: frontendUrl,
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

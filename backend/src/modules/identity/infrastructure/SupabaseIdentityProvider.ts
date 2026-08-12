@@ -26,7 +26,6 @@ export class SupabaseIdentityProvider implements IdentityProvider {
       options: {
         data: {
           name: credentials.name,
-          organizationId: credentials.organizationId,
         },
       },
     });

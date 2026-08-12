@@ -31,4 +31,4 @@ RUN npm install -g tsx prisma
 EXPOSE 4000
 
 # Push the schema to the database before starting the server
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npx tsx src/server.ts"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx src/server.ts"]
