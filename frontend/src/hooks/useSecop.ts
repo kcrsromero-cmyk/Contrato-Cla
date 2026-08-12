@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { EntidadResumen } from '../types';
-import { SecopApiService } from '../services/secopApi';
+import { searchEntidades, getDepartamentos, getCiudades, getEntidades } from '../services/api';
 
 export function useSecop(
   selectedEntity: EntidadResumen | null,
@@ -39,7 +39,7 @@ export function useSecop(
     setLoadingAdvanced(true);
     setHasSearched(true);
     try {
-      const results = await SecopApiService.searchEntidadesAvanzada(cleanNit);
+      const results = await searchEntidades(cleanNit, 'advanced');
       setAdvancedEntities(results);
     } catch (err) {
       console.error(err);
@@ -63,7 +63,7 @@ export function useSecop(
     async function loadDepts() {
       setLoadingDepts(true);
       try {
-        const depts = await SecopApiService.getDepartamentos();
+        const depts = await getDepartamentos();
         setDepartments(depts);
       } catch (err) {
         console.error(err);
@@ -87,7 +87,7 @@ export function useSecop(
     async function loadCities() {
       setLoadingCities(true);
       try {
-        const list = await SecopApiService.getCiudades(selectedDept);
+        const list = await getCiudades(selectedDept);
         setCities(list);
         setSelectedCity('');
         setEntities([]);
@@ -112,7 +112,7 @@ export function useSecop(
     async function loadEntities() {
       setLoadingEntities(true);
       try {
-        const list = await SecopApiService.getEntidades(selectedDept, selectedCity);
+        const list = await getEntidades(selectedDept, selectedCity);
         setEntities(list);
         setSelectedEnt('');
       } catch (err) {

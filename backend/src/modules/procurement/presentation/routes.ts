@@ -23,8 +23,23 @@ const authMiddleware = new AuthMiddleware(jwtValidator);
 const currentUserResolver = new CurrentUserResolver(identityService);
 
 
-procurementRouter.get('/contracts', (req, res) => procurementController.getContracts(req, res));
-procurementRouter.get('/similarity', (req, res) => procurementController.calculateSimilarity(req, res));
+procurementRouter.get('/departments', (req, res) => procurementController.getDepartments(req, res));
+procurementRouter.get('/cities', (req, res) => procurementController.getCities(req, res));
+procurementRouter.get('/entities', (req, res) => procurementController.getEntities(req, res));
+procurementRouter.get('/entities/search', (req, res) => procurementController.searchEntities(req, res));
+procurementRouter.get('/years', (req, res) => procurementController.getContractYears(req, res));
+
+procurementRouter.get('/contracts',
+  authMiddleware.handle,
+  currentUserResolver.resolve,
+  (req, res) => procurementController.getContracts(req, res)
+);
+
+procurementRouter.get('/similarity',
+  authMiddleware.handle,
+  currentUserResolver.resolve,
+  (req, res) => procurementController.calculateSimilarity(req, res)
+);
 
 // Protected route (E2E for capabilities)
 procurementRouter.post('/favorites',

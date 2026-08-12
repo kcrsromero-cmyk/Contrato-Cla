@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, AlertCircle, Clock, Lock, RotateCw, ChevronUp, ChevronDown, Sliders } from 'lucide-react';
-import { SecopApiService } from '../services/secopApi';
+import { getContractYears } from '../services/api';
 
 interface PeriodSelectorProps {
   onPeriodChanged: (fechaDesde: string, fechaHasta: string, label: string) => void;
@@ -49,7 +49,7 @@ export default function PeriodSelector({
     async function loadYears() {
       setLoadingAnios(true);
       try {
-        const list = await SecopApiService.getAniosContratacion(codigoEntidad);
+        const list = await getContractYears(codigoEntidad!);
         if (list.length > 0) {
           setAnios(list);
           setSelectedAnio(list[0]); // Most recent year is always index 0
