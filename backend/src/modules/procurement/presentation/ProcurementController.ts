@@ -91,7 +91,7 @@ export class ProcurementController {
       const user = (req as any).user;
       if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-      if (!user.capabilities?.includes('USE_FAVORITES')) {
+      if (!user.capabilities?.includes('VIEW_SIMILARITY_ANALYSIS')) {
         return res.status(403).json({ error: 'Forbidden: Feature not available in your plan' });
       }
 
