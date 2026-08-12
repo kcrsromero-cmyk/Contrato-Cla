@@ -30,9 +30,145 @@ model User {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  organization Organization? @relation(fields: [organizationId], references: [id])
+  organization Organization?      @relation(fields: [organizationId], references: [id])
+  planId       String?            @map("plan_id") @db.Uuid
+  plan         Plan?              @relation(fields: [planId], references: [id])
+  favorites    FavoriteContract[]
 
   @@map("users")
+}
+
+model Plan {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users        User[]
+  capabilities PlanCapability[]
+
+  @@map("plans")
+}
+
+model Capability {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique // e.g., 'USE_FAVORITES', 'ADVANCED_ANALYTICS'
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  plans PlanCapability[]
+
+  @@map("capabilities")
+}
+
+model PlanCapability {
+  planId       String @map("plan_id") @db.Uuid
+  capabilityId String @map("capability_id") @db.Uuid
+
+  plan       Plan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  capability Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+
+  @@id([planId, capabilityId])
+  @@map("plan_capabilities")
+}
+
+model Supplier {
+  id             String   @id @default(uuid()) @db.Uuid
+  documentType   String?  @map("document_type") // e.g., NIT, CC
+  documentNumber String?  @unique @map("document_number") // e.g., 901234567
+  name           String
+  code           String? // codigo_proveedor in SECOP
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  contracts Contract[]
+
+  @@map("suppliers")
+}
+
+model ProcurementProcess {
+  id          String   @id @default(uuid()) @db.Uuid
+  processId   String   @unique @map("process_id") // proceso_de_compra
+  description String?
+  url         String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  contracts Contract[]
+
+  @@map("procurement_processes")
+}
+
+model Contract {
+  id                 String  @id @default(uuid()) @db.Uuid
+  contractId         String  @unique @map("contract_id") // id_contrato
+  reference          String? // referencia_del_contrato
+  status             String? // estado_contrato
+  contractType       String? @map("contract_type") // tipo_de_contrato
+  modality           String? // modalidad_de_contratacion
+  justification      String? // justificacion_modalidad_de
+  object             String // objeto_del_contrato
+  deliveryConditions String? @map("delivery_conditions") // condiciones_de_entrega
+
+  signatureDate DateTime? @map("signature_date") // fecha_de_firma
+  startDate     DateTime? @map("start_date") // fecha_de_inicio_del_contrato
+  endDate       DateTime? @map("end_date") // fecha_de_fin_del_contrato
+  lastUpdate    DateTime? @map("last_update") // ultima_actualizacion
+
+  contractValue         Float? @map("contract_value") // valor_del_contrato
+  advancePaymentValue   Float? @map("advance_payment_value") // valor_de_pago_adelantado
+  invoicedValue         Float? @map("invoiced_value") // valor_facturado
+  paidValue             Float? @map("paid_value") // valor_pagado
+  pendingPaymentValue   Float? @map("pending_payment_value") // valor_pendiente_de_pago
+  pendingExecutionValue Float? @map("pending_execution_value") // valor_pendiente_de_ejecucion
+  cdpBalance            Float? @map("cdp_balance") // saldo_cdp
+
+  duration     Float? // duraci_n_del_contrato
+  addedDays    Float?  @map("added_days") // dias_adicionados
+  isExtendable String? @map("is_extendable") // el_contrato_puede_ser_prorrogado
+
+  location          String? // localizaci_n
+  centralizedEntity String? @map("centralized_entity") // entidad_centralizada
+  order             String? // orden
+  sector            String? // sector
+  branch            String? // rama
+
+  supervisorName String? @map("supervisor_name") // nombre_supervisor
+  spenderName    String? @map("spender_name") // nombre_ordenador_del_gasto
+
+  department String?
+  city       String?
+  entityName String  @map("entity_name")
+  entityCode String  @map("entity_code")
+  entityNit  String? @map("entity_nit")
+
+  supplierId           String? @map("supplier_id") @db.Uuid
+  procurementProcessId String? @map("procurement_process_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id])
+  procurementProcess ProcurementProcess? @relation(fields: [procurementProcessId], references: [id])
+  favoritedBy        FavoriteContract[]
+
+  @@index([entityCode])
+  @@index([department, city])
+  @@index([signatureDate])
+  @@map("contracts")
+}
+
+model FavoriteContract {
+  userId     String   @map("user_id") @db.Uuid
+  contractId String   @map("contract_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@id([userId, contractId])
+  @@map("favorite_contracts")
 }
 
 model AuditLog {
