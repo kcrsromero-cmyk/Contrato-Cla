@@ -45,9 +45,15 @@ app.get('/api/health', (req, res) => {
 });
 
 import { authRouter } from './modules/identity/presentation/routes';
+import { procurementRouter } from './modules/procurement/presentation/routes';
 
 // Mount API routes
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/procurement', procurementRouter);
+
+import { setupRecurringJobs } from './infrastructure/jobs/refreshWorker';
+// Initialize recurring background jobs
+setupRecurringJobs().catch(console.error);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Contrato, EntidadResumen } from '../types';
-import { SecopApiService } from '../services/secopApi';
 import { CacheService } from '../services/db';
+import { getContracts } from '../services/api';
 
 export function useContratos(
   selectedEntity: EntidadResumen | null,
@@ -32,12 +32,11 @@ export function useContratos(
     setLoading(true);
     setError(null);
     try {
-      const data = await SecopApiService.getContratos(
-        selectedEntity.codigo_entidad,
-        fechaDesde,
-        fechaHasta,
-        forceRefresh
-      );
+      const data = await getContracts({
+         codigoEntidad: selectedEntity.codigo_entidad,
+         fechaDesde,
+         fechaHasta
+      });
       setContratos(data);
       setLastUpdated(
         new Date().toLocaleTimeString('es-CO', {

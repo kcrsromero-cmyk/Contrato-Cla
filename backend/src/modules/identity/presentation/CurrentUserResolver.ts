@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { IdentityService } from '../application/IdentityService';
+import { prisma } from '../../../infrastructure/db/prisma';
 
 export class CurrentUserResolver {
   constructor(private readonly identityService: IdentityService) {}
@@ -19,6 +20,30 @@ export class CurrentUserResolver {
       const user = await this.identityService.getCurrentUser(token);
 
       if (user) {
+        // Hydrate with capabilities from DB
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          include: {
+             plan: {
+                 include: {
+                     capabilities: {
+                         include: {
+                             capability: true
+                         }
+                     }
+                 }
+             }
+          }
+        });
+
+        if (dbUser?.plan) {
+            user.plan = dbUser.plan.name;
+            user.capabilities = dbUser.plan.capabilities.map(pc => pc.capability.name);
+        } else {
+            user.plan = 'FREE';
+            user.capabilities = [];
+        }
+
         (req as any).user = user;
       }
 

@@ -10,4 +10,6 @@ export interface AuthenticatedUser {
   avatarUrl?: string;
   lastLoginAt?: Date;
   metadata?: Record<string, any>;
+  plan?: string;
+  capabilities?: string[];
 }
