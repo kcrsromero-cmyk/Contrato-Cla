@@ -47,7 +47,12 @@ export class ProcurementService {
     for (const contractData of contracts) {
       await prisma.contract.upsert({
         where: { contractId: contractData.contractId },
-        update: {},
+        update: {
+          status: contractData.status,
+          paidValue: contractData.paidValue,
+          pendingPaymentValue: contractData.pendingPaymentValue,
+          pendingExecutionValue: contractData.pendingExecutionValue,
+        },
         create: {
           contractId: contractData.contractId,
           reference: contractData.reference,
