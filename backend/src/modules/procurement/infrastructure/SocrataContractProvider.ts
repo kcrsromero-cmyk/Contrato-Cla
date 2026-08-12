@@ -118,6 +118,142 @@ export class SocrataContractProvider implements ContractProvider {
     return isNaN(num) ? 0 : num;
   }
 
+  async getDepartments(): Promise<string[]> {
+    const query = `?$select=distinct departamento&$order=departamento&$where=departamento is not null&$limit=100`;
+    const response = await fetch(`${this.baseUrl}${encodeURI(query)}`);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const data = await response.json();
+    const list = data
+      .map((item: any) => item.departamento)
+      .filter((dept: string) => dept && dept.trim() !== '' && dept !== 'No Definido')
+      .map((dept: string) => dept.trim());
+    return Array.from(new Set(list)).sort((a: any, b: any) => a.localeCompare(b)) as string[];
+  }
+
+  async getCities(department: string): Promise<string[]> {
+    const escapedDept = this.escapeSoQL(department);
+    const query = `?$select=distinct ciudad&$where=departamento='${escapedDept}'&$order=ciudad&$limit=1000`;
+    const response = await fetch(`${this.baseUrl}${encodeURI(query)}`);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const data = await response.json();
+    const list = data
+      .map((item: any) => item.ciudad)
+      .filter((c: string) => c && c.trim() !== '')
+      .map((c: string) => c.trim());
+
+    const uniqueList = Array.from(new Set(list)).sort((a: any, b: any) => a.localeCompare(b));
+    const indexNoDef = uniqueList.findIndex((c: any) => c.toLowerCase() === 'no definido');
+    if (indexNoDef !== -1) {
+      uniqueList.splice(indexNoDef, 1);
+      uniqueList.unshift('No Definido');
+    }
+    return uniqueList as string[];
+  }
+
+  async getEntities(department: string, city: string): Promise<any[]> {
+    const escapedDept = this.escapeSoQL(department);
+    const escapedCity = this.escapeSoQL(city);
+    let whereClause = `departamento='${escapedDept}' and ciudad='${escapedCity}'`;
+
+    if (city === 'No Definido') {
+      whereClause = `departamento='${escapedDept}' and (ciudad is null or ciudad='No Definido')`;
+    }
+
+    const fields = 'codigo_entidad,nombre_entidad,nit_entidad,departamento,ciudad';
+    const whereParam = `${whereClause} and codigo_entidad is not null`;
+    const query = `?$select=${encodeURIComponent(fields)}&$where=${encodeURIComponent(whereParam)}&$group=${encodeURIComponent(fields)}&$limit=500`;
+
+    const response = await fetch(`${this.baseUrl}${query}`);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const data = await response.json();
+
+    const entitiesMap = new Map<string, any>();
+    for (const item of data) {
+      const code = item.codigo_entidad?.trim();
+      if (!code) continue;
+      entitiesMap.set(code, {
+        departamento: item.departamento?.trim() || 'No Definido',
+        ciudad: item.ciudad?.trim() || 'No Definido',
+        codigo_entidad: code,
+        nombre_entidad: item.nombre_entidad?.trim() || '',
+        nit_entidad: item.nit_entidad?.trim() || '',
+        localizaci_n: '',
+        orden: '',
+        sector: '',
+        rama: '',
+        entidad_centralizada: '',
+      });
+    }
+
+    return Array.from(entitiesMap.values()).sort((a, b) =>
+      a.nombre_entidad.localeCompare(b.nombre_entidad)
+    );
+  }
+
+  async searchEntities(searchText: string, type: 'global' | 'advanced'): Promise<any[]> {
+    const clean = searchText.trim();
+    if (!clean) return [];
+
+    let whereClause = "";
+    if (type === 'advanced') {
+      whereClause = `nit_entidad='${this.escapeSoQL(clean)}'`;
+    } else {
+      if (clean.length < 3) return [];
+      const isNumeric = /^\\d+$/.test(clean);
+      if (isNumeric) {
+        whereClause = `(nit_entidad like '%${this.escapeSoQL(clean)}%' or codigo_entidad='${this.escapeSoQL(clean)}')`;
+      } else {
+        whereClause = `(lower(nombre_entidad) like '%${this.escapeSoQL(clean).toLowerCase()}%')`;
+      }
+    }
+
+    const fields = 'codigo_entidad,nombre_entidad,nit_entidad,departamento,ciudad';
+    const whereParam = `${whereClause} and codigo_entidad is not null`;
+    const limit = type === 'advanced' ? 150 : 100;
+    const query = `?$select=${encodeURIComponent(fields)}&$where=${encodeURIComponent(whereParam)}&$group=${encodeURIComponent(fields)}&$limit=${limit}`;
+
+    const response = await fetch(`${this.baseUrl}${query}`);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const data = await response.json();
+
+    const entitiesMap = new Map<string, any>();
+    for (const item of data) {
+      const code = item.codigo_entidad?.trim();
+      if (!code) continue;
+      entitiesMap.set(code, {
+        departamento: item.departamento?.trim() || 'No Definido',
+        ciudad: item.ciudad?.trim() || 'No Definido',
+        codigo_entidad: code,
+        nombre_entidad: item.nombre_entidad?.trim() || '',
+        nit_entidad: item.nit_entidad?.trim() || '',
+        localizaci_n: '',
+        orden: '',
+        sector: '',
+        rama: '',
+        entidad_centralizada: '',
+      });
+    }
+
+    return Array.from(entitiesMap.values()).sort((a, b) =>
+      a.nombre_entidad.localeCompare(b.nombre_entidad)
+    );
+  }
+
+  async getContractYears(entityCode: string): Promise<string[]> {
+    const escapedCodigo = this.escapeSoQL(entityCode);
+    const query = `?$select=date_extract_y(fecha_de_firma) as anio&$where=codigo_entidad='${escapedCodigo}' and fecha_de_firma IS NOT NULL&$group=anio&$order=anio DESC&$limit=50`;
+
+    const response = await fetch(`${this.baseUrl}${encodeURI(query)}`);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const data = await response.json();
+    const anios = data
+      .map((item: any) => item.anio?.trim())
+      .filter(Boolean) as string[];
+
+    anios.sort((a, b) => b.localeCompare(a));
+    return anios;
+  }
+
   private mapToDomain(data: any[]): Contract[] {
     const deduplicated: Contract[] = [];
     const seenIds = new Set<string>();

@@ -1,8 +1,8 @@
 import { Worker, Queue, Job } from 'bullmq';
 import Redis from 'ioredis';
 import { logger } from '../logger';
-// Import the domain event or service once implemented
-// import { DatasetImportedEvent, DatasetNormalizationCompletedEvent } from '...';
+import { ProcurementService } from '../../modules/procurement/application/ProcurementService';
+import { SocrataContractProvider } from '../../modules/procurement/infrastructure/SocrataContractProvider';
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
@@ -15,16 +15,25 @@ export const datasetNormalizationQueue = new Queue('dataset-normalization', { co
 export const datasetImportWorker = new Worker('dataset-import', async (job: Job) => {
   logger.info(`Processing job ${job.id} for dataset import`);
   try {
-    // In a real application, call the Application Service to fetch new data via SocrataContractProvider
-    // Example: await procurementService.importNewContracts();
+    const socrataProvider = new SocrataContractProvider();
+    const procurementService = new ProcurementService(socrataProvider);
 
-    // Simulate work
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // As a default or placeholder, we could fetch data for a well-known entity or use job data
+    const codigoEntidad = job.data?.codigoEntidad || '704283084'; // Example entity if none provided
+    const currentDate = new Date();
+    const yearStart = `${currentDate.getFullYear()}-01-01`;
+    const yearEnd = `${currentDate.getFullYear()}-12-31`;
+
+    await procurementService.getContracts({
+      codigoEntidad: codigoEntidad,
+      fechaDesde: yearStart,
+      fechaHasta: yearEnd
+    });
 
     logger.info(`Completed dataset import job ${job.id}`);
 
     // Trigger the next step in the pipeline (normalization / similarity calculation)
-    await datasetNormalizationQueue.add('normalize', { sourceJobId: job.id });
+    await datasetNormalizationQueue.add('normalize', { sourceJobId: job.id, codigoEntidad, fechaDesde: yearStart, fechaHasta: yearEnd });
 
   } catch (error) {
     logger.error(`Failed job ${job.id} dataset import`, { error });
@@ -40,10 +49,17 @@ datasetImportWorker.on('failed', (job, err) => {
 export const datasetNormalizationWorker = new Worker('dataset-normalization', async (job: Job) => {
   logger.info(`Processing job ${job.id} for dataset normalization`);
   try {
-    // Here we could call SimilarityDomainService to precompute and cache similarities for popular entities
-    // Example: await procurementService.precomputeSimilarities();
+    const socrataProvider = new SocrataContractProvider();
+    const procurementService = new ProcurementService(socrataProvider);
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (job.data?.codigoEntidad && job.data?.fechaDesde && job.data?.fechaHasta) {
+       await procurementService.calculateSimilarity({
+          codigoEntidad: job.data.codigoEntidad,
+          fechaDesde: job.data.fechaDesde,
+          fechaHasta: job.data.fechaHasta
+       });
+    }
+
     logger.info(`Completed dataset normalization job ${job.id}`);
 
   } catch (error) {

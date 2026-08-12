@@ -38,7 +38,7 @@ export class CurrentUserResolver {
 
         if (dbUser?.plan) {
             user.plan = dbUser.plan.name;
-            user.capabilities = dbUser.plan.capabilities.map(pc => pc.capability.name);
+            user.capabilities = dbUser.plan.capabilities.map((pc: any) => pc.capability.name);
         } else {
             user.plan = 'FREE';
             user.capabilities = [];

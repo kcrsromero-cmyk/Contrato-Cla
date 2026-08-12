@@ -12,8 +12,69 @@ const filterSchema = z.object({
 export class ProcurementController {
   constructor(private readonly procurementService: ProcurementService) {}
 
+  async getDepartments(req: Request, res: Response) {
+    try {
+      const departments = await this.procurementService.getDepartments();
+      res.json(departments);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async getCities(req: Request, res: Response) {
+    try {
+      const { department } = req.query;
+      if (!department || typeof department !== 'string') return res.status(400).json({ error: 'Missing or invalid department' });
+      const cities = await this.procurementService.getCities(department);
+      res.json(cities);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async getEntities(req: Request, res: Response) {
+    try {
+      const { department, city } = req.query;
+      if (!department || typeof department !== 'string' || !city || typeof city !== 'string') return res.status(400).json({ error: 'Missing or invalid parameters' });
+      const entities = await this.procurementService.getEntities(department, city);
+      res.json(entities);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async searchEntities(req: Request, res: Response) {
+    try {
+      const { q, type } = req.query;
+      if (!q || typeof q !== 'string') return res.status(400).json({ error: 'Missing query string' });
+      const entities = await this.procurementService.searchEntities(q, type === 'advanced' ? 'advanced' : 'global');
+      res.json(entities);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async getContractYears(req: Request, res: Response) {
+    try {
+      const { entityCode } = req.query;
+      if (!entityCode || typeof entityCode !== 'string') return res.status(400).json({ error: 'Missing entityCode' });
+      const years = await this.procurementService.getContractYears(entityCode);
+      res.json(years);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
   async getContracts(req: Request, res: Response) {
     try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
       const filters = filterSchema.parse(req.query);
       const contracts = await this.procurementService.getContracts(filters);
       res.json(contracts);
@@ -27,6 +88,13 @@ export class ProcurementController {
 
   async calculateSimilarity(req: Request, res: Response) {
     try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+      if (!user.capabilities?.includes('USE_FAVORITES')) {
+        return res.status(403).json({ error: 'Forbidden: Feature not available in your plan' });
+      }
+
       const filters = filterSchema.parse(req.query);
       const clusters = await this.procurementService.calculateSimilarity(filters);
       res.json(clusters);
@@ -52,7 +120,7 @@ export class ProcurementController {
         include: { contract: true }
       });
 
-      res.json(favorites.map(f => f.contract));
+      res.json(favorites.map((f: any) => f.contract));
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -71,36 +139,18 @@ export class ProcurementController {
         return res.status(403).json({ error: 'Forbidden: Feature not available in your plan' });
       }
 
-      const { contractId, contractData } = req.body;
+      const { contractId } = req.body;
       if (!contractId) {
         return res.status(400).json({ error: 'contractId is required' });
       }
 
-      // 1. Ensure contract exists in DB.
-      // If we are strictly working off the provider, we might need to upsert the contract to DB here.
-      if (contractData) {
-         await prisma.contract.upsert({
-            where: { contractId: contractId },
-            update: {},
-            create: {
-                contractId: contractId,
-                object: contractData.object || contractData.objeto_del_contrato || 'Unknown Object',
-                entityName: contractData.entityName || contractData.nombre_entidad || 'Unknown Entity',
-                entityCode: contractData.entityCode || contractData.codigo_entidad || '000',
-                department: contractData.department,
-                city: contractData.city,
-                contractValue: contractData.contractValue,
-            }
-         });
-      }
-
-      // Map external contractId to internal UUID if necessary
+      // Ensure contract exists in DB.
       const dbContract = await prisma.contract.findUnique({
          where: { contractId: contractId }
       });
 
       if (!dbContract) {
-         return res.status(404).json({ error: 'Contract not found in database. Must be fetched first.' });
+         return res.status(404).json({ error: 'Contract not found in database. Must be fetched by the system first.' });
       }
 
       await prisma.favoriteContract.create({
