@@ -22,15 +22,7 @@ export const FavoriteButton: React.FC<{ contract: Contrato }> = ({ contract }) =
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          contractId: contract.id_contrato,
-          contractData: {
-            objeto_del_contrato: contract.objeto_del_contrato,
-            nombre_entidad: contract.nombre_entidad,
-            codigo_entidad: contract.codigo_entidad,
-            department: contract.departamento,
-            city: contract.ciudad,
-            contractValue: contract.valor_del_contrato
-          }
+          contractId: contract.id_contrato
         })
       });
 
