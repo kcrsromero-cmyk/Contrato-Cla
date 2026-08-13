@@ -72,9 +72,6 @@ export class ProcurementController {
 
   async getContracts(req: Request, res: Response) {
     try {
-      const user = (req as any).user;
-      if (!user) return res.status(401).json({ error: 'Unauthorized' });
-
       const filters = filterSchema.parse(req.query);
       const contracts = await this.procurementService.getContracts(filters);
       res.json(contracts);
