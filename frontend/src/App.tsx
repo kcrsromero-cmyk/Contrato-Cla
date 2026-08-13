@@ -12,6 +12,7 @@ import TerritorialSelector from './components/TerritorialSelector';
 import PeriodSelector from './components/PeriodSelector';
 import Dashboard from './components/Dashboard';
 import OnboardingModal from './components/OnboardingModal';
+import AuthModal from './components/AuthModal';
 import { ArrowLeft, Sliders, RefreshCw } from 'lucide-react';
 import { formatBytes } from './utils/helpers';
 
@@ -20,6 +21,14 @@ export default function App() {
   const windowWidth = useWindowWidth();
   
   const [isOnboardingOpen, setIsOnboardingOpen] = React.useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsAuthModalOpen(true);
+    }
+  }, []);
 
   const handleCloseOnboarding = () => {
     setIsOnboardingOpen(false);
@@ -121,6 +130,7 @@ export default function App() {
         toggleEasyRead={toggleEasyRead}
         handleClearCache={handleClearCache}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
       >
       {/* If an entity is selected and we are on a wide screen, render the Dual Column Sidebar layout */}
       {selectedEntity && isWideLayout ? (
@@ -284,6 +294,10 @@ export default function App() {
       onFocusTerritorial={handleFocusTerritorial}
       onFocusPeriod={handleFocusPeriod}
       easyRead={easyRead}
+    />
+    <AuthModal
+      isOpen={isAuthModalOpen}
+      onClose={() => setIsAuthModalOpen(false)}
     />
     </>
   );
