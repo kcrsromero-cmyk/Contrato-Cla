@@ -30,8 +30,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         data = await registerUser({ name, email, password });
       }
 
-      if (data.token) {
-        localStorage.setItem('token', data.token);
+      if (data.accessToken) {
+        localStorage.setItem('token', data.accessToken);
         onClose();
         // Option to force reload or notify app to re-read token
         window.location.reload();
