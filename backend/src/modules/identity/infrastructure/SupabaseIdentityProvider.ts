@@ -31,14 +31,14 @@ export class SupabaseIdentityProvider implements IdentityProvider {
     });
 
     if (error) throw new Error(error.message);
-    if (!data.session || !data.user) throw new Error('Registration failed to return session data');
+    if (!data.user) throw new Error('Registration failed: no user data returned');
 
     const authUser = SupabaseIdentityMapper.fromProviderPayload(data.user);
 
     return {
-      accessToken: data.session.access_token,
-      refreshToken: data.session.refresh_token,
-      expiresIn: data.session.expires_in,
+      accessToken: data.session?.access_token || '',
+      refreshToken: data.session?.refresh_token || '',
+      expiresIn: data.session?.expires_in || 0,
       user: IdentityMapper.toUserProfile(authUser),
     };
   }
