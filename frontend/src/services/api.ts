@@ -1,5 +1,31 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
 
+export const registerUser = async (data: { name?: string; email: string; password: string }) => {
+  const res = await fetch(`${API_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to register');
+  }
+  return res.json();
+};
+
+export const loginUser = async (data: { email: string; password: string }) => {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to login');
+  }
+  return res.json();
+};
+
 export const getContracts = async (filters: { codigoEntidad: string; fechaDesde: string; fechaHasta: string }) => {
   const query = new URLSearchParams(filters).toString();
   const token = localStorage.getItem('token');
