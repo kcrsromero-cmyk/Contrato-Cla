@@ -29,11 +29,7 @@ procurementRouter.get('/entities', (req, res) => procurementController.getEntiti
 procurementRouter.get('/entities/search', (req, res) => procurementController.searchEntities(req, res));
 procurementRouter.get('/years', (req, res) => procurementController.getContractYears(req, res));
 
-procurementRouter.get('/contracts',
-  authMiddleware.handle,
-  currentUserResolver.resolve,
-  (req, res) => procurementController.getContracts(req, res)
-);
+procurementRouter.get('/contracts', (req, res) => procurementController.getContracts(req, res));
 
 procurementRouter.get('/similarity',
   authMiddleware.handle,
