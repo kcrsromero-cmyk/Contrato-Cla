@@ -10,10 +10,10 @@ export class SupabaseIdentityProvider implements IdentityProvider {
 
   constructor() {
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase configuration is missing. Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set.');
+      throw new Error('Supabase configuration is missing. Ensure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are set.');
     }
 
     this.client = createClient(supabaseUrl, supabaseKey);
