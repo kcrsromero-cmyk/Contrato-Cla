@@ -23,13 +23,6 @@ export default function App() {
   const [isOnboardingOpen, setIsOnboardingOpen] = React.useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
-  React.useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setIsAuthModalOpen(true);
-    }
-  }, []);
-
   const handleCloseOnboarding = () => {
     setIsOnboardingOpen(false);
   };

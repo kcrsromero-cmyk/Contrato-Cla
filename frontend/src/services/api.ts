@@ -7,7 +7,16 @@ export const registerUser = async (data: { name?: string; email: string; passwor
     body: JSON.stringify(data),
   });
   if (!res.ok) {
+    if (res.status === 429) {
+      throw new Error('Too many requests, please try again later');
+    }
     const errorData = await res.json().catch(() => ({}));
+    if (errorData.details && typeof errorData.details === 'object') {
+      const messages = Object.values(errorData.details)
+        .map((val: any) => val?._errors?.join(', '))
+        .filter(Boolean);
+      if (messages.length > 0) throw new Error(messages.join(' | '));
+    }
     throw new Error(errorData.error || 'Failed to register');
   }
   return res.json();
@@ -20,7 +29,16 @@ export const loginUser = async (data: { email: string; password: string }) => {
     body: JSON.stringify(data),
   });
   if (!res.ok) {
+    if (res.status === 429) {
+      throw new Error('Too many requests, please try again later');
+    }
     const errorData = await res.json().catch(() => ({}));
+    if (errorData.details && typeof errorData.details === 'object') {
+      const messages = Object.values(errorData.details)
+        .map((val: any) => val?._errors?.join(', '))
+        .filter(Boolean);
+      if (messages.length > 0) throw new Error(messages.join(' | '));
+    }
     throw new Error(errorData.error || 'Failed to login');
   }
   return res.json();
