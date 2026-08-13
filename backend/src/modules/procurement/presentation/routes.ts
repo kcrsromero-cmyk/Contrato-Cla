@@ -18,7 +18,7 @@ const procurementController = new ProcurementController(procurementService);
 // Setting up auth dependencies (simplified for route setup)
 const activeProvider = IdentityProviderRegistry.resolve();
 const identityService = new IdentityService(activeProvider);
-const jwtValidator = new JWTValidator();
+const jwtValidator = new JWTValidator(process.env.SUPABASE_JWKS_URL!);
 const authMiddleware = new AuthMiddleware(jwtValidator);
 const currentUserResolver = new CurrentUserResolver(identityService);
 

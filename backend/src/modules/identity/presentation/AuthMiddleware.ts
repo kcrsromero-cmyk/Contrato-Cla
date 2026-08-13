@@ -7,7 +7,7 @@ export class AuthMiddleware {
   /**
    * Express middleware to validate JWT in the Authorization header.
    */
-  handle = (req: Request, res: Response, next: NextFunction) => {
+  handle = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -15,7 +15,7 @@ export class AuthMiddleware {
       }
 
       const token = authHeader.split(' ')[1];
-      const payload = this.jwtValidator.verify(token);
+      const payload = await this.jwtValidator.verify(token);
 
       // Attach raw payload to request for further processing
       (req as any).tokenPayload = payload;

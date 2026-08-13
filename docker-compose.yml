@@ -33,7 +33,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-      - JWT_SECRET=${JWT_SECRET}
+      - SUPABASE_JWKS_URL=${SUPABASE_JWKS_URL}
       - FRONTEND_URL=${FRONTEND_URL}
       - LOG_LEVEL=info
       - PORT=4000

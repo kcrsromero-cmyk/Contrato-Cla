@@ -1,25 +1,20 @@
-import jwt from 'jsonwebtoken';
-
 export class JWTValidator {
-  private secret: string;
+  private readonly jwksUrl: string;
+  private jwks: any;
 
-  constructor() {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error('JWT_SECRET is not defined in environment variables.');
-    }
-    this.secret = secret;
+  constructor(jwksUrl: string) {
+    this.jwksUrl = jwksUrl;
   }
 
-  /**
-   * Validates a JWT token locally without calling the provider.
-   * Useful for fast middleware checks if the token is self-contained.
-   */
-  verify(token: string): any {
-    try {
-      return jwt.verify(token, this.secret, { algorithms: ['HS256'] });
-    } catch (error) {
-      throw new Error('Invalid or expired token');
+  async verify(token: string): Promise<any> {
+    const { createRemoteJWKSet, jwtVerify } = await import('jose');
+    if (!this.jwks) {
+      this.jwks = createRemoteJWKSet(new URL(this.jwksUrl));
     }
+
+    const { payload } = await jwtVerify(token, this.jwks, {
+      algorithms: ['ES256'],
+    });
+    return payload;
   }
 }
