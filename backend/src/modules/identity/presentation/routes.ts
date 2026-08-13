@@ -43,7 +43,7 @@ const activeProvider = IdentityProviderRegistry.resolve();
 const identityService = new IdentityService(activeProvider);
 
 // Create infrastructure validator
-const jwtValidator = new JWTValidator();
+const jwtValidator = new JWTValidator(process.env.SUPABASE_JWKS_URL!);
 
 // Create presentation components
 const authController = new AuthController(identityService, auditService);
