@@ -30,7 +30,7 @@ export function mapContractToViewModel(c: any): Contrato {
     fecha_de_fin_del_contrato: c.endDate,
     ultima_actualizacion: c.lastUpdate,
 
-    proveedor_adjudicado: c.supplierId,
+    proveedor_adjudicado: c.supplierName,
 
     valor_del_contrato: c.contractValue,
     valor_de_pago_adelantado: c.advancePaymentValue,

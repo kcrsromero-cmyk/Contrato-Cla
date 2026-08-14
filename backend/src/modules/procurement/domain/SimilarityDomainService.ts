@@ -161,10 +161,8 @@ export class SimilarityDomainService {
 
         const contractorsSet = new Set<string>();
         allContracts.forEach(c => {
-          if (c.supplierId) {
-            // Need the supplier name, but we only have ID here right now
-            // Adjusting this based on the available data. If supplier relation is fetched, it should be used.
-            contractorsSet.add(c.supplierId); // fallback
+          if (c.supplierName) {
+            contractorsSet.add(c.supplierName);
           }
         });
 
