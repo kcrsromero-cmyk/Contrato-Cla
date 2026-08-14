@@ -10,6 +10,8 @@ export class AuthController {
   ) {}
 
   async register(req: Request, res: Response) {
+    const genericMessage = { message: 'Si los datos son válidos, revisa tu correo para continuar.' };
+
     try {
       const result = await this.identityService.register(req.body);
 
@@ -25,6 +27,22 @@ export class AuthController {
       // Avoid logging plain text passwords
       const safeBody = { ...req.body };
       delete safeBody.password;
+
+      // Check for user already exists error from Supabase
+      const isAlreadyExistsError = error.code === 'user_already_exists' ||
+                                   (error.message && error.message.toLowerCase().includes('already registered'));
+
+      if (isAlreadyExistsError) {
+        await this.auditService.logAction({
+          action: 'REGISTER_FAILED_ENUMERATION_ATTEMPT',
+          details: { error: error.message, body: safeBody },
+          resource: 'identity/register',
+          ipAddress: req.ip || req.socket.remoteAddress,
+        });
+
+        // Return identical response to a successful registration
+        return res.status(201).json(genericMessage);
+      }
 
       await this.auditService.logAction({
         action: 'REGISTER_FAILED',

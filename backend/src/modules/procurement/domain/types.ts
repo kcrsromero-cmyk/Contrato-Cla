@@ -56,7 +56,7 @@ export interface Contract {
   entityCode: string;
   entityNit?: string;
 
-  supplierId?: string;
+  supplierName?: string;
   procurementProcessId?: string;
 }
 

@@ -3,6 +3,7 @@ import { Contract, FilterParams } from '../domain/types';
 import { SimilarityDomainService, SimilarObjectGroup } from '../domain/SimilarityDomainService';
 import { RedisCacheAdapter } from '../../../infrastructure/redis/RedisCacheAdapter';
 import { prisma } from '../../../infrastructure/db/prisma';
+import { logger } from '../../../infrastructure/logger';
 
 export class ProcurementService {
   private similarityService: SimilarityDomainService;
@@ -116,7 +117,7 @@ export class ProcurementService {
           entityName: c.entityName,
           entityCode: c.entityCode,
           entityNit: c.entityNit ?? undefined,
-          supplierId: c.supplierId ?? undefined,
+          supplierName: undefined, // Prisma uses supplierId to relation Supplier, but Domain Contract expects supplierName
           procurementProcessId: c.procurementProcessId ?? undefined,
         }));
         await this.cacheAdapter.set(cacheKey, JSON.stringify(domainData), 86400);
@@ -125,7 +126,7 @@ export class ProcurementService {
     }
 
     // 3. Fetch from Provider (Socrata)
-    console.log("Fetching from Socrata provider for cache key:", cacheKey);
+    logger.info(`Fetching from Socrata provider for cache key: ${cacheKey}`);
     const contracts = await this.provider.fetchContracts(filters);
 
     // Persist contracts to Postgres

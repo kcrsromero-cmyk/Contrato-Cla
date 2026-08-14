@@ -30,7 +30,11 @@ export class SupabaseIdentityProvider implements IdentityProvider {
       },
     });
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      const err = new Error(error.message);
+      (err as any).code = error.code;
+      throw err;
+    }
     if (!data.user) throw new Error('Registration failed: no user data returned');
 
     const authUser = SupabaseIdentityMapper.fromProviderPayload(data.user);
