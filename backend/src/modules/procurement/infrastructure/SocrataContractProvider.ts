@@ -12,18 +12,6 @@ export class SocrataContractProvider implements ContractProvider {
 
   async fetchContracts(filters: FilterParams): Promise<Contract[]> {
     const { codigoEntidad, fechaDesde, fechaHasta } = filters;
-    const cacheKey = `contracts:${codigoEntidad}:${fechaDesde}:${fechaHasta}`;
-
-    const cachedData = await this.cacheAdapter.get(cacheKey);
-    if (cachedData) {
-      return JSON.parse(cachedData).map((c: any) => ({
-        ...c,
-        signatureDate: c.signatureDate ? new Date(c.signatureDate) : undefined,
-        startDate: c.startDate ? new Date(c.startDate) : undefined,
-        endDate: c.endDate ? new Date(c.endDate) : undefined,
-        lastUpdate: c.lastUpdate ? new Date(c.lastUpdate) : undefined,
-      }));
-    }
 
     // Select required fields
     const selectFields = [
@@ -101,9 +89,6 @@ export class SocrataContractProvider implements ContractProvider {
     }
 
     const domainData = this.mapToDomain(allData);
-
-    // Cache for 24 hours (86400 seconds)
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(domainData), 86400);
 
     return domainData;
   }
