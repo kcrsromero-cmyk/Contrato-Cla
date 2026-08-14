@@ -14,6 +14,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -21,6 +22,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       let data;
@@ -35,6 +37,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         onClose();
         // Option to force reload or notify app to re-read token
         window.location.reload();
+      } else if (data.message) {
+        setSuccessMessage(data.message);
       }
     } catch (err: any) {
       setError(err.message || 'Ha ocurrido un error');
@@ -99,6 +103,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {error && (
             <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-semibold">
               {error}
+            </div>
+          )}
+          {successMessage && (
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-semibold">
+              {successMessage}
             </div>
           )}
 
