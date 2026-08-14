@@ -307,7 +307,7 @@ export class SocrataContractProvider implements ContractProvider {
         entityCode: item.codigo_entidad,
         entityNit: item.nit_entidad,
 
-        supplierId: item.proveedor_adjudicado,
+        supplierName: item.proveedor_adjudicado,
         procurementProcessId: item.proceso_de_compra,
       };
 
