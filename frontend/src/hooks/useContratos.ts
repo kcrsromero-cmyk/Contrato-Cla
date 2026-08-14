@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Contrato, EntidadResumen } from '../types';
 import { CacheService } from '../services/db';
 import { getContracts } from '../services/api';
+import { mapContractToViewModel } from '../utils/contractAdapter';
 
 export function useContratos(
   selectedEntity: EntidadResumen | null,
@@ -37,7 +38,7 @@ export function useContratos(
          fechaDesde,
          fechaHasta
       });
-      setContratos(data);
+      setContratos(data.map(mapContractToViewModel));
       setLastUpdated(
         new Date().toLocaleTimeString('es-CO', {
           hour: '2-digit',
@@ -49,7 +50,7 @@ export function useContratos(
     } catch (err: any) {
       console.error(err);
       setError(
-        'No se pudieron obtener los contratos del portal de Datos Abiertos. Por favor intente nuevamente o elija otro periodo/entidad.'
+        'No se pudieron obtener los contratos. Por favor intente nuevamente o elija otro periodo/entidad.'
       );
     } finally {
       setLoading(false);
