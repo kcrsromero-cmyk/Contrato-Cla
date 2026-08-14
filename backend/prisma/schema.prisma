@@ -144,10 +144,12 @@ model Contract {
   entityNit  String? @map("entity_nit")
 
   supplierId           String? @map("supplier_id") @db.Uuid
+  supplierName         String? @map("supplier_name")
   procurementProcessId String? @map("procurement_process_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  syncedAt  DateTime @default(now()) @map("synced_at")
 
   supplier           Supplier?           @relation(fields: [supplierId], references: [id])
   procurementProcess ProcurementProcess? @relation(fields: [procurementProcessId], references: [id])
