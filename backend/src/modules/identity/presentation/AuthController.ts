@@ -22,8 +22,7 @@ export class AuthController {
         ipAddress: req.ip || req.socket.remoteAddress,
       });
 
-      // Always return a generic success message so registration attempts cannot be enumerated
-      res.status(201).json(genericMessage);
+      res.status(201).json(result);
     } catch (error: any) {
       // Avoid logging plain text passwords
       const safeBody = { ...req.body };
