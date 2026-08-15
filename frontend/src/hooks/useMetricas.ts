@@ -3,6 +3,7 @@ import { Contrato } from '../types';
 import { SimilarObjectGroup } from '../components/metricas/types';
 import { useDashboard } from './useDashboard';
 import { getSimilarity } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import {
   calculateFinancialStats,
   calculateMonthlySignatureData,
@@ -14,6 +15,7 @@ import {
 } from '../utils/metricsEngine';
 
 export function useMetricas(contratos: Contrato[]) {
+  const { capabilities, isLoading } = useAuth();
   // --- 1. Aggregated financial statistics ---
   const stats = useMemo(() => {
     return calculateFinancialStats(contratos);
@@ -63,6 +65,16 @@ export function useMetricas(contratos: Contrato[]) {
     let isCancelled = false;
 
     const fetchSimilarity = async () => {
+      if (isLoading) {
+        return;
+      }
+
+      if (!capabilities?.includes('VIEW_SIMILARITY_ANALYSIS')) {
+        setSimilarObjectsGroups([]);
+        setIsCalculatingSimilar(false);
+        return;
+      }
+
       setIsCalculatingSimilar(true);
       try {
         // Infer filters from current contracts and window URL
@@ -96,7 +108,7 @@ export function useMetricas(contratos: Contrato[]) {
     return () => {
       isCancelled = true;
     };
-  }, [contratos]);
+  }, [contratos, capabilities, isLoading]);
 
   // --- 8. Citizen Warning Indicators ---
   const citizenIndicators = useMemo(() => {

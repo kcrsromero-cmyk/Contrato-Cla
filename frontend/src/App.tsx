@@ -7,6 +7,7 @@ import { useDashboard, DashboardTab } from './hooks/useDashboard';
 import { useWindowWidth } from './hooks/useWindowWidth';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
+import { AuthProvider } from './context/AuthContext';
 import AppLayout from './components/AppLayout';
 import TerritorialSelector from './components/TerritorialSelector';
 import PeriodSelector from './components/PeriodSelector';
@@ -115,7 +116,7 @@ export default function App() {
   }, [contratos]);
 
   return (
-    <>
+    <AuthProvider>
       <AppLayout
         theme={theme}
         toggleTheme={toggleTheme}
@@ -292,6 +293,6 @@ export default function App() {
       isOpen={isAuthModalOpen}
       onClose={() => setIsAuthModalOpen(false)}
     />
-    </>
+    </AuthProvider>
   );
 }
