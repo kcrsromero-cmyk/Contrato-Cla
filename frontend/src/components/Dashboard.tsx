@@ -302,7 +302,9 @@ export default function Dashboard({
           <div className="pt-2">
             {activeTab === 'resumen' && (
               <ResumenView 
-                contratos={contratos} 
+                contratos={contratos}
+                fechaDesde={fechaDesde}
+                fechaHasta={fechaHasta}
                 onModalityClick={(modality) => {
                   setSelectedModalidadFilter(modality);
                   setActiveTab('contratos');
@@ -318,7 +320,7 @@ export default function Dashboard({
               />
             )}
             {activeTab === 'supervisores' && <SupervisoresView contratos={contratos} />}
-            {activeTab === 'metricas' && <MetricasView contratos={contratos} />}
+            {activeTab === 'metricas' && <MetricasView contratos={contratos} fechaDesde={fechaDesde} fechaHasta={fechaHasta} />}
           </div>
 
           {/* Bottom Navigation Citizens Assistant */}

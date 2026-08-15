@@ -35,9 +35,11 @@ import { ComparativaMensual } from './ComparativaMensual';
 
 interface MetricasViewProps {
   contratos: Contrato[];
+  fechaDesde: string;
+  fechaHasta: string;
 }
 
-export default function MetricasView({ contratos }: MetricasViewProps) {
+export default function MetricasView({ contratos, fechaDesde, fechaHasta }: MetricasViewProps) {
   const [selectedIndicatorList, setSelectedIndicatorList] = useState<{ label: string, list: Contrato[] } | null>(null);
   const [selectedMultiContractor, setSelectedMultiContractor] = useState<MultiContractorAggregate | null>(null);
   const [selectedRepeatedGroup, setSelectedRepeatedGroup] = useState<RepeatedObjectGroup | null>(null);
@@ -54,7 +56,7 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
   };
 
   // Get full monthly data (always un-filtered so the comparison trends and selectors work correctly)
-  const { monthlyData } = useMetricas(contratos);
+  const { monthlyData } = useMetricas(contratos, fechaDesde, fechaHasta);
 
   // Filter contracts for individual detailed indicator tabs
   const filteredContratos = useMemo(() => {
@@ -72,7 +74,7 @@ export default function MetricasView({ contratos }: MetricasViewProps) {
     similarObjectsGroups,
     citizenIndicators,
     isCalculatingSimilar,
-  } = useMetricas(filteredContratos);
+  } = useMetricas(filteredContratos, fechaDesde, fechaHasta);
 
   const {
     limiteContratistas,

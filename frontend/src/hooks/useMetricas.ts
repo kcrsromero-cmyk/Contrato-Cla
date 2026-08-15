@@ -13,7 +13,7 @@ import {
   calculateCitizenIndicators
 } from '../utils/metricsEngine';
 
-export function useMetricas(contratos: Contrato[]) {
+export function useMetricas(contratos: Contrato[], fechaDesde: string, fechaHasta: string) {
   // --- 1. Aggregated financial statistics ---
   const stats = useMemo(() => {
     return calculateFinancialStats(contratos);
@@ -48,11 +48,6 @@ export function useMetricas(contratos: Contrato[]) {
   const [similarObjectsGroups, setSimilarObjectsGroups] = useState<SimilarObjectGroup[]>([]);
   const [isCalculatingSimilar, setIsCalculatingSimilar] = useState<boolean>(false);
 
-  // Get these from somewhere else or we just rely on the first contract's info
-  // For the sake of simplicity, we can extract the query parameters from the contracts list if needed,
-  // or we can pass the QueryContext down. Since useMetricas only takes `contratos`, we can infer the
-  // entity code from them, and use the URL params for dates.
-
   useEffect(() => {
     if (!contratos || contratos.length === 0) {
       setSimilarObjectsGroups([]);
@@ -65,11 +60,7 @@ export function useMetricas(contratos: Contrato[]) {
     const fetchSimilarity = async () => {
       setIsCalculatingSimilar(true);
       try {
-        // Infer filters from current contracts and window URL
         const codigoEntidad = contratos[0]?.codigo_entidad;
-        const params = new URLSearchParams(window.location.search);
-        const fechaDesde = params.get('fechaDesde') || '2023-01-01';
-        const fechaHasta = params.get('fechaHasta') || '2023-12-31';
 
         if (!codigoEntidad) return;
 
@@ -96,7 +87,7 @@ export function useMetricas(contratos: Contrato[]) {
     return () => {
       isCancelled = true;
     };
-  }, [contratos]);
+  }, [contratos, fechaDesde, fechaHasta]);
 
   // --- 8. Citizen Warning Indicators ---
   const citizenIndicators = useMemo(() => {

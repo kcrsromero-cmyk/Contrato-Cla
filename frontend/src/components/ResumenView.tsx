@@ -101,16 +101,18 @@ import { useMetricas } from '../hooks/useMetricas';
 
 interface ResumenViewProps {
   contratos: Contrato[];
+  fechaDesde: string;
+  fechaHasta: string;
   onModalityClick?: (modality: string) => void;
 }
 
-export default function ResumenView({ contratos, onModalityClick }: ResumenViewProps) {
+export default function ResumenView({ contratos, fechaDesde, fechaHasta, onModalityClick }: ResumenViewProps) {
   const {
     stats,
     monthlyData,
     statusData,
     modalityData,
-  } = useMetricas(contratos);
+  } = useMetricas(contratos, fechaDesde, fechaHasta);
 
   // Modern Swiss Theme Color Palette
   const COLORS = ['#1a1a1a', '#444440', '#777772', '#a0a09a', '#cbcbca', '#e4e4e1'];
