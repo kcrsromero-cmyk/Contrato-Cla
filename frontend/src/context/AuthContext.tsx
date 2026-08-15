@@ -46,11 +46,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       try {
         const data = await getMe();
-        if (data.user) {
-          setUser(data.user);
-          setPlan(data.plan || null);
-          setCapabilities(data.capabilities || []);
-        }
+        setUser({ id: data.id, email: data.email, name: data.name });
+        setPlan(data.plan || null);
+        setCapabilities(data.capabilities || []);
       } catch (error) {
         console.error('Failed to fetch user:', error);
       } finally {
