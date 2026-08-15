@@ -40,7 +40,7 @@ export default function DashboardSkeleton({ entityName, periodLabel }: Dashboard
                 {entityName ? `Procesando registros de ${entityName}...` : 'Descargando y procesando volumen contractual...'}
               </h3>
               <p className="text-xs text-indigo-200/80 max-w-xl leading-relaxed">
-                Sincronizando contratos electrónicos, ejecutando deduplicación en IndexedDB local y estructurando tableros analíticos.
+                Consultando SECOP II y estructurando tableros analíticos.
               </p>
             </div>
           </div>
@@ -48,7 +48,7 @@ export default function DashboardSkeleton({ entityName, periodLabel }: Dashboard
           <div className="flex items-center gap-3 self-stretch md:self-auto justify-end shrink-0">
             <div className="px-3.5 py-2 rounded-xl bg-slate-900/60 border border-slate-700/60 text-[11px] font-mono text-slate-300 flex items-center gap-2">
               <Database className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-              <span>Optimizando IndexedDB...</span>
+              <span>Preparando resultados...</span>
             </div>
           </div>
         </div>
