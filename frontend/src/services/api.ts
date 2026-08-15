@@ -95,3 +95,13 @@ export const getContractYears = async (entityCode: string) => {
   if (!res.ok) throw new Error('Failed to fetch contract years from backend');
   return res.json();
 };
+
+export const getMe = async () => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}/auth/me`, { headers });
+  if (!res.ok) throw new Error('Failed to fetch user from backend');
+  return res.json();
+};
