@@ -21,8 +21,15 @@ export class CurrentUserResolver {
 
       if (user) {
         // Hydrate with capabilities from DB
-        const dbUser = await prisma.user.findUnique({
+        const dbUser = await prisma.user.upsert({
           where: { id: user.id },
+          create: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            roles: ['USER'],
+          },
+          update: {},
           include: {
              plan: {
                  include: {
