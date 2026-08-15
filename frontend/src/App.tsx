@@ -1,3 +1,4 @@
+import { AuthProvider } from './context/AuthContext';
 import React from 'react';
 import { useTheme } from './hooks/useTheme';
 import { usePeriodo } from './hooks/usePeriodo';
@@ -17,6 +18,14 @@ import { ArrowLeft, Sliders, RefreshCw } from 'lucide-react';
 import { formatBytes } from './utils/helpers';
 
 export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
   const { theme, toggleTheme, easyRead, toggleEasyRead } = useTheme();
   const windowWidth = useWindowWidth();
   

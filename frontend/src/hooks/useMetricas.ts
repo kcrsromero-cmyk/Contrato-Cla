@@ -1,3 +1,4 @@
+import { useAuth } from '../context/AuthContext';
 import { useState, useEffect, useMemo } from 'react';
 import { Contrato } from '../types';
 import { SimilarObjectGroup } from '../components/metricas/types';
@@ -14,6 +15,7 @@ import {
 } from '../utils/metricsEngine';
 
 export function useMetricas(contratos: Contrato[], fechaDesde: string, fechaHasta: string) {
+  const { capabilities } = useAuth();
   // --- 1. Aggregated financial statistics ---
   const stats = useMemo(() => {
     return calculateFinancialStats(contratos);
@@ -63,6 +65,11 @@ export function useMetricas(contratos: Contrato[], fechaDesde: string, fechaHast
         const codigoEntidad = contratos[0]?.codigo_entidad;
 
         if (!codigoEntidad) return;
+        if (!capabilities?.includes('VIEW_SIMILARITY_ANALYSIS')) {
+          setSimilarObjectsGroups([]);
+          setIsCalculatingSimilar(false);
+          return;
+        }
 
         const filters = {
            codigoEntidad,
@@ -87,7 +94,7 @@ export function useMetricas(contratos: Contrato[], fechaDesde: string, fechaHast
     return () => {
       isCancelled = true;
     };
-  }, [contratos, fechaDesde, fechaHasta]);
+  }, [contratos, fechaDesde, fechaHasta, capabilities]);
 
   // --- 8. Citizen Warning Indicators ---
   const citizenIndicators = useMemo(() => {
