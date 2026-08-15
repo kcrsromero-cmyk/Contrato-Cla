@@ -32,10 +32,12 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
         throw new Error('No hay sesión activa para actualizar la contraseña');
       }
 
+      const refreshToken = localStorage.getItem('refreshToken') || '';
+
       // Configure session explicitly before updating
       const { error: sessionError } = await supabase.auth.setSession({
         access_token: token,
-        refresh_token: '',
+        refresh_token: refreshToken,
       });
       if (sessionError) throw sessionError;
 
@@ -162,6 +164,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
         <div className="p-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800">
           <button
             onClick={() => {
+              localStorage.removeItem('refreshToken');
               onLogout();
               onClose();
             }}

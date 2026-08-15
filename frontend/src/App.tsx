@@ -305,6 +305,7 @@ function AppContent() {
       onClose={() => setIsProfileModalOpen(false)}
       onLogout={() => {
         localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
         window.location.reload();
       }}
     />
