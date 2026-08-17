@@ -14,6 +14,7 @@ import PeriodSelector from './components/PeriodSelector';
 import Dashboard from './components/Dashboard';
 import OnboardingModal from './components/OnboardingModal';
 import AuthModal from './components/AuthModal';
+import ProfileModal from './components/ProfileModal';
 import { ArrowLeft, Sliders, RefreshCw } from 'lucide-react';
 import { formatBytes } from './utils/helpers';
 
@@ -31,6 +32,7 @@ function AppContent() {
   
   const [isOnboardingOpen, setIsOnboardingOpen] = React.useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
 
   const handleCloseOnboarding = () => {
     setIsOnboardingOpen(false);
@@ -133,6 +135,7 @@ function AppContent() {
         handleClearCache={handleClearCache}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
       >
       {/* If an entity is selected and we are on a wide screen, render the Dual Column Sidebar layout */}
       {selectedEntity && isWideLayout ? (
@@ -296,6 +299,15 @@ function AppContent() {
       onFocusTerritorial={handleFocusTerritorial}
       onFocusPeriod={handleFocusPeriod}
       easyRead={easyRead}
+    />
+    <ProfileModal
+      isOpen={isProfileModalOpen}
+      onClose={() => setIsProfileModalOpen(false)}
+      onLogout={() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        window.location.reload();
+      }}
     />
     <AuthModal
       isOpen={isAuthModalOpen}

@@ -34,6 +34,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
       if (data.accessToken) {
         localStorage.setItem('token', data.accessToken);
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken);
+        }
         onClose();
         // Option to force reload or notify app to re-read token
         window.location.reload();

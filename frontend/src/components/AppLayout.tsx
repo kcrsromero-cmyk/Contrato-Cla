@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X, CheckCircle2, Eye, Compass, HelpCircle, LogOut, User } from 'lucide-react';
+import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X, CheckCircle2, Eye, Compass, HelpCircle, User } from 'lucide-react';
 import { useVersionUpdate } from '../hooks/useVersionUpdate';
 
 interface AppLayoutProps {
@@ -11,6 +11,7 @@ interface AppLayoutProps {
   handleClearCache: () => Promise<void>;
   onOpenOnboarding?: () => void;
   onOpenAuth?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export default function AppLayout({
@@ -22,6 +23,7 @@ export default function AppLayout({
   handleClearCache,
   onOpenOnboarding,
   onOpenAuth,
+  onOpenProfile,
 }: AppLayoutProps) {
   const [scrollY, setScrollY] = useState(0);
   const [isScrollingUp, setIsScrollingUp] = useState(true);
@@ -49,13 +51,7 @@ export default function AppLayout({
     setIsAuthenticated(!!localStorage.getItem('token'));
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-    if (onOpenAuth) onOpenAuth();
-    // Optional: force reload
-    // window.location.reload();
-  };
+
 
   const handleUpdateClick = () => {
     setUpdating(true);
@@ -230,12 +226,12 @@ export default function AppLayout({
             {/* Auth Button */}
             {isAuthenticated ? (
               <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-red-200 dark:border-red-900/60 hover:border-red-600 dark:hover:border-red-400 bg-red-50/70 dark:bg-red-950/40 text-red-700 dark:text-red-400 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer group"
-                title="Cerrar sesión"
+                onClick={onOpenProfile}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-indigo-200 dark:border-indigo-900/60 hover:border-indigo-600 dark:hover:border-indigo-400 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer group"
+                title="Mi Perfil"
               >
-                <LogOut className="w-3.5 h-3.5 text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform duration-300" />
-                <span className="hidden sm:inline">Cerrar Sesión</span>
+                <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
+                <span className="hidden sm:inline">Mi Perfil</span>
               </button>
             ) : (
               <button
