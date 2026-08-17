@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X, CheckCircle2, Eye, Compass, HelpCircle, User } from 'lucide-react';
+import { ShieldCheck, Database, Moon, Sun, Sparkles, RefreshCw, X, CheckCircle2, Eye, Compass, HelpCircle, User, Star } from 'lucide-react';
 import { useVersionUpdate } from '../hooks/useVersionUpdate';
 
 interface AppLayoutProps {
@@ -12,6 +12,7 @@ interface AppLayoutProps {
   onOpenOnboarding?: () => void;
   onOpenAuth?: () => void;
   onOpenProfile?: () => void;
+  onOpenFavorites?: () => void;
 }
 
 export default function AppLayout({
@@ -24,6 +25,7 @@ export default function AppLayout({
   onOpenOnboarding,
   onOpenAuth,
   onOpenProfile,
+  onOpenFavorites,
 }: AppLayoutProps) {
   const [scrollY, setScrollY] = useState(0);
   const [isScrollingUp, setIsScrollingUp] = useState(true);
@@ -225,14 +227,24 @@ export default function AppLayout({
 
             {/* Auth Button */}
             {isAuthenticated ? (
-              <button
-                onClick={onOpenProfile}
+              <>
+                <button
+                  onClick={onOpenFavorites}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-200 dark:border-amber-900/60 hover:border-amber-500 dark:hover:border-amber-400 bg-amber-50/70 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer group"
+                  title="Favoritos"
+                >
+                  <Star className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 group-hover:scale-110 transition-transform duration-300" />
+                  <span className="hidden sm:inline">Favoritos</span>
+                </button>
+                <button
+                  onClick={onOpenProfile}
                 className="flex items-center gap-1.5 px-3 py-1.5 border border-indigo-200 dark:border-indigo-900/60 hover:border-indigo-600 dark:hover:border-indigo-400 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer group"
                 title="Mi Perfil"
               >
                 <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
                 <span className="hidden sm:inline">Mi Perfil</span>
-              </button>
+                </button>
+              </>
             ) : (
               <button
                 onClick={onOpenAuth}

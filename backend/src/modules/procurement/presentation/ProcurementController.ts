@@ -163,4 +163,77 @@ export class ProcurementController {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
+
+  async addFavoriteEntity(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+      const planName = user.plan || 'FREE';
+      if (planName === 'FREE') {
+        return res.status(403).json({ error: 'Tu plan actual no permite agregar entidades favoritas.' });
+      }
+
+      const { entityCode, entityName } = req.body;
+      if (!entityCode || !entityName) {
+        return res.status(400).json({ error: 'entityCode and entityName are required' });
+      }
+
+      if (planName !== 'ENTERPRISE') {
+        const count = await prisma.favoriteEntity.count({ where: { userId: user.id } });
+        const limit = planName === 'STARTER' ? 3 : (planName === 'PROFESIONAL' ? 10 : 0);
+        if (count >= limit) {
+          return res.status(403).json({ error: 'Has alcanzado el límite de entidades favoritas para tu plan.' });
+        }
+      }
+
+      await prisma.favoriteEntity.upsert({
+        where: { userId_entityCode: { userId: user.id, entityCode } },
+        update: { entityName },
+        create: { userId: user.id, entityCode, entityName }
+      });
+
+      res.status(201).json({ message: 'Favorite entity added/updated' });
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async getFavoriteEntities(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+      const entities = await prisma.favoriteEntity.findMany({
+        where: { userId: user.id },
+      });
+
+      res.json(entities);
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async removeFavoriteEntity(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { entityCode } = req.query;
+      if (!entityCode || typeof entityCode !== 'string') {
+        return res.status(400).json({ error: 'entityCode is required' });
+      }
+
+      await prisma.favoriteEntity.deleteMany({
+        where: { userId: user.id, entityCode }
+      });
+
+      res.status(204).send();
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 }
