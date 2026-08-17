@@ -8,15 +8,9 @@ interface User {
   // Add other user fields as necessary
 }
 
-interface Plan {
-  id: string;
-  name: string;
-  // Add other plan fields as necessary
-}
-
 interface AuthContextType {
   user: User | null;
-  plan: Plan | null;
+  plan: string | null;
   capabilities: string[];
   isLoading: boolean;
 }
@@ -32,7 +26,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [plan, setPlan] = useState<Plan | null>(null);
+  const [plan, setPlan] = useState<string | null>(null);
   const [capabilities, setCapabilities] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
