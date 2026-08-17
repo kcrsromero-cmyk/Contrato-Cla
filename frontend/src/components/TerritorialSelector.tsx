@@ -3,6 +3,7 @@ import { MapPin, Building2, Search, ArrowRight, RotateCw, ChevronUp, ChevronDown
 import { EntidadResumen } from '../types';
 import { useSecop } from '../hooks/useSecop';
 import TerritoryFlagBadge from './TerritoryFlagBadge';
+import { FavoriteEntityButton } from './FavoriteEntityButton';
 
 interface TerritorialSelectorProps {
   onEntitySelected: (entity: EntidadResumen) => void;
@@ -526,8 +527,11 @@ export default function TerritorialSelector({
                 <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span> Listo
               </span>
             </div>
-            <div className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm mt-0.5 truncate" title={selectedEntity.nombre_entidad}>
-              {selectedEntity.nombre_entidad}
+            <div className="flex items-center gap-2 mt-0.5">
+              <div className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate" title={selectedEntity.nombre_entidad}>
+                {selectedEntity.nombre_entidad}
+              </div>
+              <FavoriteEntityButton entity={selectedEntity} />
             </div>
             <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
               {selectedEntity.departamento} — {selectedEntity.ciudad} | Código: {selectedEntity.codigo_entidad}

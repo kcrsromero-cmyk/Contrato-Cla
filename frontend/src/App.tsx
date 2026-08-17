@@ -15,6 +15,7 @@ import Dashboard from './components/Dashboard';
 import OnboardingModal from './components/OnboardingModal';
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
+import FavoriteEntitiesModal from './components/FavoriteEntitiesModal';
 import { ArrowLeft, Sliders, RefreshCw } from 'lucide-react';
 import { formatBytes } from './utils/helpers';
 
@@ -33,6 +34,7 @@ function AppContent() {
   const [isOnboardingOpen, setIsOnboardingOpen] = React.useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
+  const [isFavoriteEntitiesModalOpen, setIsFavoriteEntitiesModalOpen] = React.useState(false);
 
   const handleCloseOnboarding = () => {
     setIsOnboardingOpen(false);
@@ -136,6 +138,7 @@ function AppContent() {
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenFavorites={() => setIsFavoriteEntitiesModalOpen(true)}
       >
       {/* If an entity is selected and we are on a wide screen, render the Dual Column Sidebar layout */}
       {selectedEntity && isWideLayout ? (
@@ -312,6 +315,11 @@ function AppContent() {
     <AuthModal
       isOpen={isAuthModalOpen}
       onClose={() => setIsAuthModalOpen(false)}
+    />
+    <FavoriteEntitiesModal
+      isOpen={isFavoriteEntitiesModalOpen}
+      onClose={() => setIsFavoriteEntitiesModalOpen(false)}
+      onSelectEntity={setSelectedEntity}
     />
     </>
   );

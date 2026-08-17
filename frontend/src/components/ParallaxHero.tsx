@@ -5,6 +5,7 @@ import { ShieldCheck, MapPin, Landmark, Award, ArrowUpRight } from 'lucide-react
 import { formatCOP } from '../utils/helpers';
 import { InfoTooltip } from './InfoTooltip';
 import TerritoryFlagBadge from './TerritoryFlagBadge';
+import { FavoriteEntityButton } from './FavoriteEntityButton';
 
 interface ParallaxHeroProps {
   selectedEntity: EntidadResumen;
@@ -113,9 +114,14 @@ export default function ParallaxHero({ selectedEntity, contratos }: ParallaxHero
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-              {selectedEntity.nombre_entidad}
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                {selectedEntity.nombre_entidad}
+              </h2>
+              <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center shadow-sm h-10 w-10 shrink-0">
+                <FavoriteEntityButton entity={selectedEntity} />
+              </div>
+            </div>
             <div className="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-medium">
               <div className="flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0" />
