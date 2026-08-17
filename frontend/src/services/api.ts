@@ -105,3 +105,47 @@ export const getMe = async () => {
   if (!res.ok) throw new Error('Failed to fetch user from backend');
   return res.json();
 };
+
+
+export const getFavoriteEntities = async () => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}/procurement/favorite-entities`, { headers });
+  if (!res.ok) throw new Error('Failed to fetch favorite entities from backend');
+  return res.json();
+};
+
+export const addFavoriteEntity = async (data: { entityCode: string, entityName: string }) => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}/procurement/favorite-entities`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    if (res.status === 403) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || 'Tu plan actual o límite no permite agregar más entidades favoritas.');
+    }
+    throw new Error('Error al agregar entidad favorita');
+  }
+  return res.json();
+};
+
+export const removeFavoriteEntity = async (entityCode: string) => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}/procurement/favorite-entities?entityCode=${entityCode}`, {
+    method: 'DELETE',
+    headers
+  });
+  if (!res.ok) throw new Error('Error al eliminar entidad favorita');
+  return res.json();
+};
