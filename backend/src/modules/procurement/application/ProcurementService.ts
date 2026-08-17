@@ -22,15 +22,36 @@ export class ProcurementService {
    * Persists fetched contracts into the PostgreSQL database.
    */
   async getDepartments(): Promise<string[]> {
-    return this.provider.getDepartments();
+    const cacheKey = 'departments';
+    const cachedData = await this.cacheAdapter.get(cacheKey);
+    if (cachedData) {
+      return JSON.parse(cachedData);
+    }
+    const departments = await this.provider.getDepartments();
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(departments), 604800); // 7 days
+    return departments;
   }
 
   async getCities(department: string): Promise<string[]> {
-    return this.provider.getCities(department);
+    const cacheKey = `cities:${department}`;
+    const cachedData = await this.cacheAdapter.get(cacheKey);
+    if (cachedData) {
+      return JSON.parse(cachedData);
+    }
+    const cities = await this.provider.getCities(department);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(cities), 604800); // 7 days
+    return cities;
   }
 
   async getEntities(department: string, city: string): Promise<any[]> {
-    return this.provider.getEntities(department, city);
+    const cacheKey = `entities:${department}:${city}`;
+    const cachedData = await this.cacheAdapter.get(cacheKey);
+    if (cachedData) {
+      return JSON.parse(cachedData);
+    }
+    const entities = await this.provider.getEntities(department, city);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), 604800); // 7 days
+    return entities;
   }
 
   async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]> {
