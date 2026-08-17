@@ -335,6 +335,7 @@ export default function TerritorialSelector({
                   <p className="text-xs text-slate-400 font-mono">No se encontraron entidades en este municipio.</p>
                 </div>
               ) : (
+                <>
                 <div 
                   className={`grid gap-2 overflow-y-auto pr-1 custom-scrollbar ${
                     isSidebarMode 
@@ -371,6 +372,14 @@ export default function TerritorialSelector({
                     </div>
                   )}
                 </div>
+                {entities.length > 0 && entities.length < 3 && (
+                  <div className="mt-2 text-center">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                      Algunas entidades no reportaron su ciudad correctamente en SECOP — revisa también 'No especificado en registro'
+                    </p>
+                  </div>
+                )}
+              </>
               )}
             </div>
           )}
