@@ -97,7 +97,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
               <Star className="w-5 h-5 text-amber-400" />
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan Actual</p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">{plan?.name || 'Básico'}</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">{plan || 'Básico'}</p>
               </div>
             </div>
 
