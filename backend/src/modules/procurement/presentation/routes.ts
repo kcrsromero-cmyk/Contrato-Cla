@@ -50,4 +50,22 @@ procurementRouter.get('/favorites',
   (req, res) => procurementController.getFavorites(req, res)
 );
 
+procurementRouter.post('/favorite-entities',
+  authMiddleware.handle,
+  currentUserResolver.resolve,
+  (req, res) => procurementController.addFavoriteEntity(req, res)
+);
+
+procurementRouter.get('/favorite-entities',
+  authMiddleware.handle,
+  currentUserResolver.resolve,
+  (req, res) => procurementController.getFavoriteEntities(req, res)
+);
+
+procurementRouter.delete('/favorite-entities/:entityCode',
+  authMiddleware.handle,
+  currentUserResolver.resolve,
+  (req, res) => procurementController.removeFavoriteEntity(req, res)
+);
+
 export { procurementRouter };

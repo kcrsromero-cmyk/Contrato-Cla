@@ -133,6 +133,7 @@ function AppContent() {
         handleClearCache={handleClearCache}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
+        onSelectEntity={setSelectedEntity}
       >
       {/* If an entity is selected and we are on a wide screen, render the Dual Column Sidebar layout */}
       {selectedEntity && isWideLayout ? (

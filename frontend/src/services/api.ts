@@ -105,3 +105,42 @@ export const getMe = async () => {
   if (!res.ok) throw new Error('Failed to fetch user from backend');
   return res.json();
 };
+
+export const getFavoriteEntities = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('No token found');
+  const res = await fetch(`${API_URL}/procurement/favorite-entities`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to fetch favorite entities');
+  return res.json();
+};
+
+export const addFavoriteEntity = async (entityCode: string, entityName: string) => {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('No token found');
+  const res = await fetch(`${API_URL}/procurement/favorite-entities`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ entityCode, entityName })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to add favorite entity');
+  }
+  return res.json();
+};
+
+export const removeFavoriteEntity = async (entityCode: string) => {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('No token found');
+  const res = await fetch(`${API_URL}/procurement/favorite-entities/${encodeURIComponent(entityCode)}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to remove favorite entity');
+  return res.json();
+};

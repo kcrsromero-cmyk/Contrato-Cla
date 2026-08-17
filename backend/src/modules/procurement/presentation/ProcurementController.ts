@@ -163,4 +163,103 @@ export class ProcurementController {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
+
+  async getFavoriteEntities(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+      const favorites = await prisma.favoriteEntity.findMany({
+        where: { userId: user.id }
+      });
+
+      res.json(favorites);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async addFavoriteEntity(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { entityCode, entityName } = req.body;
+      if (!entityCode || !entityName) {
+        return res.status(400).json({ error: 'entityCode and entityName are required' });
+      }
+
+      // Check user plan limit. Depending on CurrentUserResolver, user.plan could be a string or object.
+      // We handle both safely.
+      const planName = (typeof user.plan === 'object' && user.plan !== null) ? user.plan.name : (user.plan || 'FREE');
+
+      if (planName === 'FREE') {
+        return res.status(403).json({ error: 'Suscríbete a un plan de pago para usar la función de favoritos.' });
+      }
+
+      let limit = 0;
+      if (planName === 'STARTER') {
+        limit = 3;
+      } else if (planName === 'PROFESIONAL') {
+        limit = 10;
+      } else if (planName === 'ENTERPRISE') {
+        limit = Infinity;
+      }
+
+      const currentCount = await prisma.favoriteEntity.count({
+        where: { userId: user.id }
+      });
+
+      if (currentCount >= limit) {
+        return res.status(403).json({ error: `Alcanzaste el límite de tu plan (${limit} favoritas). Actualiza tu plan para agregar más.` });
+      }
+
+      await prisma.favoriteEntity.upsert({
+        where: {
+          userId_entityCode: {
+            userId: user.id,
+            entityCode: entityCode
+          }
+        },
+        update: {
+          entityName: entityName
+        },
+        create: {
+          userId: user.id,
+          entityCode: entityCode,
+          entityName: entityName
+        }
+      });
+
+      res.status(201).json({ message: 'Favorite entity added' });
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async removeFavoriteEntity(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { entityCode } = req.params;
+      if (!entityCode) {
+        return res.status(400).json({ error: 'entityCode is required' });
+      }
+
+      await prisma.favoriteEntity.deleteMany({
+        where: {
+          userId: user.id,
+          entityCode: entityCode
+        }
+      });
+
+      res.status(200).json({ message: 'Favorite entity removed' });
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 }

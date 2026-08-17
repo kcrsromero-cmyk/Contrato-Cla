@@ -34,6 +34,7 @@ model User {
   planId       String?            @map("plan_id") @db.Uuid
   plan         Plan?              @relation(fields: [planId], references: [id])
   favorites    FavoriteContract[]
+  favoriteEntities FavoriteEntity[]
 
   @@map("users")
 }
@@ -171,6 +172,18 @@ model FavoriteContract {
 
   @@id([userId, contractId])
   @@map("favorite_contracts")
+}
+
+model FavoriteEntity {
+  userId     String   @map("user_id") @db.Uuid
+  entityCode String   @map("entity_code")
+  entityName String   @map("entity_name")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, entityCode])
+  @@map("favorite_entities")
 }
 
 model AuditLog {
