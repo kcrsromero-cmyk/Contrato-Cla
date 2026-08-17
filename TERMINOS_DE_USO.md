@@ -43,6 +43,9 @@ El Servicio recopila y procesa datos agregados del dataset de SECOP II en Datos 
 * No garantizamos que los datos de origen estén 100% libres de errores de digitación realizados por los funcionarios de las entidades contratantes.
 * Los análisis de similitud léxica y cálculos matemáticos (detallados en la [Documentación Técnica](DOCUMENTACION_TECNICA.md)) son herramientas informáticas orientativas que deben ser acompañadas de la revisión directa del expediente contractual en SECOP II.
 
+### 🔒 Política de Privacidad y Exclusión de Datos Personales
+* **Exclusión deliberada:** Por decisión de privacidad consciente y deliberada, la plataforma Contrato-Claro no captura, almacena ni procesa datos personales sensibles de los representantes legales (como `nombre_representante_legal`, `domicilio_representante_legal`, `identificaci_n_representante_legal` y similares), aun cuando estos se encuentren disponibles en la fuente oficial de Datos Abiertos. Esta omisión no es un error, sino un esfuerzo por proteger la privacidad de las personas naturales involucradas.
+
 ---
 
 ## 5. ⚖️ Propiedad Intelectual y Licencia GNU AGPLv3

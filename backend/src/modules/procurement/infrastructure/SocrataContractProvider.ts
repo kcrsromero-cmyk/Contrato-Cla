@@ -14,6 +14,12 @@ export class SocrataContractProvider implements ContractProvider {
     const { codigoEntidad, fechaDesde, fechaHasta } = filters;
 
     // Select required fields
+    // NOTA DE PRIVACIDAD DELIBERADA:
+    // Los campos 'nombre_representante_legal', 'domicilio_representante_legal',
+    // 'identificaci_n_representante_legal' y el resto de ese clúster NUNCA deben
+    // ser incluidos en este array de selección. Aunque están disponibles en la
+    // fuente de datos de Socrata, su exclusión es una decisión de privacidad
+    // deliberada y no una omisión accidental.
     const selectFields = [
       'id_contrato',
       'referencia_del_contrato',
