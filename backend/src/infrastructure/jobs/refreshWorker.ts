@@ -143,4 +143,15 @@ export const setupRecurringJobs = async () => {
     { pattern: '0 0 * * 0' }, // Every Sunday at midnight
     { name: 'weekly-territorial-refresh', data: {} }
   );
+
+  // Warmup inicial: si las tablas territoriales están vacías, sincronizar de inmediato
+  const departmentCount = await prisma.department.count();
+  if (departmentCount === 0) {
+    logger.info('Territorial tables empty — triggering immediate sync in background');
+    await territorialDataRefreshQueue.add(
+      'initial-warmup',
+      {},
+      { priority: 1 }
+    );
+  }
 };
