@@ -47,5 +47,6 @@ export function mapContractToViewModel(c: any): Contrato {
     dias_adicionados: c.addedDays,
     el_contrato_puede_ser_prorrogado: c.isExtendable,
     direcci_n_de_ejecuci_n_del_contrato: c.location,
+    urlproceso: c.urlproceso,
   } as Contrato;
 }
