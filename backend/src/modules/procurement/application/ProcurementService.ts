@@ -232,6 +232,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           entityName: c.entityName,
           entityCode: c.entityCode,
           entityNit: c.entityNit ?? undefined,
+          urlproceso: c.urlproceso ?? undefined,
           supplierName: c.supplierName ?? undefined, // Prisma uses supplierId to relation Supplier, but Domain Contract expects supplierName
           procurementProcessId: c.procurementProcessId ?? undefined,
         }));
@@ -254,6 +255,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           pendingPaymentValue: contractData.pendingPaymentValue,
           pendingExecutionValue: contractData.pendingExecutionValue,
           supplierName: contractData.supplierName,
+          urlproceso: contractData.urlproceso,
           syncedAt: new Date(),
         },
         create: {
@@ -297,6 +299,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           entityName: contractData.entityName || 'Unknown Entity',
           entityCode: contractData.entityCode || '000',
           entityNit: contractData.entityNit,
+          urlproceso: contractData.urlproceso,
 
           supplierName: contractData.supplierName,
           syncedAt: new Date(),
