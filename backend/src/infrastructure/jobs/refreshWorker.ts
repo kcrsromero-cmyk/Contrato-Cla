@@ -1,3 +1,4 @@
+import { prisma } from '../db/prisma';
 import { Worker, Queue, Job } from 'bullmq';
 import Redis from 'ioredis';
 import { logger } from '../logger';
@@ -10,6 +11,7 @@ const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
 // Define Queues
 export const datasetImportQueue = new Queue('dataset-import', { connection });
 export const datasetNormalizationQueue = new Queue('dataset-normalization', { connection });
+export const territorialDataRefreshQueue = new Queue('territorial-data-refresh', { connection });
 
 // Initialize Worker for importing
 export const datasetImportWorker = new Worker('dataset-import', async (job: Job) => {
@@ -69,18 +71,76 @@ export const datasetNormalizationWorker = new Worker('dataset-normalization', as
 }, { connection });
 
 
+
+
+// Initialize Worker for territorial data refresh
+export const territorialDataRefreshWorker = new Worker('territorial-data-refresh', async (job: Job) => {
+  logger.info(`Processing job ${job.id} for territorial data refresh`);
+  try {
+    const socrataProvider = new SocrataContractProvider();
+
+    // Call Socrata directly by bypassing cache for refresh
+    logger.info('Fetching fresh departments from Socrata');
+    const departments = await socrataProvider.getDepartments();
+
+    for (const name of departments) {
+      const dbDept = await prisma.department.upsert({
+        where: { name },
+        update: {},
+        create: { name }
+      });
+
+      const cities = await socrataProvider.getCities(name);
+      for (const cityName of cities) {
+         const dbCity = await prisma.city.upsert({
+           where: { departmentId_name: { departmentId: dbDept.id, name: cityName } },
+           update: {},
+           create: { name: cityName, departmentId: dbDept.id }
+         });
+
+         const entities = await socrataProvider.getEntities(name, cityName);
+         for (const entity of entities) {
+           await prisma.entity.upsert({
+             where: { entityCode: entity.codigo_entidad },
+             update: {
+               name: entity.nombre_entidad,
+               nit: entity.nit_entidad,
+               order: entity.orden,
+               syncedAt: new Date()
+             },
+             create: {
+               entityCode: entity.codigo_entidad,
+               name: entity.nombre_entidad,
+               nit: entity.nit_entidad,
+               order: entity.orden,
+               cityId: dbCity.id,
+               syncedAt: new Date()
+             }
+           });
+         }
+      }
+    }
+
+    logger.info(`Completed territorial data refresh job ${job.id}`);
+  } catch (error) {
+    logger.error(`Failed job ${job.id} territorial data refresh`, { error });
+    throw error;
+  }
+}, { connection });
+
 // Setup Cron to run every 24 hours
 export const setupRecurringJobs = async () => {
   logger.info('Setting up recurring dataset import jobs (every 24h)');
   // BullMQ v5+ recurring job syntax
   await datasetImportQueue.upsertJobScheduler(
     'daily-import',
-    {
-      pattern: '0 0 * * *' // Every day at midnight
-    },
-    {
-      name: 'daily-import',
-      data: {}
-    }
+    { pattern: '0 0 * * *' },
+    { name: 'daily-import', data: {} }
+  );
+
+  await territorialDataRefreshQueue.upsertJobScheduler(
+    'weekly-territorial-refresh',
+    { pattern: '0 0 * * 0' }, // Every Sunday at midnight
+    { name: 'weekly-territorial-refresh', data: {} }
   );
 };
