@@ -360,6 +360,7 @@ export default function TerritorialSelector({
                           <div className="font-bold truncate leading-tight">{ent.nombre_entidad}</div>
                           <div className={`text-[9px] font-mono mt-0.5 ${isSelected ? 'text-indigo-100' : 'text-slate-500'} flex flex-wrap gap-x-1.5`}>
                             <span>Cód: {ent.codigo_entidad}</span>
+                            {ent.nit_entidad && <span>| NIT: {ent.nit_entidad}</span>}
                           </div>
                         </div>
                         <ArrowRight className={`w-3 h-3 shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity ${isSelected ? 'text-white' : 'text-slate-400'}`} />
@@ -508,7 +509,11 @@ export default function TerritorialSelector({
                         <Building2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
                         <div className="min-w-0 flex-1">
                           <div className="font-bold truncate leading-tight">{ent.nombre_entidad}</div>
-                          <p className={`text-[9px] font-mono uppercase tracking-wide ${isSelected ? 'text-indigo-200' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                          <div className={`text-[9px] font-mono mt-0.5 ${isSelected ? 'text-indigo-100' : 'text-slate-500'} flex flex-wrap gap-x-1.5`}>
+                            <span>Cód: {ent.codigo_entidad}</span>
+                            {ent.nit_entidad && <span>| NIT: {ent.nit_entidad}</span>}
+                          </div>
+                          <p className={`text-[9px] font-mono uppercase tracking-wide mt-0.5 ${isSelected ? 'text-indigo-200' : 'text-indigo-600 dark:text-indigo-400'}`}>
                             {ent.departamento} — {ent.ciudad}
                           </p>
                         </div>
@@ -544,6 +549,7 @@ export default function TerritorialSelector({
             </div>
             <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
               {selectedEntity.departamento} — {selectedEntity.ciudad} | Código: {selectedEntity.codigo_entidad}
+              {selectedEntity.nit_entidad && ` | NIT: ${selectedEntity.nit_entidad}`}
             </div>
           </div>
 
