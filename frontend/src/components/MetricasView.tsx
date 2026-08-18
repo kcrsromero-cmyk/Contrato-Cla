@@ -72,6 +72,9 @@ export default function MetricasView({ contratos, fechaDesde, fechaHasta }: Metr
     typeData,
     repeatedObjects,
     similarObjectsGroups,
+    similarityLimited,
+    similarityTotalCount,
+    similarityPreviewCount,
     citizenIndicators,
     isCalculatingSimilar,
   } = useMetricas(filteredContratos, fechaDesde, fechaHasta);
@@ -338,6 +341,9 @@ export default function MetricasView({ contratos, fechaDesde, fechaHasta }: Metr
             similarObjectsGroups={similarObjectsGroups}
             setSelectedSimilarGroup={setSelectedSimilarGroup}
             isCalculatingSimilar={isCalculatingSimilar}
+            isLimited={similarityLimited}
+            totalCount={similarityTotalCount}
+            previewCount={similarityPreviewCount}
           />
         )}
 

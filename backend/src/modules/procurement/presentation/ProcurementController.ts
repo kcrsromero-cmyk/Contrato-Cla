@@ -88,13 +88,30 @@ export class ProcurementController {
       const user = (req as any).user;
       if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-      if (!user.capabilities?.includes('VIEW_SIMILARITY_ANALYSIS')) {
-        return res.status(403).json({ error: 'Forbidden: Feature not available in your plan' });
+      const filters = filterSchema.parse(req.query);
+      const hasFullAccess = user.capabilities?.includes('VIEW_SIMILARITY_ANALYSIS');
+
+      // Siempre calculamos, pero limitamos lo que enviamos
+      const allClusters = await this.procurementService.calculateSimilarity(filters);
+      const totalCount = allClusters.length;
+
+      if (!hasFullAccess && totalCount > 0) {
+        const previewCount = Math.max(1, Math.round(totalCount * 0.10));
+        return res.json({
+          clusters: allClusters.slice(0, previewCount),
+          totalCount,
+          isLimited: true,
+          previewCount
+        });
       }
 
-      const filters = filterSchema.parse(req.query);
-      const clusters = await this.procurementService.calculateSimilarity(filters);
-      res.json(clusters);
+      return res.json({
+        clusters: allClusters,
+        totalCount,
+        isLimited: false,
+        previewCount: totalCount
+      });
+
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.format() });
