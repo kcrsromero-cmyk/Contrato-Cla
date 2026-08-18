@@ -13,6 +13,9 @@ vi.mock('../../../infrastructure/db/prisma', () => {
         findMany: vi.fn(),
         upsert: vi.fn(),
         deleteMany: vi.fn(),
+      },
+      plan: {
+        findUnique: vi.fn(),
       }
     }
   }
@@ -43,6 +46,7 @@ describe('ProcurementController - FavoriteEntities', () => {
     it('should reject with 403 if plan is FREE', async () => {
       mockReq.user = { id: 'u1', plan: 'FREE' } as any;
       mockReq.body = { entityCode: '123', entityName: 'Test' };
+      mockPrisma.plan.findUnique.mockResolvedValue({ name: 'FREE', maxFavoriteEntities: 0 });
 
       await procurementController.addFavoriteEntity(mockReq as Request, mockRes as Response);
 
@@ -53,6 +57,7 @@ describe('ProcurementController - FavoriteEntities', () => {
     it('should reject with 403 if limit is reached for STARTER plan', async () => {
       mockReq.user = { id: 'u1', plan: 'STARTER' } as any;
       mockReq.body = { entityCode: '123', entityName: 'Test' };
+      mockPrisma.plan.findUnique.mockResolvedValue({ name: 'STARTER', maxFavoriteEntities: 3 });
       mockPrisma.favoriteEntity.count.mockResolvedValue(3);
 
       await procurementController.addFavoriteEntity(mockReq as Request, mockRes as Response);
@@ -64,6 +69,7 @@ describe('ProcurementController - FavoriteEntities', () => {
     it('should upsert and return success if under limit', async () => {
       mockReq.user = { id: 'u1', plan: 'STARTER' } as any;
       mockReq.body = { entityCode: '123', entityName: 'Test' };
+      mockPrisma.plan.findUnique.mockResolvedValue({ name: 'STARTER', maxFavoriteEntities: 3 });
       mockPrisma.favoriteEntity.count.mockResolvedValue(2);
       mockPrisma.favoriteEntity.upsert.mockResolvedValue({});
 
@@ -81,6 +87,7 @@ describe('ProcurementController - FavoriteEntities', () => {
     it('should bypass limit for ENTERPRISE plan', async () => {
       mockReq.user = { id: 'u1', plan: 'ENTERPRISE' } as any;
       mockReq.body = { entityCode: '123', entityName: 'Test' };
+      mockPrisma.plan.findUnique.mockResolvedValue({ name: 'ENTERPRISE', maxFavoriteEntities: null });
       mockPrisma.favoriteEntity.count.mockResolvedValue(99);
       mockPrisma.favoriteEntity.upsert.mockResolvedValue({});
 
@@ -128,6 +135,7 @@ describe('ProcurementController - FavoriteEntities', () => {
       // Caso 1: Crear favorito nuevo (under limit)
       mockReq.user = { id: 'u1', plan: 'STARTER' } as any;
       mockReq.body = { entityCode: '123', entityName: 'Test' };
+      mockPrisma.plan.findUnique.mockResolvedValue({ name: 'STARTER', maxFavoriteEntities: 3 });
       mockPrisma.favoriteEntity.count.mockResolvedValue(2);
       mockPrisma.favoriteEntity.upsert.mockResolvedValue({});
       await procurementController.addFavoriteEntity(mockReq as Request, mockRes as Response);
@@ -139,6 +147,7 @@ describe('ProcurementController - FavoriteEntities', () => {
       // Caso 2: Alcanzar límite (STARTER)
       mockReq.user = { id: 'u1', plan: 'STARTER' } as any;
       mockReq.body = { entityCode: '123', entityName: 'Test' };
+      mockPrisma.plan.findUnique.mockResolvedValue({ name: 'STARTER', maxFavoriteEntities: 3 });
       mockPrisma.favoriteEntity.count.mockResolvedValue(3);
       await procurementController.addFavoriteEntity(mockReq as Request, mockRes as Response);
       console.log('Límite alcanzado:');
@@ -149,6 +158,7 @@ describe('ProcurementController - FavoriteEntities', () => {
       // Caso 3: FREE
       mockReq.user = { id: 'u1', plan: 'FREE' } as any;
       mockReq.body = { entityCode: '123', entityName: 'Test' };
+      mockPrisma.plan.findUnique.mockResolvedValue({ name: 'FREE', maxFavoriteEntities: 0 });
       await procurementController.addFavoriteEntity(mockReq as Request, mockRes as Response);
       console.log('Plan FREE:');
       console.log(JSON.stringify((mockRes.json as any).mock.calls));

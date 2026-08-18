@@ -170,18 +170,19 @@ export class ProcurementController {
       if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
       const planName = user.plan || 'FREE';
-      if (planName === 'FREE') {
-        return res.status(403).json({ error: 'Tu plan actual no permite agregar entidades favoritas.' });
-      }
-
       const { entityCode, entityName } = req.body;
       if (!entityCode || !entityName) {
         return res.status(400).json({ error: 'entityCode and entityName are required' });
       }
 
-      if (planName !== 'ENTERPRISE') {
+      const userPlan = await prisma.plan.findUnique({ where: { name: planName } });
+      const limit = userPlan?.maxFavoriteEntities;
+
+      if (limit !== undefined && limit !== null) {
+        if (limit === 0) {
+          return res.status(403).json({ error: 'Tu plan actual no permite agregar entidades favoritas.' });
+        }
         const count = await prisma.favoriteEntity.count({ where: { userId: user.id } });
-        const limit = planName === 'STARTER' ? 3 : (planName === 'PROFESIONAL' ? 10 : 0);
         if (count >= limit) {
           return res.status(403).json({ error: 'Has alcanzado el límite de entidades favoritas para tu plan.' });
         }

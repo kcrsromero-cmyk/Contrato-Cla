@@ -22,16 +22,16 @@ async function main() {
 
   // 2. Create Plans
   const plansData = [
-    { name: 'FREE', description: 'Plan gratuito básico' },
-    { name: 'STARTER', description: 'Plan para usuarios iniciales' },
-    { name: 'PROFESIONAL', description: 'Plan para usuarios profesionales' },
-    { name: 'ENTERPRISE', description: 'Plan para empresas con requerimientos avanzados' }
+    { name: 'FREE', description: 'Plan gratuito básico', maxFavoriteEntities: 0 },
+    { name: 'STARTER', description: 'Plan para usuarios iniciales', maxFavoriteEntities: 3 },
+    { name: 'PROFESIONAL', description: 'Plan para usuarios profesionales', maxFavoriteEntities: 10 },
+    { name: 'ENTERPRISE', description: 'Plan para empresas con requerimientos avanzados', maxFavoriteEntities: null }
   ];
 
   for (const plan of plansData) {
     await prisma.plan.upsert({
       where: { name: plan.name },
-      update: {},
+      update: { maxFavoriteEntities: plan.maxFavoriteEntities },
       create: plan,
     });
   }
