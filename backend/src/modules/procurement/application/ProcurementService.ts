@@ -21,13 +21,36 @@ export class ProcurementService {
    * Leverages the configured provider (e.g. Socrata) which internalizes caching.
    * Persists fetched contracts into the PostgreSQL database.
    */
+
   async getDepartments(): Promise<string[]> {
     const cacheKey = 'departments';
     const cachedData = await this.cacheAdapter.get(cacheKey);
     if (cachedData) {
       return JSON.parse(cachedData);
     }
+
+    // Check Postgres
+    const dbDepartments = await prisma.department.findMany({
+      orderBy: { name: 'asc' }
+    });
+
+    if (dbDepartments.length > 0) {
+      const names = dbDepartments.map(d => d.name);
+      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), 604800);
+      return names;
+    }
+
+    // Fetch from Socrata
     const departments = await this.provider.getDepartments();
+
+    for (const name of departments) {
+      await prisma.department.upsert({
+        where: { name },
+        update: {},
+        create: { name }
+      });
+    }
+
     await this.cacheAdapter.set(cacheKey, JSON.stringify(departments), 604800); // 7 days
     return departments;
   }
@@ -38,7 +61,33 @@ export class ProcurementService {
     if (cachedData) {
       return JSON.parse(cachedData);
     }
+
+    // Check Postgres
+    const dbCities = await prisma.city.findMany({
+      where: { department: { name: department } },
+      orderBy: { name: 'asc' }
+    });
+
+    if (dbCities.length > 0) {
+      const names = dbCities.map(c => c.name);
+      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), 604800);
+      return names;
+    }
+
+    // Fetch from Socrata
     const cities = await this.provider.getCities(department);
+
+    const dbDept = await prisma.department.findUnique({ where: { name: department } });
+    if (dbDept) {
+      for (const name of cities) {
+        await prisma.city.upsert({
+          where: { departmentId_name: { departmentId: dbDept.id, name } },
+          update: {},
+          create: { name, departmentId: dbDept.id }
+        });
+      }
+    }
+
     await this.cacheAdapter.set(cacheKey, JSON.stringify(cities), 604800); // 7 days
     return cities;
   }
@@ -49,12 +98,57 @@ export class ProcurementService {
     if (cachedData) {
       return JSON.parse(cachedData);
     }
+
+    // Check Postgres
+    const dbEntities = await prisma.entity.findMany({
+      where: { city: { name: city, department: { name: department } } },
+      orderBy: { name: 'asc' }
+    });
+
+    if (dbEntities.length > 0) {
+      const entities = dbEntities.map(e => ({
+        codigo_entidad: e.entityCode,
+        nombre_entidad: e.name,
+        nit_entidad: e.nit,
+        orden: e.order
+      }));
+      await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), 604800);
+      return entities;
+    }
+
+    // Fetch from Socrata
     const entities = await this.provider.getEntities(department, city);
+
+    const dbCity = await prisma.city.findFirst({
+      where: { name: city, department: { name: department } }
+    });
+
+    if (dbCity) {
+      for (const entity of entities) {
+        await prisma.entity.upsert({
+          where: { entityCode: entity.codigo_entidad },
+          update: {
+            name: entity.nombre_entidad,
+            nit: entity.nit_entidad,
+            order: entity.orden,
+            syncedAt: new Date()
+          },
+          create: {
+            entityCode: entity.codigo_entidad,
+            name: entity.nombre_entidad,
+            nit: entity.nit_entidad,
+            order: entity.orden,
+            cityId: dbCity.id,
+            syncedAt: new Date()
+          }
+        });
+      }
+    }
+
     await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), 604800); // 7 days
     return entities;
   }
-
-  async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]> {
+async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]> {
     return this.provider.searchEntities(query, type);
   }
 

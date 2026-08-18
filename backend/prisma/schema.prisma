@@ -198,3 +198,41 @@ model AuditLog {
 
   @@map("audit_logs")
 }
+
+model Department {
+  id         String @id @default(uuid()) @db.Uuid
+  name       String @unique
+  cities     City[]
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("departments")
+}
+
+model City {
+  id           String     @id @default(uuid()) @db.Uuid
+  name         String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId String     @map("department_id") @db.Uuid
+  entities     Entity[]
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@unique([departmentId, name])
+  @@map("cities")
+}
+
+model Entity {
+  id           String   @id @default(uuid()) @db.Uuid
+  entityCode   String   @unique @map("entity_code")
+  name         String
+  nit          String?
+  order        String?
+  city         City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  cityId       String   @map("city_id") @db.Uuid
+  syncedAt     DateTime @default(now()) @map("synced_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("entities")
+}
