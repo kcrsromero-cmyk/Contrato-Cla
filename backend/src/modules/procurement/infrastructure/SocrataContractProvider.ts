@@ -57,7 +57,8 @@ export class SocrataContractProvider implements ContractProvider {
       'nit_entidad',
       'proveedor_adjudicado',
       'codigo_proveedor',
-      'proceso_de_compra'
+      'proceso_de_compra',
+      'urlproceso'
     ].join(',');
 
     const escapedCodigo = this.escapeSoQL(codigoEntidad);
@@ -300,6 +301,7 @@ export class SocrataContractProvider implements ContractProvider {
 
         supplierName: item.proveedor_adjudicado,
         procurementProcessId: item.proceso_de_compra,
+        urlproceso: item.urlproceso?.url || item.urlproceso || null,
       };
 
       deduplicated.push(contract);
