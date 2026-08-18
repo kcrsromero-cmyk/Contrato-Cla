@@ -58,6 +58,7 @@ export interface Contract {
 
   supplierName?: string;
   procurementProcessId?: string;
+  urlproceso?: string | null;
 }
 
 export interface FilterParams {
