@@ -147,5 +147,5 @@ export const removeFavoriteEntity = async (entityCode: string) => {
     headers
   });
   if (!res.ok) throw new Error('Error al eliminar entidad favorita');
-  return res.json();
+  return; // Un 204 No Content nunca trae cuerpo — no hay nada que parsear.
 };
