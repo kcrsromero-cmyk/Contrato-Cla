@@ -49,10 +49,16 @@ export function useMetricas(contratos: Contrato[], fechaDesde: string, fechaHast
   // --- 7. Similar objects groups calculated in backend ---
   const [similarObjectsGroups, setSimilarObjectsGroups] = useState<SimilarObjectGroup[]>([]);
   const [isCalculatingSimilar, setIsCalculatingSimilar] = useState<boolean>(false);
+  const [similarityLimited, setSimilarityLimited] = useState<boolean>(false);
+  const [similarityTotalCount, setSimilarityTotalCount] = useState<number>(0);
+  const [similarityPreviewCount, setSimilarityPreviewCount] = useState<number>(0);
 
   useEffect(() => {
     if (!contratos || contratos.length === 0) {
       setSimilarObjectsGroups([]);
+      setSimilarityLimited(false);
+      setSimilarityTotalCount(0);
+      setSimilarityPreviewCount(0);
       setIsCalculatingSimilar(false);
       return;
     }
@@ -65,20 +71,18 @@ export function useMetricas(contratos: Contrato[], fechaDesde: string, fechaHast
         const codigoEntidad = contratos[0]?.codigo_entidad;
 
         if (!codigoEntidad) return;
-        if (!capabilities?.includes('VIEW_SIMILARITY_ANALYSIS')) {
-          setSimilarObjectsGroups([]);
-          setIsCalculatingSimilar(false);
-          return;
-        }
 
         const filters = {
            codigoEntidad,
            fechaDesde,
            fechaHasta
         };
-        const clusters = await getSimilarity(filters);
+        const response = await getSimilarity(filters);
         if (!isCancelled) {
-           setSimilarObjectsGroups(clusters);
+           setSimilarObjectsGroups(response.clusters || []);
+           setSimilarityLimited(response.isLimited || false);
+           setSimilarityTotalCount(response.totalCount || 0);
+           setSimilarityPreviewCount(response.previewCount || 0);
         }
       } catch (err) {
         console.error('Failed to fetch similarity:', err);
@@ -109,6 +113,9 @@ export function useMetricas(contratos: Contrato[], fechaDesde: string, fechaHast
     typeData,
     repeatedObjects,
     similarObjectsGroups,
+    similarityLimited,
+    similarityTotalCount,
+    similarityPreviewCount,
     citizenIndicators,
     isCalculatingSimilar
   };

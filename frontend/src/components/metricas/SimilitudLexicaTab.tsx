@@ -7,12 +7,18 @@ interface SimilitudLexicaTabProps {
   similarObjectsGroups: SimilarObjectGroup[];
   setSelectedSimilarGroup: (group: SimilarObjectGroup) => void;
   isCalculatingSimilar?: boolean;
+  isLimited?: boolean;
+  totalCount?: number;
+  previewCount?: number;
 }
 
 export const SimilitudLexicaTab: React.FC<SimilitudLexicaTabProps> = ({
   similarObjectsGroups,
   setSelectedSimilarGroup,
   isCalculatingSimilar = false,
+  isLimited = false,
+  totalCount = 0,
+  previewCount = 0,
 }) => {
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs animate-fade-in" id="lexical-similarity-analysis">
@@ -83,6 +89,14 @@ export const SimilitudLexicaTab: React.FC<SimilitudLexicaTabProps> = ({
               </div>
             );
           })}
+
+          {isLimited && (
+            <div className="mt-6 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-950/30 text-center shadow-3xs animate-fade-in">
+              <p className="text-sm font-medium text-indigo-800 dark:text-indigo-200 font-sans">
+                Mostrando <span className="font-bold">{previewCount}</span> de <span className="font-bold">{totalCount}</span> patrones — suscríbete al plan Profesional para ver el análisis completo.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
