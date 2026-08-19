@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clasificarContrato, obtenerResumenDeGastos } from '../utils/categorizer';
+import { FavoriteButton } from './FavoriteButton';
 import CategoriasGastosPanel from './CategoriasGastosPanel';
 import PredictiveSearchBar from './PredictiveSearchBar';
 
@@ -816,6 +817,9 @@ export default function ContratosView({
                         <span className="px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 text-[10px] font-mono text-slate-500 dark:text-slate-400">
                           ID: {contrato.id_contrato}
                         </span>
+                        <div className="shrink-0 relative z-10 -ml-1">
+                          <FavoriteButton contract={contrato} />
+                        </div>
                         {contrato.referencia_del_contrato && (
                           <span className="px-2 py-0.5 rounded bg-indigo-50/80 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-[10px] font-mono font-bold text-indigo-700 dark:text-indigo-300">
                             Ref: {contrato.referencia_del_contrato}

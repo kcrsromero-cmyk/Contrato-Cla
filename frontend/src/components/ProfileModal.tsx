@@ -4,12 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../utils/supabase';
 
 interface ProfileModalProps {
+  onOpenFavoriteContracts?: () => void;
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
 }
 
-export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModalProps) {
+export default function ProfileModal({ isOpen, onClose, onLogout, onOpenFavoriteContracts }: ProfileModalProps) {
   const { user, plan, capabilities } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -159,6 +160,16 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
               </button>
             </form>
           </div>
+        </div>
+
+
+        <div className="px-6 pb-4">
+          <button
+            onClick={() => { if(onOpenFavoriteContracts) onOpenFavoriteContracts(); }}
+            className="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+          >
+            Ver mis contratos favoritos
+          </button>
         </div>
 
         <div className="p-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800">

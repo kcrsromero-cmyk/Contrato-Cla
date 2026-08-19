@@ -149,3 +149,46 @@ export const removeFavoriteEntity = async (entityCode: string) => {
   if (!res.ok) throw new Error('Error al eliminar entidad favorita');
   return; // Un 204 No Content nunca trae cuerpo — no hay nada que parsear.
 };
+
+
+export const getFavoriteContracts = async () => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}/procurement/favorites`, { headers });
+  if (!res.ok) throw new Error('Failed to fetch favorite contracts from backend');
+  return res.json();
+};
+
+export const addFavoriteContract = async (contractId: string) => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}/procurement/favorites`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ contractId })
+  });
+  if (!res.ok) {
+    if (res.status === 403) {
+      throw new Error('Tu plan actual no incluye la capacidad de usar Favoritos.');
+    }
+    throw new Error('Error al agregar contrato favorito');
+  }
+  return res.json();
+};
+
+export const removeFavoriteContract = async (contractId: string) => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}/procurement/favorites?contractId=${contractId}`, {
+    method: 'DELETE',
+    headers
+  });
+  if (!res.ok) throw new Error('Error al eliminar contrato favorito');
+  return;
+};
