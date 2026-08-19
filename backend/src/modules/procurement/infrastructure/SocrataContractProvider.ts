@@ -191,7 +191,7 @@ export class SocrataContractProvider implements ContractProvider {
       whereClause = `nit_entidad='${this.escapeSoQL(clean)}'`;
     } else {
       if (clean.length < 3) return [];
-      const isNumeric = /^\\d+$/.test(clean);
+      const isNumeric = /^\d+$/.test(clean);
       if (isNumeric) {
         whereClause = `(nit_entidad like '%${this.escapeSoQL(clean)}%' or codigo_entidad='${this.escapeSoQL(clean)}')`;
       } else {
