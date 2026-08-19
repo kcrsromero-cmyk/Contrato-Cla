@@ -43,6 +43,7 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
       - LOG_LEVEL=info
       - PORT=4000
+      - SOCRATA_APP_TOKEN=${SOCRATA_APP_TOKEN}
     depends_on:
       db:
         condition: service_healthy
