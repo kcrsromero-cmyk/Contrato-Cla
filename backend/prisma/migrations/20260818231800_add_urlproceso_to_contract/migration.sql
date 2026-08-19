@@ -1,1 +1,1 @@
-ALTER TABLE "Contract" ADD COLUMN "urlproceso" TEXT;
+ALTER TABLE contracts ADD COLUMN IF NOT EXISTS urlproceso TEXT;
