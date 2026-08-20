@@ -131,7 +131,7 @@ export class AuthController {
       const user = (req as any).user;
       if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-      const { name, phone, telegramUsername } = req.body;
+      const { name, phone, telegramUsername, notifyEmail, notifyTelegram, notifySms } = req.body;
 
       // Solo actualizar campos que vienen en el body
       const updateData: any = {};
@@ -141,11 +141,14 @@ export class AuthController {
         // Normalizar: remover @ si el usuario lo incluye
         updateData.telegramUsername = telegramUsername.trim().replace(/^@/, '') || null;
       }
+      if (notifyEmail !== undefined) updateData.notifyEmail = Boolean(notifyEmail);
+      if (notifyTelegram !== undefined) updateData.notifyTelegram = Boolean(notifyTelegram);
+      if (notifySms !== undefined) updateData.notifySms = Boolean(notifySms);
 
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: updateData,
-        select: { id: true, email: true, name: true, phone: true, telegramUsername: true }
+        select: { id: true, email: true, name: true, phone: true, telegramUsername: true, notifyEmail: true, notifyTelegram: true, notifySms: true }
       });
 
       res.json(updatedUser);

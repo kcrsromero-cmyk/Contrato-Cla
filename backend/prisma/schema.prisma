@@ -29,6 +29,9 @@ model User {
   telegramUsername String?  @map("telegram_username")
   organizationId   String?  @map("organization_id") @db.Uuid
   roles            String[] @default(["USER"]) // PostgreSQL supports arrays
+  notifyEmail      Boolean  @default(false) @map("notify_email")
+  notifyTelegram   Boolean  @default(false) @map("notify_telegram")
+  notifySms        Boolean  @default(false) @map("notify_sms")
 
   createdAt DateTime @default(now()) @map("created_at")
 
