@@ -39,6 +39,9 @@ export class CurrentUserResolver {
              telegramUsername: true,
              organizationId: true,
              createdAt: true,
+             notifyEmail: true,
+             notifyTelegram: true,
+             notifySms: true,
              planId: true,
              plan: {
                  include: {
@@ -62,6 +65,9 @@ export class CurrentUserResolver {
 
         user.phone = dbUser.phone;
         user.telegramUsername = dbUser.telegramUsername;
+        user.notifyEmail = dbUser.notifyEmail;
+        user.notifyTelegram = dbUser.notifyTelegram;
+        user.notifySms = dbUser.notifySms;
 
         (req as any).user = user;
       }

@@ -14,4 +14,7 @@ export interface AuthenticatedUser {
   capabilities?: string[];
   phone?: string | null;
   telegramUsername?: string | null;
+  notifyEmail?: boolean;
+  notifyTelegram?: boolean;
+  notifySms?: boolean;
 }
