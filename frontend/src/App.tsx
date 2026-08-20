@@ -16,13 +16,18 @@ import OnboardingModal from './components/OnboardingModal';
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
 import FavoritesModal from './components/FavoritesModal';
-import { ArrowLeft, Sliders, RefreshCw } from 'lucide-react';
+import ContractDetailModal from './components/ContractDetailModal';
+import { FavoritesProvider } from './context/FavoritesContext';
+import { Contrato } from './types';
+import { ArrowLeft, Sliders, RefreshCw, X, AlertTriangle } from 'lucide-react';
 import { formatBytes } from './utils/helpers';
 
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <FavoritesProvider>
+        <AppContent />
+      </FavoritesProvider>
     </AuthProvider>
   );
 }
@@ -36,6 +41,8 @@ function AppContent() {
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const [isFavoritesModalOpen, setIsFavoritesModalOpen] = React.useState(false);
   const [favoritesDefaultTab, setFavoritesDefaultTab] = React.useState<'entities' | 'contracts'>('entities');
+  const [selectedContractForDetail, setSelectedContractForDetail] = React.useState<Contrato | null>(null);
+  const [showClearCacheConfirm, setShowClearCacheConfirm] = React.useState(false);
 
   const handleCloseOnboarding = () => {
     setIsOnboardingOpen(false);
@@ -135,7 +142,7 @@ function AppContent() {
         toggleTheme={toggleTheme}
         easyRead={easyRead}
         toggleEasyRead={toggleEasyRead}
-        handleClearCache={handleClearCache}
+        handleClearCache={() => setShowClearCacheConfirm(true)}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
@@ -325,7 +332,49 @@ function AppContent() {
       onClose={() => setIsFavoritesModalOpen(false)}
       onSelectEntity={setSelectedEntity}
       defaultTab={favoritesDefaultTab}
+      onViewContractDetail={setSelectedContractForDetail}
     />
+
+    <ContractDetailModal
+      contract={selectedContractForDetail}
+      onClose={() => setSelectedContractForDetail(null)}
+    />
+
+    {showClearCacheConfirm && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity" onClick={() => setShowClearCacheConfirm(false)} />
+        <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 animate-scale-up">
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">¿Limpiar caché local?</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Se borrarán los datos guardados en este dispositivo. Tendrás que volver a descargar los datos.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowClearCacheConfirm(false)}
+                className="px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-slate-300 dark:hover:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setShowClearCacheConfirm(false);
+                  handleClearCache();
+                }}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-bold transition-colors"
+              >
+                Sí, limpiar caché
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }
