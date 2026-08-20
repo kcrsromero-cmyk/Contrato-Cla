@@ -11,6 +11,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   plan: string | null;
+  maxFavoriteEntities: number | null;
   capabilities: string[];
   isLoading: boolean;
 }
@@ -18,6 +19,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   plan: null,
+  maxFavoriteEntities: null,
   capabilities: [],
   isLoading: true,
 });
@@ -27,6 +29,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [plan, setPlan] = useState<string | null>(null);
+  const [maxFavoriteEntities, setMaxFavoriteEntities] = useState<number | null>(null);
   const [capabilities, setCapabilities] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -42,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const data = await getMe();
         setUser({ id: data.id, email: data.email, name: data.name });
         setPlan(data.plan || null);
+        setMaxFavoriteEntities(data.maxFavoriteEntities ?? null);
         setCapabilities(data.capabilities || []);
       } catch (error) {
         console.error('Failed to fetch user:', error);
@@ -54,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, plan, capabilities, isLoading }}>
+    <AuthContext.Provider value={{ user, plan, maxFavoriteEntities, capabilities, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

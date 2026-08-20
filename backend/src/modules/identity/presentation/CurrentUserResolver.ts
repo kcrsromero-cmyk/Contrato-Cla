@@ -44,12 +44,10 @@ export class CurrentUserResolver {
              notifySms: true,
              planId: true,
              plan: {
-                 include: {
-                     capabilities: {
-                         include: {
-                             capability: true
-                         }
-                     }
+                 select: {
+                     name: true,
+                     maxFavoriteEntities: true,
+                     capabilities: { select: { capability: { select: { name: true } } } }
                  }
              }
           }
@@ -57,6 +55,7 @@ export class CurrentUserResolver {
 
         if (dbUser?.plan) {
             user.plan = dbUser.plan.name;
+            user.maxFavoriteEntities = dbUser.plan.maxFavoriteEntities;
             user.capabilities = dbUser.plan.capabilities.map((pc: any) => pc.capability.name);
         } else {
             user.plan = 'FREE';
