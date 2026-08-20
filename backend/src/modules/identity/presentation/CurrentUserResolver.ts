@@ -30,7 +30,16 @@ export class CurrentUserResolver {
             roles: ['USER'],
           },
           update: {},
-          include: {
+          select: {
+             id: true,
+             email: true,
+             name: true,
+             roles: true,
+             phone: true,
+             telegramUsername: true,
+             organizationId: true,
+             createdAt: true,
+             planId: true,
              plan: {
                  include: {
                      capabilities: {
@@ -50,6 +59,9 @@ export class CurrentUserResolver {
             user.plan = 'FREE';
             user.capabilities = [];
         }
+
+        user.phone = dbUser.phone;
+        user.telegramUsername = dbUser.telegramUsername;
 
         (req as any).user = user;
       }

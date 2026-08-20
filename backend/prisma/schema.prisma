@@ -22,11 +22,13 @@ model Organization {
 }
 
 model User {
-  id             String   @id @db.Uuid // Must match Supabase auth.users UUID
-  email          String   @unique
-  name           String?
-  organizationId String?  @map("organization_id") @db.Uuid
-  roles          String[] @default(["USER"]) // PostgreSQL supports arrays
+  id               String   @id @db.Uuid // Must match Supabase auth.users UUID
+  email            String   @unique
+  name             String?
+  phone            String?
+  telegramUsername String?  @map("telegram_username")
+  organizationId   String?  @map("organization_id") @db.Uuid
+  roles            String[] @default(["USER"]) // PostgreSQL supports arrays
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -202,11 +204,11 @@ model AuditLog {
 }
 
 model Department {
-  id         String @id @default(uuid()) @db.Uuid
-  name       String @unique
-  cities     City[]
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  cities    City[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("departments")
 }
@@ -225,16 +227,16 @@ model City {
 }
 
 model Entity {
-  id           String   @id @default(uuid()) @db.Uuid
-  entityCode   String   @unique @map("entity_code")
-  name         String
-  nit          String?
-  order        String?
-  city         City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  cityId       String   @map("city_id") @db.Uuid
-  syncedAt     DateTime @default(now()) @map("synced_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(uuid()) @db.Uuid
+  entityCode String   @unique @map("entity_code")
+  name       String
+  nit        String?
+  order      String?
+  city       City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  cityId     String   @map("city_id") @db.Uuid
+  syncedAt   DateTime @default(now()) @map("synced_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@map("entities")
 }

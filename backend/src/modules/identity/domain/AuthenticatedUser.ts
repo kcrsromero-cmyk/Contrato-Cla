@@ -12,4 +12,6 @@ export interface AuthenticatedUser {
   metadata?: Record<string, any>;
   plan?: string;
   capabilities?: string[];
+  phone?: string | null;
+  telegramUsername?: string | null;
 }

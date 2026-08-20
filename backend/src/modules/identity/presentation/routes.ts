@@ -61,4 +61,10 @@ authRouter.post('/refresh', authRateLimiter, validateRequest(RefreshSchema), (re
 authRouter.post('/logout', authMiddleware.handle, (req, res) => authController.logout(req, res));
 authRouter.get('/me', authMiddleware.handle, currentUserResolver.resolve, (req, res) => authController.getMe(req, res));
 
+authRouter.patch('/profile',
+  authMiddleware.handle,
+  currentUserResolver.resolve,
+  (req, res) => authController.updateProfile(req, res)
+);
+
 export { authRouter };
