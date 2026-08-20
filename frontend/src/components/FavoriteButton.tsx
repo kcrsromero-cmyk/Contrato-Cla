@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Contrato } from '../types';
 import { Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useFavorites } from '../context/FavoritesContext';
 import { addFavoriteContract } from '../services/api';
 
 export const FavoriteButton: React.FC<{ contract: Contrato }> = ({ contract }) => {
   const { capabilities } = useAuth();
   const hasFavorites = capabilities.includes('USE_FAVORITES');
-  const [isFavorited, setIsFavorited] = useState(false);
+  const { favoriteContractIds, addFavoriteId } = useFavorites();
+  const isFavorited = favoriteContractIds.has(contract.id_contrato);
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -15,7 +17,7 @@ export const FavoriteButton: React.FC<{ contract: Contrato }> = ({ contract }) =
     setLoading(true);
     try {
       await addFavoriteContract(contract.id_contrato);
-      setIsFavorited(true);
+      addFavoriteId(contract.id_contrato);
     } catch {
       // silencioso — no window.alert
     } finally {

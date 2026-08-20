@@ -16,11 +16,8 @@ export function useEntidad() {
   };
 
   const handleClearCache = async () => {
-    if (confirm('¿Desea limpiar toda la memoria caché local? Esto forzará la recarga de catálogos desde el portal de Datos Abiertos.')) {
-      await CacheService.clear();
-      alert('Caché limpiada con éxito. Recargando la página.');
-      window.location.reload();
-    }
+    await CacheService.clear();
+    window.location.reload();
   };
 
   return {

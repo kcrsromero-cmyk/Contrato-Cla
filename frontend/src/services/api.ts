@@ -110,6 +110,9 @@ export const updateProfile = async (data: {
   name?: string;
   phone?: string;
   telegramUsername?: string;
+  notifyEmail?: boolean;
+  notifyTelegram?: boolean;
+  notifySms?: boolean;
 }) => {
   const token = localStorage.getItem('token');
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };

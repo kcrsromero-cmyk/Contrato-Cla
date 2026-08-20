@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { EntidadResumen, Contrato } from '../types';
 import { X, Star, Trash2, ArrowRight, Heart, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useFavorites } from '../context/FavoritesContext';
 import {
   getFavoriteEntities,
   removeFavoriteEntity,
@@ -14,11 +15,13 @@ interface FavoritesModalProps {
   onClose: () => void;
   onSelectEntity: (entity: EntidadResumen) => void;
   defaultTab?: 'entities' | 'contracts';
+  onViewContractDetail?: (contract: Contrato) => void;
 }
 
-export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaultTab = 'entities' }: FavoritesModalProps) {
+export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaultTab = 'entities', onViewContractDetail }: FavoritesModalProps) {
   const { user, capabilities } = useAuth();
   const hasFavorites = capabilities.includes('USE_FAVORITES');
+  const { removeFavoriteId } = useFavorites();
 
   const [activeTab, setActiveTab] = useState<'entities' | 'contracts'>(defaultTab);
 
@@ -91,6 +94,7 @@ export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaul
     } else {
       try {
         await removeFavoriteContract(confirmDelete);
+        removeFavoriteId(confirmDelete);
         setContracts(contracts.filter(c => {
           const cid = c.id_contrato || (c as any).contractId;
           return cid !== confirmDelete;
@@ -326,55 +330,18 @@ export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaul
                               <Trash2 className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => setExpandedContractId(isExpanded ? null : cid)}
+                              onClick={() => {
+                                if (onViewContractDetail) {
+                                  onViewContractDetail(contract);
+                                  onClose();
+                                }
+                              }}
                               className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                               <span>Ver detalle</span>
-                              {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                           </div>
                         </div>
-
-                        {isExpanded && (
-                          <div className="border-t border-slate-100 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                              <div>
-                                <span className="block text-slate-400 font-bold uppercase tracking-wider mb-1">Objeto</span>
-                                <span className="text-slate-700 dark:text-slate-300">{contract.objeto_del_contrato || (contract as any).object || 'N/A'}</span>
-                              </div>
-                              <div>
-                                <span className="block text-slate-400 font-bold uppercase tracking-wider mb-1">Proveedor</span>
-                                <span className="text-slate-700 dark:text-slate-300">{contract.proveedor_adjudicado || (contract as any).supplierName || 'N/A'}</span>
-                              </div>
-                              <div>
-                                <span className="block text-slate-400 font-bold uppercase tracking-wider mb-1">Valor</span>
-                                <span className="text-emerald-600 dark:text-emerald-400 font-medium">$ {(contract.valor_del_contrato || (contract as any).contractValue || 0).toLocaleString()}</span>
-                              </div>
-                              <div>
-                                <span className="block text-slate-400 font-bold uppercase tracking-wider mb-1">Fecha de Firma</span>
-                                <span className="text-slate-700 dark:text-slate-300">{contract.fecha_de_firma || (contract as any).signatureDate ? new Date(contract.fecha_de_firma || (contract as any).signatureDate).toLocaleDateString() : 'N/A'}</span>
-                              </div>
-                              <div>
-                                <span className="block text-slate-400 font-bold uppercase tracking-wider mb-1">Proceso de Compra</span>
-                                <span className="text-slate-700 dark:text-slate-300">{contract.proceso_de_compra || (contract as any).process || 'N/A'}</span>
-                              </div>
-                            </div>
-
-                            {url && (
-                              <div className="mt-4 flex justify-end">
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-xl font-bold text-xs transition-colors"
-                                >
-                                  Ver en SECOP
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
                     );
                   })}
