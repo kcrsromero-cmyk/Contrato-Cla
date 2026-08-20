@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
-import { X, User, Lock, Mail, Star, Shield } from 'lucide-react';
+import { X, User, Lock, Mail, Star, Shield, Edit3 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../utils/supabase';
+import { updateProfile } from '../services/api';
 
 interface ProfileModalProps {
-  onOpenFavoriteContracts?: () => void;
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
 }
 
-export default function ProfileModal({ isOpen, onClose, onLogout, onOpenFavoriteContracts }: ProfileModalProps) {
+export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModalProps) {
   const { user, plan, capabilities } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  const [profileData, setProfileData] = useState({
+    name: user?.name || '',
+    phone: (user as any)?.phone || '',
+    telegramUsername: (user as any)?.telegramUsername || ''
+  });
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<{type:'success'|'error', text:string}|null>(null);
 
   if (!isOpen) return null;
 
@@ -84,8 +92,93 @@ export default function ProfileModal({ isOpen, onClose, onLogout, onOpenFavorite
         </div>
 
         <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+          {/* Datos Personales */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Edit3 className="w-4 h-4" /> Datos personales
+            </h3>
+
+            {profileMessage && (
+              <div className={`p-3 rounded-xl text-xs font-semibold border ${
+                profileMessage.type === 'error'
+                  ? 'bg-red-50 border-red-200 text-red-600 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400'
+                  : 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400'
+              }`}>
+                {profileMessage.text}
+              </div>
+            )}
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setProfileLoading(true);
+              setProfileMessage(null);
+              try {
+                await updateProfile(profileData);
+                setProfileMessage({ type: 'success', text: 'Perfil actualizado correctamente' });
+              } catch (err: any) {
+                setProfileMessage({ type: 'error', text: err.message || 'Error al actualizar perfil' });
+              } finally {
+                setProfileLoading(false);
+              }
+            }} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                  Nombre completo
+                </label>
+                <input
+                  type="text"
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                  Teléfono
+                </label>
+                <input
+                  type="text"
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                  placeholder="Ej: +57 300 000 0000"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                  Usuario de Telegram
+                </label>
+                <input
+                  type="text"
+                  value={profileData.telegramUsername}
+                  onChange={(e) => setProfileData({...profileData, telegramUsername: e.target.value})}
+                  placeholder="Ej: miusuario (sin @)"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white"
+                />
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 ml-1">
+                  Próximamente recibirás alertas de contratos en Telegram
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={profileLoading}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl font-bold text-sm transition-all"
+              >
+                {profileLoading ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </form>
+          </div>
+
+          <hr className="border-slate-100 dark:border-slate-800" />
+
           {/* Info Sections */}
           <div className="space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <User className="w-4 h-4" /> Cuenta
+            </h3>
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5 text-slate-400" />
               <div>
@@ -162,15 +255,6 @@ export default function ProfileModal({ isOpen, onClose, onLogout, onOpenFavorite
           </div>
         </div>
 
-
-        <div className="px-6 pb-4">
-          <button
-            onClick={() => { if(onOpenFavoriteContracts) onOpenFavoriteContracts(); }}
-            className="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-          >
-            Ver mis contratos favoritos
-          </button>
-        </div>
 
         <div className="p-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800">
           <button

@@ -17,7 +17,8 @@ interface FavoritesModalProps {
 }
 
 export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaultTab = 'entities' }: FavoritesModalProps) {
-  const { user } = useAuth();
+  const { user, capabilities } = useAuth();
+  const hasFavorites = capabilities.includes('USE_FAVORITES');
 
   const [activeTab, setActiveTab] = useState<'entities' | 'contracts'>(defaultTab);
 
@@ -150,6 +151,28 @@ export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaul
               <X className="w-5 h-5" />
             </button>
           </div>
+
+          {!hasFavorites && (
+            <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
+              <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mb-5">
+                <Star className="w-8 h-8 text-amber-400" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">
+                Funcionalidad exclusiva para suscriptores
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-6">
+                Guarda entidades y contratos para acceder rápidamente a ellos. Disponible desde el plan Starter.
+              </p>
+              <button
+                onClick={onClose}
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all"
+              >
+                Ver planes
+              </button>
+            </div>
+          )}
+
+          {hasFavorites && (
           <div className="flex px-6 gap-6">
             <button
               onClick={() => setActiveTab('entities')}
@@ -174,9 +197,11 @@ export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaul
               Contratos
             </button>
           </div>
+          )}
         </div>
 
         {/* Content */}
+        {hasFavorites && (
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50 dark:bg-slate-950/50">
 
           {activeTab === 'entities' && (
@@ -359,6 +384,7 @@ export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaul
           )}
 
         </div>
+        )}
       </div>
     </div>
   );

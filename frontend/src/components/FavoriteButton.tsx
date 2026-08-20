@@ -1,55 +1,42 @@
 import React, { useState } from 'react';
 import { Contrato } from '../types';
 import { Heart } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { addFavoriteContract } from '../services/api';
 
 export const FavoriteButton: React.FC<{ contract: Contrato }> = ({ contract }) => {
+  const { capabilities } = useAuth();
+  const hasFavorites = capabilities.includes('USE_FAVORITES');
+  const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleAddFavorite = async () => {
+  const handleClick = async () => {
+    if (!hasFavorites || loading || isFavorited) return;
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Debes iniciar sesión para agregar favoritos.');
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1'}/procurement/favorites`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          contractId: contract.id_contrato
-        })
-      });
-
-      if (!res.ok) {
-        if (res.status === 403) {
-          alert('Tu plan actual no incluye la capacidad de usar Favoritos.');
-        } else {
-          alert('Error al agregar favorito');
-        }
-      } else {
-        alert('Añadido a favoritos');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error de red');
+      await addFavoriteContract(contract.id_contrato);
+      setIsFavorited(true);
+    } catch {
+      // silencioso — no window.alert
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <button
-      onClick={handleAddFavorite}
+      onClick={handleClick}
       disabled={loading}
-      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-      title="Añadir a Favoritos"
+      title={hasFavorites ? (isFavorited ? 'En favoritos' : 'Añadir a favoritos') : 'Disponible desde el plan Starter'}
+      className={`p-2 transition-colors rounded-xl ${
+        !hasFavorites
+          ? 'text-slate-300 dark:text-slate-700 cursor-default'
+          : isFavorited
+          ? 'text-red-500'
+          : 'text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
+      }`}
     >
-      <Heart size={20} />
+      <Heart size={18} className={isFavorited ? 'fill-current' : ''} />
     </button>
   );
 };
