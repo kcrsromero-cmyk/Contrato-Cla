@@ -254,4 +254,30 @@ export class ProcurementController {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
+
+  async removeFavorite(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { contractId } = req.query;
+      if (!contractId || typeof contractId !== 'string') {
+        return res.status(400).json({ error: 'contractId is required' });
+      }
+
+      const dbContract = await prisma.contract.findUnique({
+        where: { contractId }
+      });
+      if (!dbContract) return res.status(404).json({ error: 'Contract not found' });
+
+      await prisma.favoriteContract.deleteMany({
+        where: { userId: user.id, contractId: dbContract.id }
+      });
+
+      res.status(204).send();
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 }
