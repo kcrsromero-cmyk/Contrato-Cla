@@ -141,212 +141,214 @@ export default function ContractDetailModal({ contract: selectedContract, onClos
         {/* Modal Body */}
         <div className="p-6 space-y-6">
 
-          {/* Grid 1: Datos principales */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            {/* Columna Izquierda */}
-            <div className="space-y-4">
-              <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3 bg-white dark:bg-slate-900 shadow-2xs">
-                <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                  <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Información General
-                </h5>
-                <div className="space-y-2">
-                  <div>
-                    <span className="block text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 mb-0.5">Referencia de Contrato:</span>
-                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300 font-mono break-all">
-                      {selectedContract.referencia_del_contrato || 'No reportada'}
-                    </span>
-                  </div>
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <span className="block text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 mb-0.5">ID Proceso SECOP II:</span>
-                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300 font-mono break-all">
-                      {selectedContract.id_contrato}
-                    </span>
-                  </div>
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <span className="block text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 mb-0.5">Proceso de Compra:</span>
-                    <div className="font-bold font-mono text-slate-900 dark:text-slate-100 mt-1 text-xs select-all truncate" title={selectedContract.proceso_de_compra || 'No especificado'}>
-                      {selectedContract.proceso_de_compra || 'No especificado'}
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* Sección 1: Aviso legal */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl flex items-start gap-3 shadow-2xs">
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-indigo-600 dark:text-indigo-400"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
             </div>
-
-            {/* Columna Derecha: Objeto */}
-            <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/50 shadow-2xs">
-              <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2 flex items-center gap-1">
-                Objeto del Contrato
-              </h5>
-              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed text-justify">
-                {selectedContract.objeto_del_contrato}
+            <div>
+              <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">Información de consulta ciudadana</h5>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed text-justify">
+                Este resultado se calcula a partir de los datos públicos disponibles en SECOP II. Es descriptivo y no constituye una conclusión sobre legalidad, cumplimiento, responsabilidad o irregularidad. Consulte el expediente oficial de cada contrato para ampliar la información.
               </p>
             </div>
           </div>
 
-          {/* Grid 2: Fechas y Valores */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Fechas */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3 shadow-2xs">
+          {/* Sección 2: Grid 3 columnas (Identificación) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 rounded-xl shadow-2xs">
+            <div>
+              <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-1 flex items-center gap-1.5">
+                <span className="font-serif">#</span> Referencia del Contrato
+              </div>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" title={selectedContract.referencia_del_contrato || 'No reportada'}>
+                {selectedContract.referencia_del_contrato || 'No reportada'}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-1 flex items-center gap-1.5">
+                <span className="font-serif">#</span> ID del Contrato
+              </div>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" title={selectedContract.id_contrato}>
+                {selectedContract.id_contrato}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-1 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5" /> Proceso de Compra
+              </div>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" title={selectedContract.proceso_de_compra || 'No reportado'}>
+                {selectedContract.proceso_de_compra || 'No reportado'}
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 3: Objeto del Contrato */}
+          <div className="p-5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/50 shadow-2xs">
+            <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2 flex items-center gap-1.5">
+              Objeto del Contrato
+            </h5>
+            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed text-justify">
+              {selectedContract.objeto_del_contrato}
+            </p>
+          </div>
+
+          {/* Sección 4: Grid 3 columnas de fechas */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs text-center flex flex-col items-center justify-center">
+              <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 mb-2" />
+              <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Fecha de Firma</div>
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{formatDate(selectedContract.fecha_de_firma)}</div>
+            </div>
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs text-center flex flex-col items-center justify-center">
+              <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 mb-2" />
+              <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Inicio de Contrato</div>
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{formatDate(selectedContract.fecha_de_inicio_del_contrato)}</div>
+            </div>
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs text-center flex flex-col items-center justify-center">
+              <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 mb-2" />
+              <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Fin de Contrato</div>
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{formatDate(selectedContract.fecha_de_fin_del_contrato)}</div>
+            </div>
+          </div>
+
+          {/* Sección 5: Balance Financiero Reportado */}
+          <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs">
+            <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-1.5 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-500" /> Balance Financiero Reportado
+            </h5>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Monto de Firma</div>
+                <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  {formatCOP(selectedContract.valor_del_contrato)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Monto Pagado</div>
+                <div className="text-sm font-bold text-emerald-700 dark:text-emerald-450">
+                  {formatCOP(selectedContract.valor_pagado)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Pendiente de Pago</div>
+                <div className="text-sm font-bold text-amber-700 dark:text-amber-450">
+                  {formatCOP(selectedContract.valor_pendiente_de_pago)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Pendiente de Ejecución</div>
+                <div className="text-sm font-bold text-slate-600 dark:text-slate-405">
+                  {formatCOP(selectedContract.valor_pendiente_de_ejecucion)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 6: Grid 2 columnas (Detalles legales) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 bg-white dark:bg-slate-900 shadow-2xs">
               <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Cronograma
+                <Scale className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Régimen y Justificación
               </h5>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Firma</div>
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{formatDate(selectedContract.fecha_de_firma)}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Inicio</div>
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{formatDate(selectedContract.fecha_de_inicio_del_contrato)}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Fin Previsto</div>
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{formatDate(selectedContract.fecha_de_fin_del_contrato)}</div>
-                </div>
+              <div className="space-y-1">
+                <div className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500">Modalidad de Contratación:</div>
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">{selectedContract.modalidad_de_contratacion}</div>
               </div>
-            </div>
-
-            {/* Valores */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3 shadow-2xs">
-              <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" /> Resumen Financiero
-              </h5>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 border border-indigo-100 dark:border-indigo-900/50 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 shadow-2xs">
-                  <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-indigo-500 dark:text-indigo-400">Valor Total</div>
-                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1">
-                    {formatCOP(selectedContract.valor_del_contrato)}
-                  </div>
-                </div>
-                <div className="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-2xs">
-                  <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500">Monto Pagado</div>
-                  <div className="text-sm font-bold text-emerald-700 dark:text-emerald-450 mt-1">
-                    {formatCOP(selectedContract.valor_pagado)}
-                  </div>
-                </div>
-                <div className="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-2xs">
-                  <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500">Pendiente de Pago</div>
-                  <div className="text-sm font-bold text-amber-700 dark:text-amber-450 mt-1">
-                    {formatCOP(selectedContract.valor_pendiente_de_pago)}
-                  </div>
-                </div>
-                <div className="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-2xs">
-                  <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500">Pendiente de Ejecución</div>
-                  <div className="text-sm font-bold text-slate-600 dark:text-slate-405 mt-1">
-                    {formatCOP(selectedContract.valor_pendiente_de_ejecucion)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Grid 3: Detalles legales */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:col-span-2">
-              <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 bg-white dark:bg-slate-900 shadow-2xs">
-                <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                  <Scale className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Régimen y Justificación
-                </h5>
-                <div className="space-y-1">
-                  <div className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500">Modalidad de Contratación:</div>
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">{selectedContract.modalidad_de_contratacion}</div>
-                </div>
-                {selectedContract.justificacion_modalidad_de && (
-                  <div className="space-y-1 pt-1.5 border-t border-slate-100 dark:border-slate-800">
-                    <div className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500">Justificación de Modalidad:</div>
-                    <div className="text-xs font-medium text-slate-600 dark:text-slate-400 leading-snug">{selectedContract.justificacion_modalidad_de}</div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 bg-white dark:bg-slate-900 shadow-2xs">
-                <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Supervisión y Control
-                </h5>
-                <div className="space-y-1">
-                  <div className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500">Supervisor Designado:</div>
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{normalizeName(selectedContract.nombre_supervisor)}</div>
-                </div>
-                {selectedContract.nombre_ordenador_del_gasto && (
-                  <div className="space-y-1 pt-1.5 border-t border-slate-100 dark:border-slate-800">
-                    <div className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500">Ordenador del Gasto:</div>
-                    <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{normalizeName(selectedContract.nombre_ordenador_del_gasto)}</div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Clasificación y Estructura de la Entidad (Nuevos campos SECOP II) */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3 shadow-2xs md:col-span-2">
-              <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Clasificación y Estructura de la Entidad
-              </h5>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                <div>
-                  <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[9px] uppercase tracking-wider">Orden Administrativo</div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.orden || 'No especificado'}</div>
-                </div>
-                <div>
-                  <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[9px] uppercase tracking-wider">Régimen Centralización</div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.entidad_centralizada || 'No especificado'}</div>
-                </div>
-                <div>
-                  <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[9px] uppercase tracking-wider">Sector de Actividad</div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.sector || 'No especificado'}</div>
-                </div>
-                <div>
-                  <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[9px] uppercase tracking-wider">Rama del Poder</div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.rama || 'No especificado'}</div>
-                </div>
-              </div>
-              {selectedContract.localizaci_n && (
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                  <span className="font-bold font-mono text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Ubicación del Registro de la Entidad:</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">{selectedContract.localizaci_n}</span>
+              {selectedContract.justificacion_modalidad_de && (
+                <div className="space-y-1 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                  <div className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500">Justificación de Modalidad:</div>
+                  <div className="text-xs font-medium text-slate-600 dark:text-slate-400 leading-snug">{selectedContract.justificacion_modalidad_de}</div>
                 </div>
               )}
             </div>
 
-            {/* Datos Técnicos y Plazos */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs shadow-2xs md:col-span-2">
-              <div>
-                <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[10px] uppercase tracking-widest">Duración Original</div>
-                <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.duraci_n_del_contrato} días</div>
+            <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 bg-white dark:bg-slate-900 shadow-2xs">
+              <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Supervisión y Control
+              </h5>
+              <div className="space-y-1">
+                <div className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500">Supervisor Designado:</div>
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{normalizeName(selectedContract.nombre_supervisor)}</div>
               </div>
-              <div>
-                <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[10px] uppercase tracking-widest">Días Adicionados</div>
-                <div className={`font-bold mt-0.5 ${(Number(selectedContract.dias_adicionados) || 0) > 0 ? 'text-amber-700 dark:text-amber-400 font-bold' : 'text-slate-800 dark:text-slate-200'}`}>
-                  {selectedContract.dias_adicionados} días
+              {selectedContract.nombre_ordenador_del_gasto && (
+                <div className="space-y-1 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                  <div className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500">Ordenador del Gasto:</div>
+                  <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{normalizeName(selectedContract.nombre_ordenador_del_gasto)}</div>
                 </div>
-              </div>
-              <div>
-                <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[10px] uppercase tracking-widest">Prorrogable</div>
-                <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.el_contrato_puede_ser_prorrogado || 'No especificado'}</div>
-              </div>
+              )}
             </div>
-
           </div>
 
-          {/* Modal Footer */}
-          <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-end gap-3 sticky bottom-0 z-10">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-indigo-600 dark:hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-indigo-50/10 dark:hover:bg-indigo-950/20 transition-all cursor-pointer shadow-2xs bg-white dark:bg-slate-900"
-            >
-              Cerrar Ventana
-            </button>
-            {getSecopUrl(selectedContract) && (
-              <a
-                href={getSecopUrl(selectedContract)!}
-                target="_blank"
-                referrerPolicy="no-referrer"
-                rel="noopener noreferrer"
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-              >
-                Ir al Expediente SECOP II <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+          {/* Sección 7: Clasificación y Estructura de la Entidad */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3 shadow-2xs">
+            <h5 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+              <Building className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Clasificación y Estructura de la Entidad
+            </h5>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+              <div>
+                <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[9px] uppercase tracking-wider">Orden Administrativo</div>
+                <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.orden || 'No especificado'}</div>
+              </div>
+              <div>
+                <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[9px] uppercase tracking-wider">Régimen Centralización</div>
+                <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.entidad_centralizada || 'No especificado'}</div>
+              </div>
+              <div>
+                <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[9px] uppercase tracking-wider">Sector de Actividad</div>
+                <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.sector || 'No especificado'}</div>
+              </div>
+              <div>
+                <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[9px] uppercase tracking-wider">Rama del Poder</div>
+                <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.rama || 'No especificado'}</div>
+              </div>
+            </div>
+            {selectedContract.localizaci_n && (
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                <span className="font-bold font-mono text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Ubicación del Registro de la Entidad:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">{selectedContract.localizaci_n}</span>
+              </div>
             )}
           </div>
 
+          {/* Sección 8: Datos Técnicos y Plazos */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs shadow-2xs">
+            <div>
+              <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[10px] uppercase tracking-widest">Duración Original</div>
+              <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.duraci_n_del_contrato} días</div>
+            </div>
+            <div>
+              <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[10px] uppercase tracking-widest">Días Adicionados</div>
+              <div className={`font-bold mt-0.5 ${(Number(selectedContract.dias_adicionados) || 0) > 0 ? 'text-amber-700 dark:text-amber-400 font-bold' : 'text-slate-800 dark:text-slate-200'}`}>
+                {selectedContract.dias_adicionados} días
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-400 dark:text-slate-500 font-bold font-mono text-[10px] uppercase tracking-widest">Prorrogable</div>
+              <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedContract.el_contrato_puede_ser_prorrogado || 'No especificado'}</div>
+            </div>
+          </div>
+
+        </div>
+
+          {/* Modal Footer */}
+        <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-end gap-3 sticky bottom-0 z-10">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-indigo-600 dark:hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-indigo-50/10 dark:hover:bg-indigo-950/20 transition-all cursor-pointer shadow-2xs bg-white dark:bg-slate-900"
+          >
+            Cerrar Ventana
+          </button>
+          {getSecopUrl(selectedContract) && (
+            <a
+              href={getSecopUrl(selectedContract)!}
+              target="_blank"
+              referrerPolicy="no-referrer"
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            >
+              Ir al Expediente SECOP II <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
         </div>
       </div>
     </div>
