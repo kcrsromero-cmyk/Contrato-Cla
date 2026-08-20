@@ -260,6 +260,7 @@ function AppContent() {
               handleClearEntity={handleClearEntityAndReset}
               isWideLayout={true}
               dbSize={dbSize}
+              onViewContractDetail={setSelectedContractForDetail}
             />
           </div>
 
@@ -300,6 +301,7 @@ function AppContent() {
               handleClearEntity={handleClearEntityAndReset}
               isWideLayout={false}
               dbSize={dbSize}
+              onViewContractDetail={setSelectedContractForDetail}
             />
           )}
         </>

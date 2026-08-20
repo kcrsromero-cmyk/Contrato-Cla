@@ -55,6 +55,7 @@ interface DashboardProps {
   handleClearEntity: () => Promise<void>;
   isWideLayout?: boolean;
   dbSize?: number;
+  onViewContractDetail?: (contract: Contrato) => void;
 }
 
 export default function Dashboard({
@@ -83,6 +84,7 @@ export default function Dashboard({
   handleClearEntity,
   isWideLayout = false,
   dbSize = 0,
+  onViewContractDetail,
 }: DashboardProps) {
   
   const contratosSize = React.useMemo(() => {
@@ -317,6 +319,7 @@ export default function Dashboard({
                 contratos={contratos} 
                 selectedModalidad={selectedModalidadFilter}
                 setSelectedModalidad={setSelectedModalidadFilter}
+                onViewDetail={onViewContractDetail}
               />
             )}
             {activeTab === 'supervisores' && <SupervisoresView contratos={contratos} />}
