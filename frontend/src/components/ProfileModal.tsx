@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, User, Lock, Mail, Star, Shield, Edit3, MessageSquare, Phone, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../utils/supabase';
-import { updateProfile } from '../services/api';
+import { updateProfile, getFavoriteEntities } from '../services/api';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -11,7 +11,8 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModalProps) {
-  const { user, plan, capabilities } = useAuth();
+  const { user, plan, capabilities, maxFavoriteEntities } = useAuth();
+  const [favoriteEntitiesCount, setFavoriteEntitiesCount] = useState(0);
 
   const [activeTab, setActiveTab] = useState<'plan' | 'perfil' | 'notificaciones'>('plan');
 
@@ -47,6 +48,14 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
       setNewPassword('');
     }
   }, [isOpen, user]);
+
+  useEffect(() => {
+    if (activeTab === 'plan' && isOpen && capabilities.includes('USE_FAVORITES')) {
+      getFavoriteEntities().then(entities => {
+        setFavoriteEntitiesCount(entities.length);
+      }).catch(err => console.error(err));
+    }
+  }, [activeTab, isOpen, capabilities]);
 
   if (!isOpen) return null;
 
@@ -127,6 +136,22 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
   const planTiers = ['FREE', 'STARTER', 'PROFESIONAL', 'ENTERPRISE'];
   const userPlanIndex = planTiers.indexOf((plan || 'FREE').toUpperCase());
 
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      'bg-indigo-500', 'bg-violet-500', 'bg-blue-500', 'bg-emerald-500',
+      'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-fuchsia-500'
+    ];
+    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
+
+  const getInitials = (name: string) => {
+    return name.trim().split(/\s+/).slice(0, 2)
+      .map(w => w[0]).join('').toUpperCase();
+  };
+
+  const displayName = user?.name || 'Usuario';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
@@ -139,14 +164,14 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
         </button>
 
         <div className="p-8 pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center">
-          <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 shadow-sm">
-            <User className="w-8 h-8" />
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 ${getAvatarColor(displayName)}`}>
+            <span className="text-white font-bold text-xl">{getInitials(displayName)}</span>
           </div>
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-1">
             Perfil de Usuario
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
-            {user?.name || 'Usuario'}
+            {displayName}
           </p>
         </div>
 
@@ -222,6 +247,39 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
                   </div>
                 </div>
               </div>
+
+              {capabilities.includes('USE_FAVORITES') && (
+                <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <div className="flex justify-between text-xs text-slate-500 mb-1">
+                    <span>Entidades favoritas</span>
+                    <span>{favoriteEntitiesCount} / {maxFavoriteEntities === null ? '∞' : maxFavoriteEntities}</span>
+                  </div>
+                  {maxFavoriteEntities !== null && (
+                    <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-indigo-500 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (favoriteEntitiesCount / maxFavoriteEntities) * 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(plan === 'FREE' || plan === 'STARTER') && (
+                <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl">
+                  <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-1">
+                    {plan === 'FREE' ? 'Activa tu suscripción' : 'Mejora tu plan'}
+                  </p>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-3">
+                    {plan === 'FREE'
+                      ? 'Desbloquea favoritos, análisis de similitud y más.'
+                      : 'Accede a entidades ilimitadas y capacidades avanzadas.'}
+                  </p>
+                  <button className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all">
+                    Ver planes
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -450,7 +508,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
             }}
             className="w-full py-2.5 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 border border-slate-200 dark:border-slate-700 hover:border-red-200 dark:hover:border-red-800 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
           >
-            Cerrar Sesión General
+            Cerrar Sesión
           </button>
         </div>
       </div>

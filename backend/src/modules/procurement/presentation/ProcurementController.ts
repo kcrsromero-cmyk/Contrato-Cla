@@ -134,7 +134,45 @@ export class ProcurementController {
         include: { contract: true }
       });
 
-      res.json(favorites.map((f: any) => f.contract));
+      res.json(favorites.map((f: any) => {
+        const c = f.contract;
+        return {
+          id: c.id,
+          contractId: c.contractId,
+          reference: c.reference ?? undefined,
+          status: c.status ?? undefined,
+          contractType: c.contractType ?? undefined,
+          modality: c.modality ?? undefined,
+          justification: c.justification ?? undefined,
+          object: c.object,
+          deliveryConditions: c.deliveryConditions ?? undefined,
+          signatureDate: c.signatureDate ?? undefined,
+          startDate: c.startDate ?? undefined,
+          endDate: c.endDate ?? undefined,
+          contractValue: c.contractValue ?? undefined,
+          advancePaymentValue: c.advancePaymentValue ?? undefined,
+          invoicedValue: c.invoicedValue ?? undefined,
+          paidValue: c.paidValue ?? undefined,
+          pendingPaymentValue: c.pendingPaymentValue ?? undefined,
+          pendingExecutionValue: c.pendingExecutionValue ?? undefined,
+          duration: c.duration ?? undefined,
+          location: c.location ?? undefined,
+          centralizedEntity: c.centralizedEntity ?? undefined,
+          order: c.order ?? undefined,
+          sector: c.sector ?? undefined,
+          branch: c.branch ?? undefined,
+          supervisorName: c.supervisorName ?? undefined,
+          spenderName: c.spenderName ?? undefined,
+          department: c.department ?? undefined,
+          city: c.city ?? undefined,
+          entityName: c.entityName,
+          entityCode: c.entityCode,
+          entityNit: c.entityNit ?? undefined,
+          urlproceso: c.urlproceso ?? undefined,
+          supplierName: c.supplierName ?? undefined,
+          procurementProcessId: c.procurementProcessId ?? undefined,
+        };
+      }));
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Internal Server Error' });

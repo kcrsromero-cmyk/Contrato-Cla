@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Contrato } from '../types';
-import { Heart } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useFavorites } from '../context/FavoritesContext';
 import { addFavoriteContract } from '../services/api';
@@ -34,11 +34,11 @@ export const FavoriteButton: React.FC<{ contract: Contrato }> = ({ contract }) =
         !hasFavorites
           ? 'text-slate-300 dark:text-slate-700 cursor-default'
           : isFavorited
-          ? 'text-red-500'
-          : 'text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
+          ? 'text-amber-400'
+          : 'text-slate-400 hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
       }`}
     >
-      <Heart size={18} className={isFavorited ? 'fill-current' : ''} />
+      <Star size={18} className={isFavorited ? 'fill-current' : ''} />
     </button>
   );
 };
