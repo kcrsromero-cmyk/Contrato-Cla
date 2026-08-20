@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { IdentityService } from '../application/IdentityService';
-
+import { prisma } from '../../../infrastructure/db/prisma';
 import { AuditService } from '../../audit/application/AuditService';
 
 export class AuthController {
@@ -123,6 +123,35 @@ export class AuthController {
       res.status(200).json(currentUser);
     } catch (error: any) {
       res.status(401).json({ error: error.message });
+    }
+  }
+
+  async updateProfile(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { name, phone, telegramUsername } = req.body;
+
+      // Solo actualizar campos que vienen en el body
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name.trim();
+      if (phone !== undefined) updateData.phone = phone.trim() || null;
+      if (telegramUsername !== undefined) {
+        // Normalizar: remover @ si el usuario lo incluye
+        updateData.telegramUsername = telegramUsername.trim().replace(/^@/, '') || null;
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: updateData,
+        select: { id: true, email: true, name: true, phone: true, telegramUsername: true }
+      });
+
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 }
