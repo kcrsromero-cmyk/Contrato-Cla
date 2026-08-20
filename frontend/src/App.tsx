@@ -15,8 +15,7 @@ import Dashboard from './components/Dashboard';
 import OnboardingModal from './components/OnboardingModal';
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
-import FavoriteEntitiesModal from './components/FavoriteEntitiesModal';
-import FavoriteContractsModal from './components/FavoriteContractsModal';
+import FavoritesModal from './components/FavoritesModal';
 import { ArrowLeft, Sliders, RefreshCw } from 'lucide-react';
 import { formatBytes } from './utils/helpers';
 
@@ -35,8 +34,8 @@ function AppContent() {
   const [isOnboardingOpen, setIsOnboardingOpen] = React.useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
-  const [isFavoriteEntitiesModalOpen, setIsFavoriteEntitiesModalOpen] = React.useState(false);
-  const [isFavoriteContractsModalOpen, setIsFavoriteContractsModalOpen] = React.useState(false);
+  const [isFavoritesModalOpen, setIsFavoritesModalOpen] = React.useState(false);
+  const [favoritesDefaultTab, setFavoritesDefaultTab] = React.useState<'entities' | 'contracts'>('entities');
 
   const handleCloseOnboarding = () => {
     setIsOnboardingOpen(false);
@@ -140,7 +139,10 @@ function AppContent() {
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
-        onOpenFavorites={() => setIsFavoriteEntitiesModalOpen(true)}
+        onOpenFavorites={() => {
+          setFavoritesDefaultTab('entities');
+          setIsFavoritesModalOpen(true);
+        }}
       >
       {/* If an entity is selected and we are on a wide screen, render the Dual Column Sidebar layout */}
       {selectedEntity && isWideLayout ? (
@@ -308,7 +310,11 @@ function AppContent() {
     <ProfileModal
       isOpen={isProfileModalOpen}
       onClose={() => setIsProfileModalOpen(false)}
-      onOpenFavoriteContracts={() => { setIsProfileModalOpen(false); setIsFavoriteContractsModalOpen(true); }}
+      onOpenFavoriteContracts={() => {
+        setIsProfileModalOpen(false);
+        setFavoritesDefaultTab('contracts');
+        setIsFavoritesModalOpen(true);
+      }}
       onLogout={() => {
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
@@ -319,14 +325,11 @@ function AppContent() {
       isOpen={isAuthModalOpen}
       onClose={() => setIsAuthModalOpen(false)}
     />
-    <FavoriteEntitiesModal
-      isOpen={isFavoriteEntitiesModalOpen}
-      onClose={() => setIsFavoriteEntitiesModalOpen(false)}
+    <FavoritesModal
+      isOpen={isFavoritesModalOpen}
+      onClose={() => setIsFavoritesModalOpen(false)}
       onSelectEntity={setSelectedEntity}
-    />
-    <FavoriteContractsModal
-      isOpen={isFavoriteContractsModalOpen}
-      onClose={() => setIsFavoriteContractsModalOpen(false)}
+      defaultTab={favoritesDefaultTab}
     />
     </>
   );
