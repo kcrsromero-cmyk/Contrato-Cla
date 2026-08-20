@@ -16,6 +16,7 @@ import OnboardingModal from './components/OnboardingModal';
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
 import FavoriteEntitiesModal from './components/FavoriteEntitiesModal';
+import FavoriteContractsModal from './components/FavoriteContractsModal';
 import { ArrowLeft, Sliders, RefreshCw } from 'lucide-react';
 import { formatBytes } from './utils/helpers';
 
@@ -35,6 +36,7 @@ function AppContent() {
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const [isFavoriteEntitiesModalOpen, setIsFavoriteEntitiesModalOpen] = React.useState(false);
+  const [isFavoriteContractsModalOpen, setIsFavoriteContractsModalOpen] = React.useState(false);
 
   const handleCloseOnboarding = () => {
     setIsOnboardingOpen(false);
@@ -306,6 +308,7 @@ function AppContent() {
     <ProfileModal
       isOpen={isProfileModalOpen}
       onClose={() => setIsProfileModalOpen(false)}
+      onOpenFavoriteContracts={() => { setIsProfileModalOpen(false); setIsFavoriteContractsModalOpen(true); }}
       onLogout={() => {
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
@@ -320,6 +323,10 @@ function AppContent() {
       isOpen={isFavoriteEntitiesModalOpen}
       onClose={() => setIsFavoriteEntitiesModalOpen(false)}
       onSelectEntity={setSelectedEntity}
+    />
+    <FavoriteContractsModal
+      isOpen={isFavoriteContractsModalOpen}
+      onClose={() => setIsFavoriteContractsModalOpen(false)}
     />
     </>
   );
