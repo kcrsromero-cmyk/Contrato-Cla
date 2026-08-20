@@ -3,6 +3,7 @@ import { EntidadResumen, Contrato } from '../types';
 import { X, Star, Trash2, ArrowRight, Heart, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useFavorites } from '../context/FavoritesContext';
+import { mapContractToViewModel } from '../utils/contractAdapter';
 import {
   getFavoriteEntities,
   removeFavoriteEntity,
@@ -332,7 +333,7 @@ export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaul
                             <button
                               onClick={() => {
                                 if (onViewContractDetail) {
-                                  onViewContractDetail(contract);
+                                  onViewContractDetail(mapContractToViewModel(contract));
                                   onClose();
                                 }
                               }}
