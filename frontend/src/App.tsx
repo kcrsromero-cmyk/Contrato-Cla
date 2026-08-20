@@ -310,11 +310,6 @@ function AppContent() {
     <ProfileModal
       isOpen={isProfileModalOpen}
       onClose={() => setIsProfileModalOpen(false)}
-      onOpenFavoriteContracts={() => {
-        setIsProfileModalOpen(false);
-        setFavoritesDefaultTab('contracts');
-        setIsFavoritesModalOpen(true);
-      }}
       onLogout={() => {
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");

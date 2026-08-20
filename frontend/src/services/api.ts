@@ -106,6 +106,22 @@ export const getMe = async () => {
   return res.json();
 };
 
+export const updateProfile = async (data: {
+  name?: string;
+  phone?: string;
+  telegramUsername?: string;
+}) => {
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const res = await fetch(`${API_URL}/auth/profile`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Error al actualizar perfil');
+  return res.json();
+};
+
 
 export const getFavoriteEntities = async () => {
   const token = localStorage.getItem('token');
