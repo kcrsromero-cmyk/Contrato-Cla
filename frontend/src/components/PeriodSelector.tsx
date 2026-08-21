@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, AlertCircle, Clock, Lock, RotateCw, ChevronUp, ChevronDown, Sliders } from 'lucide-react';
+import { Calendar, AlertCircle, Clock, RotateCw, ChevronUp, ChevronDown, Sliders } from 'lucide-react';
 import { getContractYears } from '../services/api';
 
 interface PeriodSelectorProps {
@@ -101,15 +101,24 @@ export default function PeriodSelector({
       desde = new Date(`${selectedAnio}-01-01T00:00:00`);
       hasta = new Date(`${selectedAnio}-12-31T23:59:59`);
       label = `Año ${selectedAnio} (Vigencia Firma)`;
-    } else if (modoPeriodo === '30' && isMostRecent) {
-      desde.setDate(hoy.getDate() - 30);
-      label = `Últimos 30 días (Firma)`;
-    } else if (modoPeriodo === '90' && isMostRecent) {
-      desde.setDate(hoy.getDate() - 90);
-      label = `Últimos 90 días (Firma)`;
-    } else if (modoPeriodo === '180' && isMostRecent) {
-      desde.setDate(hoy.getDate() - 180);
-      label = `Últimos 6 meses (Firma)`;
+    } else if (modoPeriodo === '30') {
+      const referencia = isMostRecent ? hoy : new Date(`${selectedAnio}-12-31T23:59:59`);
+      hasta = new Date(referencia);
+      desde = new Date(referencia);
+      desde.setDate(referencia.getDate() - 30);
+      label = isMostRecent ? `Últimos 30 días (Firma)` : `Últimos 30 días de ${selectedAnio} (Firma)`;
+    } else if (modoPeriodo === '90') {
+      const referencia = isMostRecent ? hoy : new Date(`${selectedAnio}-12-31T23:59:59`);
+      hasta = new Date(referencia);
+      desde = new Date(referencia);
+      desde.setDate(referencia.getDate() - 90);
+      label = isMostRecent ? `Últimos 90 días (Firma)` : `Últimos 90 días de ${selectedAnio} (Firma)`;
+    } else if (modoPeriodo === '180') {
+      const referencia = isMostRecent ? hoy : new Date(`${selectedAnio}-12-31T23:59:59`);
+      hasta = new Date(referencia);
+      desde = new Date(referencia);
+      desde.setDate(referencia.getDate() - 180);
+      label = isMostRecent ? `Últimos 6 meses (Firma)` : `Últimos 6 meses de ${selectedAnio} (Firma)`;
     } else if (modoPeriodo === 'rango') {
       const d = new Date(fechaDesde + 'T00:00:00');
       const h = new Date(fechaHasta + 'T23:59:59');
@@ -304,11 +313,6 @@ export default function PeriodSelector({
         }`}>
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">2. Atajo Temporal</span>
-            {!isMostRecentActive && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-600 dark:text-amber-450 bg-amber-50 dark:bg-amber-950/20 px-1.5 py-0.5 rounded-md border border-amber-100 dark:border-amber-900/40">
-                <Lock className="w-2.5 h-2.5" /> Atajos bloqueados
-              </span>
-            )}
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -327,52 +331,43 @@ export default function PeriodSelector({
 
             {/* Atajo 30 días */}
             <button
-              onClick={() => { if (isMostRecentActive) { setModoPeriodo('30'); setIsCollapsed(true); } }}
-              disabled={loading || !isMostRecentActive}
-              title={!isMostRecentActive ? "Atajos de tiempo real sólo disponibles para el año más reciente" : "Últimos 30 días"}
+              onClick={() => { setModoPeriodo('30'); setIsCollapsed(true); }}
+              disabled={loading}
+              title={"Últimos 30 días"}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1 cursor-pointer ${
                 modoPeriodo === '30'
                   ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
-                  : !isMostRecentActive
-                  ? 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-850 text-slate-300 dark:text-slate-600 cursor-not-allowed'
                   : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-600 dark:hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400'
               }`}
             >
-              {!isMostRecentActive && <Lock className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
               30 días
             </button>
 
             {/* Atajo 90 días */}
             <button
-              onClick={() => { if (isMostRecentActive) { setModoPeriodo('90'); setIsCollapsed(true); } }}
-              disabled={loading || !isMostRecentActive}
-              title={!isMostRecentActive ? "Atajos de tiempo real sólo disponibles para el año más reciente" : "Últimos 90 días"}
+              onClick={() => { setModoPeriodo('90'); setIsCollapsed(true); }}
+              disabled={loading}
+              title={"Últimos 90 días"}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1 cursor-pointer ${
                 modoPeriodo === '90'
                   ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
-                  : !isMostRecentActive
-                  ? 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-850 text-slate-300 dark:text-slate-600 cursor-not-allowed'
                   : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-600 dark:hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400'
               }`}
             >
-              {!isMostRecentActive && <Lock className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
               90 días
             </button>
 
             {/* Atajo 6 meses */}
             <button
-              onClick={() => { if (isMostRecentActive) { setModoPeriodo('180'); setIsCollapsed(true); } }}
-              disabled={loading || !isMostRecentActive}
-              title={!isMostRecentActive ? "Atajos de tiempo real sólo disponibles para el año más reciente" : "Últimos 6 meses"}
+              onClick={() => { setModoPeriodo('180'); setIsCollapsed(true); }}
+              disabled={loading}
+              title={"Últimos 6 meses"}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1 cursor-pointer ${
                 modoPeriodo === '180'
                   ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
-                  : !isMostRecentActive
-                  ? 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-850 text-slate-300 dark:text-slate-600 cursor-not-allowed'
                   : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-600 dark:hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400'
               }`}
             >
-              {!isMostRecentActive && <Lock className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
               6 meses
             </button>
 
@@ -391,9 +386,7 @@ export default function PeriodSelector({
           </div>
 
           <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-normal">
-            {isMostRecentActive 
-              ? "Atajos de tiempo real activos. Seleccione un botón para acotar la búsqueda."
-              : `Atajos de tiempo real desactivados porque el año seleccionado (${selectedAnio}) no es la vigencia más reciente (${mostRecentYear}).`}
+            {`Atajos de tiempo activos. Seleccione un botón para acotar la búsqueda${!isMostRecentActive ? ` dentro de ${selectedAnio}` : ''}.`}
           </p>
         </div>
       </div>
