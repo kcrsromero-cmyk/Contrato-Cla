@@ -123,13 +123,13 @@ model Contract {
   endDate       DateTime? @map("end_date") // fecha_de_fin_del_contrato
   lastUpdate    DateTime? @map("last_update") // ultima_actualizacion
 
-  contractValue         Float? @map("contract_value") // valor_del_contrato
-  advancePaymentValue   Float? @map("advance_payment_value") // valor_de_pago_adelantado
-  invoicedValue         Float? @map("invoiced_value") // valor_facturado
-  paidValue             Float? @map("paid_value") // valor_pagado
-  pendingPaymentValue   Float? @map("pending_payment_value") // valor_pendiente_de_pago
-  pendingExecutionValue Float? @map("pending_execution_value") // valor_pendiente_de_ejecucion
-  cdpBalance            Float? @map("cdp_balance") // saldo_cdp
+  contractValue         Decimal? @db.Decimal(20, 2) @map("contract_value") // valor_del_contrato
+  advancePaymentValue   Decimal? @db.Decimal(20, 2) @map("advance_payment_value") // valor_de_pago_adelantado
+  invoicedValue         Decimal? @db.Decimal(20, 2) @map("invoiced_value") // valor_facturado
+  paidValue             Decimal? @db.Decimal(20, 2) @map("paid_value") // valor_pagado
+  pendingPaymentValue   Decimal? @db.Decimal(20, 2) @map("pending_payment_value") // valor_pendiente_de_pago
+  pendingExecutionValue Decimal? @db.Decimal(20, 2) @map("pending_execution_value") // valor_pendiente_de_ejecucion
+  cdpBalance            Decimal? @db.Decimal(20, 2) @map("cdp_balance") // saldo_cdp
 
   duration     Float? // duraci_n_del_contrato
   addedDays    Float?  @map("added_days") // dias_adicionados
