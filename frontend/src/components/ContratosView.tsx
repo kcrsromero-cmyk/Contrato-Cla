@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clasificarContrato, obtenerResumenDeGastos } from '../utils/categorizer';
+import { getEstadoSemaforoConfig } from '../utils/contractStatus';
 import { FavoriteButton } from './FavoriteButton';
 import CategoriasGastosPanel from './CategoriasGastosPanel';
 import PredictiveSearchBar from './PredictiveSearchBar';
@@ -110,72 +111,6 @@ function InfoTooltip({ content }: { content: string }) {
   );
 }
 
-function getEstadoSemaforoConfig(estado: string) {
-  const clean = (estado || '').trim().toLowerCase();
-  
-  // Green: Activo, Saludable, En curso normal
-  if (clean === 'en ejecución' || clean === 'en ejecucion' || clean === 'aprobado') {
-    return {
-      colorClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-      dotClass: 'bg-emerald-500',
-      label: estado || 'En ejecución'
-    };
-  }
-  
-  // Finalizado correctamente
-  if (clean === 'cerrado' || clean === 'terminado') {
-    return {
-      colorClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
-      dotClass: 'bg-indigo-500',
-      label: estado || 'Terminado'
-    };
-  }
-
-  // Amber: En proceso / Trámite / Modificación / Prórroga
-  if (
-    clean === 'prorrogado' || 
-    clean === 'modificado' || 
-    clean === 'enviado proveedor' || 
-    clean === 'en aprobación' || 
-    clean === 'en aprobacion'
-  ) {
-    return {
-      colorClass: 'bg-amber-50 text-amber-800 border-amber-200',
-      dotClass: 'bg-amber-500',
-      label: estado || 'En trámite/Prorrogado'
-    };
-  }
-
-  // Red: Crítico / Interrumpido / Suspendido / Cancelado / Cedido
-  if (
-    clean === 'cancelado' || 
-    clean === 'cedido' || 
-    clean === 'suspendido'
-  ) {
-    return {
-      colorClass: 'bg-rose-50 text-rose-800 border-rose-200',
-      dotClass: 'bg-rose-500 animate-pulse',
-      label: estado || 'Interrumpido/Cancelado'
-    };
-  }
-
-  // Gray: Borrador o preparación preliminar
-  return {
-    colorClass: 'bg-slate-50 text-slate-700 border-slate-200',
-    dotClass: 'bg-slate-400',
-    label: estado || 'Borrador'
-  };
-}
-
-function renderEstadoSemaforo(estado: string) {
-  const config = getEstadoSemaforoConfig(estado);
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border font-mono tracking-wide ${config.colorClass}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dotClass}`}></span>
-      {config.label}
-    </span>
-  );
-}
 
 interface ObjetoContratoTextProps {
   objeto: string;
@@ -827,7 +762,15 @@ export default function ContratosView({
                             Ref: {contrato.referencia_del_contrato}
                           </span>
                         )}
-                        {renderEstadoSemaforo(contrato.estado_contrato || '')}
+                        {(() => {
+                          const config = getEstadoSemaforoConfig(contrato.estado_contrato || '');
+                          return (
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border font-mono tracking-wide ${config.colorClass}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${config.dotClass}`}></span>
+                              {config.label}
+                            </span>
+                          );
+                        })()}
                         <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
                           Firma: {formatDate(contrato.fecha_de_firma)}
                         </span>
