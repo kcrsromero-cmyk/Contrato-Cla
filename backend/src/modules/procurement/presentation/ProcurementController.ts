@@ -131,7 +131,7 @@ export class ProcurementController {
 
       const favorites = await prisma.favoriteContract.findMany({
         where: { userId: user.id },
-        include: { contract: true }
+        include: { contract: { include: { procurementProcess: true } } }
       });
 
       res.json(favorites.map((f: any) => {
@@ -168,7 +168,7 @@ export class ProcurementController {
           entityName: c.entityName,
           entityCode: c.entityCode,
           entityNit: c.entityNit ?? undefined,
-          urlproceso: c.urlproceso ?? undefined,
+          urlproceso: c.procurementProcess?.url ?? undefined,
           supplierName: c.supplierName ?? undefined,
           procurementProcessId: c.procurementProcessId ?? undefined,
         };
