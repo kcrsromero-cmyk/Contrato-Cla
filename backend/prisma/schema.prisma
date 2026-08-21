@@ -150,8 +150,6 @@ model Contract {
   entityCode String  @map("entity_code")
   entityNit  String? @map("entity_nit")
 
-  urlproceso String?
-
   supplierId           String? @map("supplier_id") @db.Uuid
   supplierName         String? @map("supplier_name")
   procurementProcessId String? @map("procurement_process_id") @db.Uuid
