@@ -2,6 +2,7 @@ import React from 'react';
 import { Contrato } from '../types';
 import { formatCOP, formatDate, normalizeName } from '../utils/helpers';
 import { X, ExternalLink, Calendar, Building, DollarSign, FileText, Scale, User } from 'lucide-react';
+import { getEstadoSemaforoConfig } from '../utils/contractStatus';
 
 interface ContractDetailModalProps {
   contract: Contrato | null;
@@ -52,51 +53,6 @@ function maskDocument(document: string, tipoDoc?: string): string {
 
   return `${firstTwo}${maskedSection}${lastTwo}`;
 }
-
-const getEstadoSemaforoConfig = (estado: string) => {
-  const norm = estado.toLowerCase().trim();
-
-  if (norm.includes('terminado') || norm.includes('liquidado') || norm.includes('cerrado')) {
-    return {
-      label: 'Cerrado/Liquidado',
-      colorClass: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50',
-      dotClass: 'bg-emerald-500'
-    };
-  }
-  if (norm.includes('ejecución') || norm.includes('celebrado') || norm.includes('activo') || norm.includes('aprobado')) {
-    return {
-      label: 'Activo/Ejecución',
-      colorClass: 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/50',
-      dotClass: 'bg-indigo-500 animate-pulse'
-    };
-  }
-  if (norm.includes('suspendido') || norm.includes('prorrogado') || norm.includes('modificado')) {
-    return {
-      label: 'Suspendido/Modificado',
-      colorClass: 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50',
-      dotClass: 'bg-amber-500'
-    };
-  }
-  if (norm.includes('borrador') || norm.includes('convocatoria') || norm.includes('evaluación') || norm.includes('adjudicado')) {
-    return {
-      label: 'En Proceso/Adjudicado',
-      colorClass: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50',
-      dotClass: 'bg-blue-500'
-    };
-  }
-  if (norm.includes('cancelado') || norm.includes('descartado') || norm.includes('anulado') || norm.includes('revocado')) {
-    return {
-      label: 'Cancelado/Anulado',
-      colorClass: 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50',
-      dotClass: 'bg-red-500'
-    };
-  }
-  return {
-    label: estado || 'Desconocido',
-    colorClass: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
-    dotClass: 'bg-slate-400'
-  };
-};
 
 function renderEstadoSemaforo(estado: string) {
   const config = getEstadoSemaforoConfig(estado);
