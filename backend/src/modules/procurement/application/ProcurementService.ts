@@ -250,8 +250,10 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
 
     // Persist contracts to Postgres
     for (const contractData of contracts) {
+      let procurementProcessUUID: string | undefined;
+
       if (contractData.procurementProcessId) {
-        await prisma.procurementProcess.upsert({
+        const proc = await prisma.procurementProcess.upsert({
           where: { processId: contractData.procurementProcessId },
           update: { url: contractData.urlproceso ?? undefined },
           create: {
@@ -259,6 +261,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
             url: contractData.urlproceso ?? undefined,
           }
         });
+        procurementProcessUUID = proc.id;
       }
 
       await prisma.contract.upsert({
@@ -312,7 +315,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           entityName: contractData.entityName || 'Unknown Entity',
           entityCode: contractData.entityCode || '000',
           entityNit: contractData.entityNit,
-          procurementProcessId: contractData.procurementProcessId,
+          procurementProcessId: procurementProcessUUID,
 
           supplierName: contractData.supplierName,
           syncedAt: new Date(),
