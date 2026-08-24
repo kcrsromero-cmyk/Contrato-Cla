@@ -79,7 +79,9 @@ export default function ContractDetailModal({ contract: selectedContract, onClos
               {normalizeName(selectedContract.proveedor_adjudicado)}
             </h3>
             <p className="text-xs font-mono text-slate-500 dark:text-slate-455 mt-0.5">
-              ID: {selectedContract.id_contrato} | {selectedContract.tipodocproveedor || 'CC/NIT'}: {maskDocument(selectedContract.documento_proveedor || '', selectedContract.tipodocproveedor)} | Referencia: {selectedContract.referencia_del_contrato || 'No reportada'}
+              ID: {selectedContract.id_contrato} | {selectedContract.supplierDocumentDisplay
+                ? `${selectedContract.supplierDocumentType || 'Documento'}: ${selectedContract.supplierDocumentDisplay}`
+                : 'CC/NIT: No registrado'} | Referencia: {selectedContract.referencia_del_contrato || 'No reportada'}
             </p>
             <div className="mt-2 flex items-center gap-1.5">
               <span className="text-[10px] font-bold font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">Estado:</span>
