@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, AlertCircle, Clock, RotateCw, ChevronUp, ChevronDown, Sliders } from 'lucide-react';
 import { getContractYears } from '../services/api';
 
+const formatLocalDate = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 interface PeriodSelectorProps {
   onPeriodChanged: (fechaDesde: string, fechaHasta: string, label: string) => void;
   loading: boolean;
@@ -143,8 +150,8 @@ export default function PeriodSelector({
     }
 
     setError(null);
-    const dStr = desde.toISOString().split('T')[0];
-    const hStr = hasta.toISOString().split('T')[0];
+    const dStr = formatLocalDate(desde);
+    const hStr = formatLocalDate(hasta);
 
     // Synchronize inputs for custom range fallback
     setFechaDesde(dStr);
