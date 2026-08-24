@@ -46,10 +46,12 @@ app.get('/api/health', (req, res) => {
 
 import { authRouter } from './modules/identity/presentation/routes';
 import { procurementRouter } from './modules/procurement/presentation/routes';
+import { analyticsRouter } from './modules/analytics/presentation/routes';
 
 // Mount API routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/procurement', procurementRouter);
+app.use('/api/v1/analytics', analyticsRouter);
 
 import { setupRecurringJobs } from './infrastructure/jobs/refreshWorker';
 // Initialize recurring background jobs
