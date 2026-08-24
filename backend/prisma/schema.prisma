@@ -89,9 +89,23 @@ model Supplier {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  contracts Contract[]
-
   @@map("suppliers")
+}
+
+model Person {
+  id             String   @id @default(uuid()) @db.Uuid
+  documentType   String   @map("document_type")
+  documentNumber String   @map("document_number")
+  name           String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  contractsAsSupplier  Contract[] @relation("ContractSupplier")
+  contractsAsSupervisor Contract[] @relation("ContractSupervisor")
+  contractsAsLegalRep  Contract[] @relation("ContractLegalRep")
+
+  @@unique([documentType, documentNumber])
+  @@map("persons")
 }
 
 model ProcurementProcess {
@@ -150,7 +164,9 @@ model Contract {
   entityCode String  @map("entity_code")
   entityNit  String? @map("entity_nit")
 
-  supplierId           String? @map("supplier_id") @db.Uuid
+  supplierId   String? @map("supplier_id")   @db.Uuid
+  supervisorId String? @map("supervisor_id") @db.Uuid
+  legalRepId   String? @map("legal_rep_id")  @db.Uuid
   supplierName         String? @map("supplier_name")
   procurementProcessId String? @map("procurement_process_id") @db.Uuid
 
@@ -158,7 +174,9 @@ model Contract {
   updatedAt DateTime @updatedAt @map("updated_at")
   syncedAt  DateTime @default(now()) @map("synced_at")
 
-  supplier           Supplier?           @relation(fields: [supplierId], references: [id])
+  supplier   Person? @relation("ContractSupplier",   fields: [supplierId],   references: [id])
+  supervisor Person? @relation("ContractSupervisor", fields: [supervisorId], references: [id])
+  legalRep   Person? @relation("ContractLegalRep",   fields: [legalRepId],   references: [id])
   procurementProcess ProcurementProcess? @relation(fields: [procurementProcessId], references: [id])
   favoritedBy        FavoriteContract[]
 
