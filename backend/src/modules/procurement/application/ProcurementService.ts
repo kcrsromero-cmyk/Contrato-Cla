@@ -4,6 +4,7 @@ import { SimilarityDomainService, SimilarObjectGroup } from '../domain/Similarit
 import { RedisCacheAdapter } from '../../../infrastructure/redis/RedisCacheAdapter';
 import { prisma } from '../../../infrastructure/db/prisma';
 import { logger } from '../../../infrastructure/logger';
+import { normalizeDocumentType, maskDocument } from '../../../utils/documentNormalizer';
 
 export class ProcurementService {
   private similarityService: SimilarityDomainService;
@@ -182,7 +183,10 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
         }
       },
       include: {
-        procurementProcess: true
+        procurementProcess: true,
+        supplier: true,
+        supervisor: true,
+        legalRep: true
       }
     });
 
@@ -238,6 +242,12 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           urlproceso: c.procurementProcess?.url ?? undefined,
           supplierName: c.supplierName ?? undefined, // Prisma uses supplierId to relation Supplier, but Domain Contract expects supplierName
           procurementProcessId: c.procurementProcessId ?? undefined,
+          supplierDocumentDisplay: c.supplier
+            ? maskDocument(c.supplier.documentNumber, c.supplier.documentType as any)
+            : undefined,
+          supervisorDocumentDisplay: c.supervisor
+            ? maskDocument(c.supervisor.documentNumber, c.supervisor.documentType as any)
+            : undefined,
         }));
         await this.cacheAdapter.set(cacheKey, JSON.stringify(domainData), 86400);
         return domainData;
@@ -264,6 +274,63 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
         procurementProcessUUID = proc.id;
       }
 
+      let supplierUUID: string | undefined;
+      if (contractData.supplierDocument && contractData.supplierDocumentType) {
+        const p = await prisma.person.upsert({
+          where: {
+            documentType_documentNumber: {
+              documentType: normalizeDocumentType(contractData.supplierDocumentType),
+              documentNumber: contractData.supplierDocument.trim()
+            }
+          },
+          update: { name: contractData.supplierName ?? undefined },
+          create: {
+            documentType: normalizeDocumentType(contractData.supplierDocumentType),
+            documentNumber: contractData.supplierDocument.trim(),
+            name: contractData.supplierName ?? undefined
+          }
+        });
+        supplierUUID = p.id;
+      }
+
+      let supervisorUUID: string | undefined;
+      if (contractData.supervisorDocument && contractData.supervisorDocumentType) {
+        const p = await prisma.person.upsert({
+          where: {
+            documentType_documentNumber: {
+              documentType: normalizeDocumentType(contractData.supervisorDocumentType),
+              documentNumber: contractData.supervisorDocument.trim()
+            }
+          },
+          update: { name: contractData.supervisorName ?? undefined },
+          create: {
+            documentType: normalizeDocumentType(contractData.supervisorDocumentType),
+            documentNumber: contractData.supervisorDocument.trim(),
+            name: contractData.supervisorName ?? undefined
+          }
+        });
+        supervisorUUID = p.id;
+      }
+
+      let legalRepUUID: string | undefined;
+      if (contractData.legalRepDocument && contractData.legalRepDocumentType) {
+        const p = await prisma.person.upsert({
+          where: {
+            documentType_documentNumber: {
+              documentType: normalizeDocumentType(contractData.legalRepDocumentType),
+              documentNumber: contractData.legalRepDocument.trim()
+            }
+          },
+          update: { name: contractData.legalRepName ?? undefined },
+          create: {
+            documentType: normalizeDocumentType(contractData.legalRepDocumentType),
+            documentNumber: contractData.legalRepDocument.trim(),
+            name: contractData.legalRepName ?? undefined
+          }
+        });
+        legalRepUUID = p.id;
+      }
+
       await prisma.contract.upsert({
         where: { contractId: contractData.contractId },
         update: {
@@ -272,6 +339,9 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           pendingPaymentValue: contractData.pendingPaymentValue,
           pendingExecutionValue: contractData.pendingExecutionValue,
           supplierName: contractData.supplierName,
+          supplierId: supplierUUID,
+          supervisorId: supervisorUUID,
+          legalRepId: legalRepUUID,
           syncedAt: new Date(),
         },
         create: {
@@ -318,6 +388,9 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           procurementProcessId: procurementProcessUUID,
 
           supplierName: contractData.supplierName,
+          supplierId: supplierUUID,
+          supervisorId: supervisorUUID,
+          legalRepId: legalRepUUID,
           syncedAt: new Date(),
         }
       });

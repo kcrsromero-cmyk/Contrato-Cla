@@ -59,6 +59,15 @@ export interface Contract {
   supplierName?: string;
   procurementProcessId?: string;
   urlproceso?: string | null;
+  supplierDocument?: string | null;
+  supplierDocumentType?: string | null;
+  supervisorDocument?: string | null;
+  supervisorDocumentType?: string | null;
+  legalRepDocument?: string | null;
+  legalRepDocumentType?: string | null;
+  legalRepName?: string | null;
+  supplierDocumentDisplay?: string;
+  supervisorDocumentDisplay?: string;
 }
 
 export interface FilterParams {

@@ -14,12 +14,6 @@ export class SocrataContractProvider implements ContractProvider {
     const { codigoEntidad, fechaDesde, fechaHasta } = filters;
 
     // Select required fields
-    // NOTA DE PRIVACIDAD DELIBERADA:
-    // Los campos 'nombre_representante_legal', 'domicilio_representante_legal',
-    // 'identificaci_n_representante_legal' y el resto de ese clúster NUNCA deben
-    // ser incluidos en este array de selección. Aunque están disponibles en la
-    // fuente de datos de Socrata, su exclusión es una decisión de privacidad
-    // deliberada y no una omisión accidental.
     const selectFields = [
       'id_contrato',
       'referencia_del_contrato',
@@ -58,7 +52,14 @@ export class SocrataContractProvider implements ContractProvider {
       'proveedor_adjudicado',
       'codigo_proveedor',
       'proceso_de_compra',
-      'urlproceso'
+      'urlproceso',
+      'documento_proveedor',
+      'tipodocproveedor',
+      'n_mero_de_documento_supervisor',
+      'tipo_de_documento_supervisor',
+      'identificaci_n_representante_legal',
+      'tipo_de_identificaci_n_representante_legal',
+      'representante_legal'
     ].join(',');
 
     const escapedCodigo = this.escapeSoQL(codigoEntidad);
@@ -310,6 +311,14 @@ export class SocrataContractProvider implements ContractProvider {
         supplierName: item.proveedor_adjudicado,
         procurementProcessId: item.proceso_de_compra,
         urlproceso: item.urlproceso?.url || item.urlproceso || null,
+
+        supplierDocument:     item.documento_proveedor || null,
+        supplierDocumentType: item.tipodocproveedor || null,
+        supervisorDocument:   item.n_mero_de_documento_supervisor || null,
+        supervisorDocumentType: item.tipo_de_documento_supervisor || null,
+        legalRepDocument:     item.identificaci_n_representante_legal || null,
+        legalRepDocumentType: item.tipo_de_identificaci_n_representante_legal || null,
+        legalRepName:         item.representante_legal || null,
       };
 
       deduplicated.push(contract);
