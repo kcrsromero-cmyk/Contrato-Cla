@@ -27,6 +27,8 @@ export interface Contrato {
   tipodocproveedor?: string;
   documento_proveedor?: string;
   proveedor_adjudicado?: string;
+  supplierDocumentDisplay?: string;
+  supplierDocumentType?: string;
   codigo_proveedor?: string;
 
   valor_del_contrato?: string | number;

@@ -31,6 +31,8 @@ export function mapContractToViewModel(c: any): Contrato {
     ultima_actualizacion: c.lastUpdate,
 
     proveedor_adjudicado: c.supplierName,
+    supplierDocumentDisplay: c.supplierDocumentDisplay,
+    supplierDocumentType: c.supplierDocumentType,
 
     valor_del_contrato: c.contractValue,
     valor_de_pago_adelantado: c.advancePaymentValue,
