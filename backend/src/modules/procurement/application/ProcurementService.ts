@@ -274,62 +274,35 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
         procurementProcessUUID = proc.id;
       }
 
-      let supplierUUID: string | undefined;
-      if (contractData.supplierDocument && contractData.supplierDocumentType) {
-        const p = await prisma.person.upsert({
-          where: {
-            documentType_documentNumber: {
-              documentType: normalizeDocumentType(contractData.supplierDocumentType),
-              documentNumber: contractData.supplierDocument.trim()
-            }
-          },
-          update: { name: contractData.supplierName ?? undefined },
-          create: {
-            documentType: normalizeDocumentType(contractData.supplierDocumentType),
-            documentNumber: contractData.supplierDocument.trim(),
-            name: contractData.supplierName ?? undefined
-          }
-        });
-        supplierUUID = p.id;
-      }
+      const [supplierPerson, supervisorPerson, legalRepPerson] = await Promise.all([
+        contractData.supplierDocument && contractData.supplierDocumentType
+          ? prisma.person.upsert({
+              where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: contractData.supplierDocument.trim() } },
+              update: { name: contractData.supplierName ?? undefined },
+              create: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: contractData.supplierDocument.trim(), name: contractData.supplierName ?? undefined }
+            })
+          : Promise.resolve(null),
 
-      let supervisorUUID: string | undefined;
-      if (contractData.supervisorDocument && contractData.supervisorDocumentType) {
-        const p = await prisma.person.upsert({
-          where: {
-            documentType_documentNumber: {
-              documentType: normalizeDocumentType(contractData.supervisorDocumentType),
-              documentNumber: contractData.supervisorDocument.trim()
-            }
-          },
-          update: { name: contractData.supervisorName ?? undefined },
-          create: {
-            documentType: normalizeDocumentType(contractData.supervisorDocumentType),
-            documentNumber: contractData.supervisorDocument.trim(),
-            name: contractData.supervisorName ?? undefined
-          }
-        });
-        supervisorUUID = p.id;
-      }
+        contractData.supervisorDocument && contractData.supervisorDocumentType
+          ? prisma.person.upsert({
+              where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: contractData.supervisorDocument.trim() } },
+              update: { name: contractData.supervisorName ?? undefined },
+              create: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: contractData.supervisorDocument.trim(), name: contractData.supervisorName ?? undefined }
+            })
+          : Promise.resolve(null),
 
-      let legalRepUUID: string | undefined;
-      if (contractData.legalRepDocument && contractData.legalRepDocumentType) {
-        const p = await prisma.person.upsert({
-          where: {
-            documentType_documentNumber: {
-              documentType: normalizeDocumentType(contractData.legalRepDocumentType),
-              documentNumber: contractData.legalRepDocument.trim()
-            }
-          },
-          update: { name: contractData.legalRepName ?? undefined },
-          create: {
-            documentType: normalizeDocumentType(contractData.legalRepDocumentType),
-            documentNumber: contractData.legalRepDocument.trim(),
-            name: contractData.legalRepName ?? undefined
-          }
-        });
-        legalRepUUID = p.id;
-      }
+        contractData.legalRepDocument && contractData.legalRepDocumentType
+          ? prisma.person.upsert({
+              where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: contractData.legalRepDocument.trim() } },
+              update: { name: contractData.legalRepName ?? undefined },
+              create: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: contractData.legalRepDocument.trim(), name: contractData.legalRepName ?? undefined }
+            })
+          : Promise.resolve(null),
+      ]);
+
+      const supplierUUID = supplierPerson?.id;
+      const supervisorUUID = supervisorPerson?.id;
+      const legalRepUUID = legalRepPerson?.id;
 
       await prisma.contract.upsert({
         where: { contractId: contractData.contractId },
