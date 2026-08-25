@@ -7,7 +7,8 @@ import {
   BadgeAlert, 
   CopyCheck, 
   Sparkles,
-  Calendar
+  Calendar,
+  Activity
 } from 'lucide-react';
 
 import { 
