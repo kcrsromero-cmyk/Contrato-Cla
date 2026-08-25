@@ -32,6 +32,7 @@ import {
 import { useMetricas } from '../hooks/useMetricas';
 import { useContratistas } from '../hooks/useContratistas';
 import { ComparativaMensual } from './ComparativaMensual';
+import { ActividadTemporalTab } from './metricas/ActividadTemporalTab';
 
 interface MetricasViewProps {
   contratos: Contrato[];
@@ -46,7 +47,7 @@ export default function MetricasView({ contratos, fechaDesde, fechaHasta }: Metr
   const [selectedSimilarGroup, setSelectedSimilarGroup] = useState<SimilarObjectGroup | null>(null);
   const [selectedTopContractor, setSelectedTopContractor] = useState<ContractorAggregate | null>(null);
   const [chartType, setChartType] = useState<'donut' | 'bar-horizontal' | 'bar-vertical'>('donut');
-  const [activeMainTab, setActiveMainTab] = useState<'general' | 'simultaneidad' | 'exactas' | 'similares' | 'alertas' | 'mensual'>('general');
+  const [activeMainTab, setActiveMainTab] = useState<'general' | 'simultaneidad' | 'exactas' | 'similares' | 'alertas' | 'mensual' | 'temporal'>('general');
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>('all');
 
   const fullMonthNames: { [key: string]: string } = {
@@ -204,6 +205,29 @@ export default function MetricasView({ contratos, fechaDesde, fechaHasta }: Metr
             </div>
           </button>
 
+          {/* Tab 2.5: Actividad Temporal */}
+          <button
+            onClick={() => setActiveMainTab('temporal')}
+            className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group shadow-3xs ${
+              activeMainTab === 'temporal'
+                ? 'border-indigo-600 bg-indigo-50/20 text-indigo-900 dark:text-indigo-200 ring-2 ring-indigo-600/10 dark:bg-indigo-950/25 dark:border-indigo-500'
+                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2 w-full">
+              <Activity className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeMainTab === 'temporal' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+              <span className={`text-[10px] font-extrabold font-mono px-2 py-0.5 rounded-full border ${
+                activeMainTab === 'temporal' ? 'bg-indigo-100/60 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900 text-indigo-700 dark:text-indigo-300' : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
+              }`}>
+                ~
+              </span>
+            </div>
+            <div className="mt-4">
+              <span className="font-extrabold text-xs block font-sans tracking-tight">Actividad Temporal</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 block leading-tight font-medium">Análisis de firmas</span>
+            </div>
+          </button>
+
           {/* Tab 3: Simultaneidad */}
           <button
             onClick={() => setActiveMainTab('simultaneidad')}
@@ -319,6 +343,14 @@ export default function MetricasView({ contratos, fechaDesde, fechaHasta }: Metr
             contratos={contratos} 
             selectedMonthKey={selectedMonthKey}
             onSelectMonthKey={setSelectedMonthKey}
+          />
+        )}
+
+        {activeMainTab === 'temporal' && (
+          <ActividadTemporalTab
+            contratos={contratos}
+            fechaDesde={fechaDesde}
+            fechaHasta={fechaHasta}
           />
         )}
 
