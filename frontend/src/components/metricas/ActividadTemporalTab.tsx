@@ -3,7 +3,7 @@ import { Contrato } from '../../types';
 import { useActividadTemporal, DiaActividad } from '../../hooks/useActividadTemporal';
 import { useAuth } from '../../context/AuthContext';
 import {
-  Activity,
+  BarChart2 as Activity,
   CalendarDays,
   BarChart4,
   TrendingUp,
