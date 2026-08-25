@@ -59,7 +59,7 @@ export class SocrataContractProvider implements ContractProvider {
       'tipo_de_documento_supervisor',
       'identificaci_n_representante_legal',
       'tipo_de_identificaci_n_representante_legal',
-      'representante_legal'
+      'nombre_representante_legal'
     ].join(',');
 
     const escapedCodigo = this.escapeSoQL(codigoEntidad);
@@ -318,7 +318,7 @@ export class SocrataContractProvider implements ContractProvider {
         supervisorDocumentType: item.tipo_de_documento_supervisor || null,
         legalRepDocument:     item.identificaci_n_representante_legal || null,
         legalRepDocumentType: item.tipo_de_identificaci_n_representante_legal || null,
-        legalRepName:         item.representante_legal || null,
+        legalRepName:         item.nombre_representante_legal || null,
       };
 
       deduplicated.push(contract);
