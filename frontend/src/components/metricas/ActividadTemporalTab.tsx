@@ -365,6 +365,41 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({ cont
                     </span>
                   </div>
                 </div>
+
+                {/* Días de la semana mini */}
+                <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <p className="text-[9px] uppercase tracking-wide text-slate-400 mb-2 font-bold">
+                    Días de la semana:
+                  </p>
+                  <div className="flex gap-1">
+                    {semana.dias.map(fecha => {
+                      const diaData = metricas.porDia.find(d => d.fecha === fecha);
+                      if (!diaData) return null;
+                      const esMayorDia = semana.mayorDia?.nombre.includes(diaData.nombreDia.substring(0,3));
+                      return (
+                        <div
+                          key={fecha}
+                          className={`flex-1 flex flex-col items-center p-1 rounded-lg text-center ${
+                            esMayorDia && diaData.contratos > 0
+                              ? 'bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700'
+                              : diaData.contratos > 0
+                              ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800'
+                              : 'bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800'
+                          }`}
+                        >
+                          <span className="text-[8px] font-bold text-slate-500 dark:text-slate-400">
+                            {diaData.nombreDia.substring(0, 1)}
+                          </span>
+                          <span className={`text-[9px] font-bold mt-0.5 ${
+                            diaData.contratos > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'
+                          }`}>
+                            {diaData.dia}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             );
           })}

@@ -349,9 +349,17 @@ export default function MetricasView({ contratos, fechaDesde, fechaHasta }: Metr
 
         {activeMainTab === 'temporal' && (
           <ActividadTemporalTab
-            contratos={contratos}
-            fechaDesde={fechaDesde}
-            fechaHasta={fechaHasta}
+            contratos={filteredContratos}
+            fechaDesde={selectedMonthKey !== 'all'
+              ? `${selectedMonthKey}-01`
+              : fechaDesde}
+            fechaHasta={selectedMonthKey !== 'all'
+              ? `${selectedMonthKey}-${new Date(
+                  parseInt(selectedMonthKey.split('-')[0]),
+                  parseInt(selectedMonthKey.split('-')[1]),
+                  0
+                ).getDate()}`
+              : fechaHasta}
           />
         )}
 
