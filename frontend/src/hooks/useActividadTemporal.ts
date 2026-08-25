@@ -135,7 +135,7 @@ export function useActividadTemporal(
     const totalContratos = contratos.length;
     const porDiaSemana = NOMBRES_DIA.map((nombre, i) => {
       const data = porDiaSemanaMap.get(i) || { contratos: 0, valor: 0 };
-      return { dia: nombre.toUpperCase(), contratos: data.contratos, valor: data.valor, porcentaje: totalContratos > 0 ? (data.contratos / totalContratos) * 100 : 0 };
+      return { dia: nombre, contratos: data.contratos, valor: data.valor, porcentaje: totalContratos > 0 ? (data.contratos / totalContratos) * 100 : 0 };
     });
     const diaMayorConc = porDiaSemana.reduce((max, d) => d.contratos > max.contratos ? d : max, porDiaSemana[0]);
 
