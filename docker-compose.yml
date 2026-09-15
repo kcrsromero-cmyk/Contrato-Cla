@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile
     container_name: contrata360_backend
     ports:
-      - "127.0.0.1:4000:4000"
+      - "4000:4000"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379
@@ -61,7 +61,7 @@ services:
         - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
     container_name: contrata360_frontend
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     restart: unless-stopped
 
 volumes:
