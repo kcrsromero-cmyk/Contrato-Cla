@@ -13,6 +13,10 @@ import { AuditMiddleware } from './modules/audit/presentation/AuditMiddleware';
 dotenv.config();
 
 const app = express();
+
+// Confiar en el proxy de Traefik (primer proxy en la cadena)
+app.set('trust proxy', 1);
+
 const port = process.env.PORT || 4000;
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
