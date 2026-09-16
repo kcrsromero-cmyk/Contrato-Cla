@@ -29,9 +29,10 @@ app.use(helmet());
 // Rate limit global — 100 requests por IP cada 15 minutos
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1',
   message: { error: 'Too many requests, please try again later.' }
 });
 
@@ -57,7 +58,7 @@ app.get('/robots.txt', (req, res) => {
 app.use((req, res, next) => {
   const blockedPaths = [
     '/debug', '/.env', '/wp-admin', '/phpmyadmin',
-    '/admin', '/.git', '/config', '/robots.txt'
+    '/admin', '/.git', '/config'
   ];
   if (blockedPaths.some(p => req.path.startsWith(p))) {
     return res.status(404).end();
