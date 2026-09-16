@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { prisma } from './infrastructure/db/prisma';
 import { logger } from './infrastructure/logger';
 import { AuditService } from './modules/audit/application/AuditService';
@@ -18,8 +19,48 @@ const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 const auditService = new AuditService(prisma);
 const auditMiddleware = new AuditMiddleware(auditService);
 
-// Middleware
+// Seguridad de headers HTTP
 app.use(helmet());
+
+// Rate limit global — 100 requests por IP cada 15 minutos
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+});
+
+// Rate limit estricto para auth — 10 intentos por 15 minutos
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts, please try again later.' }
+});
+
+app.use(globalLimiter);
+app.use('/api/v1/auth', authLimiter);
+
+// robots.txt — desindexar la API
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send('User-agent: *\nDisallow: /');
+});
+
+// Bloquear rutas de scanners
+app.use((req, res, next) => {
+  const blockedPaths = [
+    '/debug', '/.env', '/wp-admin', '/phpmyadmin',
+    '/admin', '/.git', '/config', '/robots.txt'
+  ];
+  if (blockedPaths.some(p => req.path.startsWith(p))) {
+    return res.status(404).end();
+  }
+  next();
+});
+
 app.use(cors({
   origin: frontendUrl,
   credentials: true,
