@@ -11,6 +11,7 @@ export interface AuthenticatedUser {
   lastLoginAt?: Date;
   metadata?: Record<string, any>;
   plan?: string;
+  planExpiresAt?: Date | string | null;
   maxFavoriteEntities?: number | null;
   capabilities?: string[];
   phone?: string | null;

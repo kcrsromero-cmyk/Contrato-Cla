@@ -11,7 +11,7 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModalProps) {
-  const { user, plan, capabilities, maxFavoriteEntities } = useAuth();
+  const { user, plan, planExpiresAt, capabilities, maxFavoriteEntities } = useAuth();
   const [favoriteEntitiesCount, setFavoriteEntitiesCount] = useState(0);
 
   const [activeTab, setActiveTab] = useState<'plan' | 'perfil' | 'notificaciones'>('plan');
@@ -228,7 +228,14 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
                 <Star className="w-5 h-5 text-amber-400" />
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan Actual</p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">{plan || 'Básico'}</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">
+                    {plan || 'Básico'}
+                    {planExpiresAt && plan !== 'FREE' && (
+                      <span className="block text-xs font-normal text-slate-500 dark:text-slate-400 mt-0.5">
+                        Vence: {new Date(planExpiresAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: '2-digit', month: 'long', year: 'numeric' })}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
 

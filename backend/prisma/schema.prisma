@@ -37,6 +37,7 @@ model User {
 
   organization     Organization?      @relation(fields: [organizationId], references: [id])
   planId           String?            @map("plan_id") @db.Uuid
+  planExpiresAt    DateTime?          @map("plan_expires_at") @db.Timestamp(6)
   plan             Plan?              @relation(fields: [planId], references: [id])
   favorites        FavoriteContract[]
   favoriteEntities FavoriteEntity[]
