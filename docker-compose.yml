@@ -64,46 +64,6 @@ services:
       - "127.0.0.1:3000:3000"
     restart: unless-stopped
 
-  nocodb:
-    image: nocodb/nocodb:latest
-    restart: unless-stopped
-    environment:
-      NC_DB: "pg://db:5432?u=${NOCODB_DB_USER}&p=${NOCODB_DB_PASSWORD}&d=${NOCODB_DB_NAME}"
-      NC_AUTH_JWT_SECRET: ${NC_AUTH_JWT_SECRET}
-      NC_ADMIN_EMAIL: ${NC_ADMIN_EMAIL}
-      NC_ADMIN_PASSWORD: ${NC_ADMIN_PASSWORD}
-      NC_DISABLE_TELE: "true"
-    volumes:
-      - nocodb_data:/usr/app/data
-    depends_on:
-      db:
-        condition: service_healthy
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-      PGADMIN_CONFIG_SERVER_MODE: "True"
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      db:
-        condition: service_healthy
-
-  redisinsight:
-    image: redis/redisinsight:latest
-    restart: unless-stopped
-    volumes:
-      - redisinsight_data:/data
-    depends_on:
-      - redis
-
 volumes:
   postgres_data:
   redis_data:
-  nocodb_data:
-  pgadmin_data:
-  redisinsight_data:
