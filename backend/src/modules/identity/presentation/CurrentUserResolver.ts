@@ -43,6 +43,7 @@ export class CurrentUserResolver {
              notifyTelegram: true,
              notifySms: true,
              planId: true,
+             planExpiresAt: true,
              plan: {
                  select: {
                      name: true,
@@ -53,12 +54,19 @@ export class CurrentUserResolver {
           }
         });
 
-        if (dbUser?.plan) {
+        user.planExpiresAt = dbUser?.planExpiresAt || null;
+
+        // Check plan expiration
+        const planName = dbUser?.plan?.name || 'FREE';
+        const isExpired = planName !== 'FREE' && dbUser?.planExpiresAt && new Date() >= new Date(dbUser.planExpiresAt);
+
+        if (dbUser?.plan && !isExpired) {
             user.plan = dbUser.plan.name;
             user.maxFavoriteEntities = dbUser.plan.maxFavoriteEntities;
             user.capabilities = dbUser.plan.capabilities.map((pc: any) => pc.capability.name);
         } else {
             user.plan = 'FREE';
+            user.maxFavoriteEntities = 0;
             user.capabilities = [];
         }
 

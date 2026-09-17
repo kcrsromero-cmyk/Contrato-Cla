@@ -131,7 +131,7 @@ export class AuthController {
       const user = (req as any).user;
       if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-      const { name, phone, telegramUsername, notifyEmail, notifyTelegram, notifySms } = req.body;
+      const { name, phone, telegramUsername, notifyEmail, notifyTelegram, notifySms, planName } = req.body;
 
       // Solo actualizar campos que vienen en el body
       const updateData: any = {};
@@ -145,10 +145,41 @@ export class AuthController {
       if (notifyTelegram !== undefined) updateData.notifyTelegram = Boolean(notifyTelegram);
       if (notifySms !== undefined) updateData.notifySms = Boolean(notifySms);
 
+      if (planName !== undefined) {
+        const targetPlan = await prisma.plan.findUnique({ where: { name: planName } });
+        if (targetPlan) {
+          updateData.planId = targetPlan.id;
+          if (planName === 'FREE') {
+            updateData.planExpiresAt = null;
+          } else {
+            // Al asignar plan pagado — vence en 30 días en UTC
+            updateData.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          }
+        }
+      }
+
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: updateData,
-        select: { id: true, email: true, name: true, phone: true, telegramUsername: true, notifyEmail: true, notifyTelegram: true, notifySms: true }
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          telegramUsername: true,
+          notifyEmail: true,
+          notifyTelegram: true,
+          notifySms: true,
+          planId: true,
+          planExpiresAt: true,
+          plan: {
+            select: {
+              name: true,
+              maxFavoriteEntities: true,
+              capabilities: { select: { capability: { select: { name: true } } } }
+            }
+          }
+        }
       });
 
       res.json(updatedUser);
