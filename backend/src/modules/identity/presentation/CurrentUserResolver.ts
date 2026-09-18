@@ -65,9 +65,17 @@ export class CurrentUserResolver {
             user.maxFavoriteEntities = dbUser.plan.maxFavoriteEntities;
             user.capabilities = dbUser.plan.capabilities.map((pc: any) => pc.capability.name);
         } else {
+            const freePlan = await prisma.plan.findUnique({
+              where: { name: 'FREE' },
+              select: {
+                maxFavoriteEntities: true,
+                capabilities: { select: { capability: { select: { name: true } } } }
+              }
+            });
+
             user.plan = 'FREE';
-            user.maxFavoriteEntities = 0;
-            user.capabilities = [];
+            user.maxFavoriteEntities = freePlan?.maxFavoriteEntities ?? 0;
+            user.capabilities = freePlan?.capabilities.map((pc: any) => pc.capability.name) ?? [];
         }
 
         user.phone = dbUser.phone;
