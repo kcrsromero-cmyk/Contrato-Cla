@@ -1,11 +1,11 @@
 import { prisma } from '../db/prisma';
 import { Worker, Queue, Job } from 'bullmq';
 import { logger } from '../logger';
-import { redisClient } from '../redis/redisClient';
+import { redisWorkerClient } from '../redis/redisWorkerClient';
 import { ProcurementService } from '../../modules/procurement/application/ProcurementService';
 import { SocrataContractProvider } from '../../modules/procurement/infrastructure/SocrataContractProvider';
 
-const connection = redisClient;
+const connection = redisWorkerClient;
 
 // Define Queues
 export const datasetImportQueue = new Queue('dataset-import', { connection });
