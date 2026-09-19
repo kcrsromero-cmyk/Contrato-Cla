@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RedisStore } from 'rate-limit-redis';
-import { redisClient } from '../../../infrastructure/redis/redisClient';
+import { redisAppClient } from '../../../infrastructure/redis/redisAppClient';
 
 describe('Persistent Redis Rate Limiter Store', () => {
-  it('should instantiate RedisStore with redisClient sendCommand wrapper', async () => {
-    const callSpy = vi.spyOn(redisClient, 'call').mockResolvedValue('OK' as any);
+  it('should instantiate RedisStore with redisAppClient sendCommand wrapper', async () => {
+    const callSpy = vi.spyOn(redisAppClient, 'call').mockResolvedValue('OK' as any);
 
     const store = new RedisStore({
-      sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as Promise<any>,
+      sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
       prefix: 'rl:global:'
     });
 
@@ -26,7 +26,7 @@ describe('Persistent Redis Rate Limiter Store', () => {
 
   it('should support rl:auth: prefix configuration for authentication rate limiting', () => {
     const store = new RedisStore({
-      sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as Promise<any>,
+      sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
       prefix: 'rl:auth:'
     });
 

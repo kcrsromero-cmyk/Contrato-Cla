@@ -1,20 +1,20 @@
+import dotenv from 'dotenv';
+// Load environment variables
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
-import { redisClient } from './infrastructure/redis/redisClient';
+import { redisAppClient } from './infrastructure/redis/redisAppClient';
 import { prisma } from './infrastructure/db/prisma';
 import { logger } from './infrastructure/logger';
 import { AuditService } from './modules/audit/application/AuditService';
 import { AuditMiddleware } from './modules/audit/presentation/AuditMiddleware';
 import { blockedPathsMiddleware } from './infrastructure/security/blockedPathsMiddleware';
 import { healthCheckHandler } from './modules/health/presentation/healthController';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 
@@ -44,7 +44,7 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as Promise<any>,
+    sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
     prefix: 'rl:global:'
   }),
   skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1',

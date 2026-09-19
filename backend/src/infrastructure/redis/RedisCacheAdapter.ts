@@ -1,11 +1,11 @@
 import Redis from 'ioredis';
-import { redisClient } from './redisClient';
+import { redisAppClient } from './redisAppClient';
 
 export class RedisCacheAdapter {
   private redis: Redis;
 
   constructor(redisInstance?: Redis) {
-    this.redis = redisInstance || redisClient;
+    this.redis = redisInstance || redisAppClient;
   }
 
   async get(key: string): Promise<string | null> {
