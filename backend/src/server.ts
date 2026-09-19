@@ -87,10 +87,6 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/procurement', procurementRouter);
 app.use('/api/v1/analytics', analyticsRouter);
 
-import { setupRecurringJobs } from './infrastructure/jobs/refreshWorker';
-// Initialize recurring background jobs
-setupRecurringJobs().catch(console.error);
-
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
