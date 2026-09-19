@@ -153,10 +153,11 @@ app.use(morgan('combined', {
 // Global Audit Middleware for API Consumption
 app.use(auditMiddleware.logApiConsumption);
 
-// Basic Health Check Route
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+import { healthCheckHandler } from './modules/health/presentation/healthController';
+
+// Real Health Check Routes
+app.get('/api/v1/health', healthCheckHandler);
+app.get('/api/health', healthCheckHandler);
 
 import { authRouter } from './modules/identity/presentation/routes';
 import { procurementRouter } from './modules/procurement/presentation/routes';

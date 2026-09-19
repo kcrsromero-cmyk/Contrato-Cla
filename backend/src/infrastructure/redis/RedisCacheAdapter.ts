@@ -24,6 +24,10 @@ export class RedisCacheAdapter {
     await this.redis.del(key);
   }
 
+  async ping(): Promise<string> {
+    return this.redis.ping();
+  }
+
   async disconnect(): Promise<void> {
     await this.redis.quit();
   }
