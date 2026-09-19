@@ -4,10 +4,10 @@ import { Request, Response, NextFunction } from 'express';
 // Extract middleware function or simulate blocked paths logic
 function createBlockedPathsMiddleware() {
   return (req: Request, res: Response, next: NextFunction) => {
-    const path = req.path.toLowerCase();
+    const path = ((req as any).originalUrl || req.path).toLowerCase();
 
     // Bloquear extensiones PHP inmediatamente
-    if (path.endsWith('.php') || path.includes('.php.')) {
+    if (path.endsWith('.php') || path.includes('.php.') || path.includes('.php?')) {
       return res.status(404).end();
     }
 
@@ -16,7 +16,8 @@ function createBlockedPathsMiddleware() {
       '/.aws', '/aws.env', '/gcp', '/google-key', '/google-credentials',
       '/firebase', '/keyfile.json', '/key.json', '/sa.json',
       '/credentials.json', '/service-account', '/.config/gcloud',
-      '/application_default_credentials'
+      '/application_defaultcredentials', '/gcp-credentials', '/gcp-key',
+      '/firebase-key', '/firebase-adminsdk', '/service-account.json'
     ];
 
     // Bloquear archivos .env de CI/CD y servicios
@@ -26,25 +27,53 @@ function createBlockedPathsMiddleware() {
       '/postgres/.env', '/mongodb/.env', '/rabbitmq/.env', '/kafka/.env',
       '/elasticsearch/.env', '/production/.env', '/staging/.env',
       '/test/.env', '/dev/.env', '/qa/.env', '/beta/.env', '/uat/.env',
-      '/preview/.env', '/worker/.env', '/queue/.env', '/job/.env'
+      '/preview/.env', '/worker/.env', '/queue/.env', '/job/.env',
+      '/.env', '/aws.env', '/.env.backup', '/.env.local', '/development/.env'
     ];
 
     // Bloquear paths de reconocimiento generales
     const blockedPaths = [
-      '/debug', '/.env', '/wp-admin', '/phpmyadmin',
-      '/admin', '/.git', '/config',
-      '/wp-login.php', '/xmlrpc.php', '/wp-json',
-      '/.aws', '/aws.env', '/license.txt',
-      '/bank', '/haan', '/info', '/server-status',
-      '/server-info', '/_profiler', '/_environment',
-      '/firebase', '/keyfile', '/service-account',
-      '/credentials', '/.config'
+      // WordPress
+      '/wp-login', '/wp-admin', '/wp-content', '/wp-includes',
+      '/wp-json', '/wp/', '/wordpress', '/blog/wp-',
+      '/xmlrpc.php', '/?rest_route=',
+      '/wp/wordpress', '/blog/wordpress',
+
+      // PHP genérico
+      '/phpinfo', '/php-info', '/info.php', '/test.php',
+      '/p.php', '/pi.php', '/i.php', '/php.php',
+      '/pinfo.php', '/phpversion.php',
+      '/server-status', '/server-info',
+
+      // Archivos .env y configuración
+      '/.env', '/aws.env', '/.env.backup', '/.env.local',
+      '/production/.env', '/development/.env', '/staging/.env',
+
+      // Credenciales cloud
+      '/.aws/credentials', '/aws.env',
+      '/.config/gcloud', '/gcp-credentials', '/gcp-key',
+      '/firebase-key', '/firebase-adminsdk', '/credentials.json',
+      '/service-account.json', '/keyfile.json',
+
+      // Git y backups
+      '/.git/config', '/.git/',
+      '/backup.sql', '/dump.sql', '/database.sql', '/db.sql',
+      '/config.bak', '/.htaccess',
+
+      // Rutas de ataque genéricas
+      '/license.txt', '/haan', '/bank',
+      '/readme.html',
+
+      // Rutas adicionales de reconocimiento
+      '/debug', '/phpmyadmin', '/admin', '/.git', '/config',
+      '/info', '/_profiler', '/_environment', '/firebase', '/keyfile',
+      '/service-account', '/credentials', '/.config'
     ];
 
     const isBlocked =
       credentialFiles.some(p => path.startsWith(p) || path.includes(p)) ||
       envPaths.some(p => path === p) ||
-      blockedPaths.some(p => path.startsWith(p));
+      blockedPaths.some(p => path.startsWith(p) || path.includes('rest_route='));
 
     if (isBlocked) {
       return res.status(404).end();
@@ -65,14 +94,22 @@ describe('BlockedPaths Middleware', () => {
   };
 
   it('should allow clean application paths', () => {
-    const req: any = { path: '/api/v1/procurement/contracts' };
-    const res = mockResponse();
-    const next = vi.fn();
+    const validPaths = [
+      '/api/v1/procurement/contracts',
+      '/api/v1/auth/me',
+      '/api/v1/analytics/overview'
+    ];
 
-    middleware(req, res, next);
+    validPaths.forEach(path => {
+      const req: any = { path };
+      const res = mockResponse();
+      const next = vi.fn();
 
-    expect(next).toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalled();
+      middleware(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
   });
 
   it('should block PHP file extensions', () => {
@@ -99,39 +136,155 @@ describe('BlockedPaths Middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  it('should block WordPress scan paths', () => {
+    const wpPaths = [
+      '/wp-login.php',
+      '/wp-admin/index.php',
+      '/wp-content/plugins',
+      '/wp-includes/js',
+      '/wp-json/batch/v1',
+      '/blog/wp-login.php',
+      '/?rest_route=/wp/v2',
+      '/wp/wordpress',
+      '/blog/wordpress'
+    ];
+
+    wpPaths.forEach(path => {
+      const req: any = { path };
+      const res = mockResponse();
+      const next = vi.fn();
+
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.end).toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should block generic PHP scan paths', () => {
+    const phpPaths = [
+      '/phpinfo',
+      '/php-info',
+      '/info.php',
+      '/test.php',
+      '/p.php',
+      '/pi.php',
+      '/i.php',
+      '/php.php',
+      '/pinfo.php',
+      '/phpversion.php',
+      '/server-status',
+      '/server-info'
+    ];
+
+    phpPaths.forEach(path => {
+      const req: any = { path };
+      const res = mockResponse();
+      const next = vi.fn();
+
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.end).toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should block .env and configuration files', () => {
+    const envFilePaths = [
+      '/.env',
+      '/aws.env',
+      '/.env.backup',
+      '/.env.local',
+      '/production/.env',
+      '/development/.env',
+      '/staging/.env'
+    ];
+
+    envFilePaths.forEach(path => {
+      const req: any = { path };
+      const res = mockResponse();
+      const next = vi.fn();
+
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.end).toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
   it('should block cloud credential files', () => {
-    const req: any = { path: '/.aws/credentials' };
-    const res = mockResponse();
-    const next = vi.fn();
+    const cloudPaths = [
+      '/.aws/credentials',
+      '/aws.env',
+      '/.config/gcloud',
+      '/gcp-credentials',
+      '/gcp-key',
+      '/firebase-key',
+      '/firebase-adminsdk',
+      '/credentials.json',
+      '/service-account.json',
+      '/keyfile.json'
+    ];
 
-    middleware(req, res, next);
+    cloudPaths.forEach(path => {
+      const req: any = { path };
+      const res = mockResponse();
+      const next = vi.fn();
 
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.end).toHaveBeenCalled();
-    expect(next).not.toHaveBeenCalled();
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.end).toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+    });
   });
 
-  it('should block CI/CD .env files', () => {
-    const req: any = { path: '/production/.env' };
-    const res = mockResponse();
-    const next = vi.fn();
+  it('should block Git and database dump / backup files', () => {
+    const gitBackupPaths = [
+      '/.git/config',
+      '/.git/HEAD',
+      '/backup.sql',
+      '/dump.sql',
+      '/database.sql',
+      '/db.sql',
+      '/config.bak',
+      '/.htaccess'
+    ];
 
-    middleware(req, res, next);
+    gitBackupPaths.forEach(path => {
+      const req: any = { path };
+      const res = mockResponse();
+      const next = vi.fn();
 
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.end).toHaveBeenCalled();
-    expect(next).not.toHaveBeenCalled();
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.end).toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+    });
   });
 
-  it('should block general reconnaissance paths', () => {
-    const req: any = { path: '/wp-admin/index.html' };
-    const res = mockResponse();
-    const next = vi.fn();
+  it('should block generic attack paths', () => {
+    const genericAttackPaths = [
+      '/license.txt',
+      '/haan',
+      '/bank',
+      '/readme.html'
+    ];
 
-    middleware(req, res, next);
+    genericAttackPaths.forEach(path => {
+      const req: any = { path };
+      const res = mockResponse();
+      const next = vi.fn();
 
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.end).toHaveBeenCalled();
-    expect(next).not.toHaveBeenCalled();
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.end).toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+    });
   });
 });
