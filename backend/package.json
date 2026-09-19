@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
-    "dev": "tsx src/server.ts"
+    "dev": "tsx src/server.ts",
+    "build": "tsc",
+    "start:api": "node dist/server.js",
+    "start:worker": "node dist/worker.js"
   },
   "keywords": [],
   "author": "",
