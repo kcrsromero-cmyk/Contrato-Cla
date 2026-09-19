@@ -122,21 +122,7 @@ const globalLimiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' }
 });
 
-// Rate limit estricto para auth — 10 intentos por 15 minutos
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: new RedisStore({
-    sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as Promise<any>,
-    prefix: 'rl:auth:'
-  }),
-  message: { error: 'Too many login attempts, please try again later.' }
-});
-
 app.use(globalLimiter);
-app.use('/api/v1/auth', authLimiter);
 
 // robots.txt — desindexar la API
 app.get('/robots.txt', (req, res) => {
