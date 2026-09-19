@@ -8,6 +8,11 @@ export class AuditMiddleware {
    * Middleware to log generic API consumption
    */
   logApiConsumption = (req: Request, res: Response, next: NextFunction) => {
+    const path = (req.originalUrl || req.path || '').toLowerCase();
+    if (path.includes('/health')) {
+      return next();
+    }
+
     // Capture the IP Address
     const ipAddress = req.ip || req.socket.remoteAddress;
 
