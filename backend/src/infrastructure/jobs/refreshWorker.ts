@@ -1,12 +1,11 @@
 import { prisma } from '../db/prisma';
 import { Worker, Queue, Job } from 'bullmq';
-import Redis from 'ioredis';
 import { logger } from '../logger';
+import { redisClient } from '../redis/redisClient';
 import { ProcurementService } from '../../modules/procurement/application/ProcurementService';
 import { SocrataContractProvider } from '../../modules/procurement/infrastructure/SocrataContractProvider';
 
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
+const connection = redisClient;
 
 // Define Queues
 export const datasetImportQueue = new Queue('dataset-import', { connection });

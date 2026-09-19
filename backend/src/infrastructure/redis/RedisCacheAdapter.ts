@@ -1,11 +1,11 @@
 import Redis from 'ioredis';
+import { redisClient } from './redisClient';
 
 export class RedisCacheAdapter {
   private redis: Redis;
 
-  constructor() {
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-    this.redis = new Redis(redisUrl);
+  constructor(redisInstance?: Redis) {
+    this.redis = redisInstance || redisClient;
   }
 
   async get(key: string): Promise<string | null> {
