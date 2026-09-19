@@ -26,6 +26,11 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   migrator:
     build:
@@ -61,7 +66,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       migrator:
         condition: service_completed_successfully
     restart: unless-stopped
@@ -81,7 +86,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       migrator:
         condition: service_completed_successfully
     restart: unless-stopped
