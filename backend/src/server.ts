@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
+import { redisClient } from './infrastructure/redis/redisClient';
 import { prisma } from './infrastructure/db/prisma';
 import { logger } from './infrastructure/logger';
 import { AuditService } from './modules/audit/application/AuditService';
@@ -106,27 +108,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rate limit global — 100 requests por IP cada 15 minutos
+// Rate limit global — 500 requests por IP cada 15 minutos
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as Promise<any>,
+    prefix: 'rl:global:'
+  }),
   skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1',
   message: { error: 'Too many requests, please try again later.' }
 });
 
-// Rate limit estricto para auth — 10 intentos por 15 minutos
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many login attempts, please try again later.' }
-});
-
 app.use(globalLimiter);
-app.use('/api/v1/auth', authLimiter);
 
 // robots.txt — desindexar la API
 app.get('/robots.txt', (req, res) => {
