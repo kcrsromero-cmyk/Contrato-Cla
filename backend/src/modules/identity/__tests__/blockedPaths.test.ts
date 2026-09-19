@@ -15,11 +15,12 @@ describe('BlockedPaths Middleware', () => {
     const validPaths = [
       '/api/v1/procurement/contracts',
       '/api/v1/auth/me',
-      '/api/v1/analytics/overview'
+      '/api/v1/analytics/overview',
+      '/api/v1/user/credentials-list' // should not match prefix /credentials because it starts with /api
     ];
 
     validPaths.forEach(path => {
-      const req: any = { path };
+      const req: any = { originalUrl: path };
       const res = mockResponse();
       const next = vi.fn();
 
@@ -30,31 +31,28 @@ describe('BlockedPaths Middleware', () => {
     });
   });
 
-  it('should block PHP file extensions', () => {
-    const req: any = { path: '/index.php' };
-    const res = mockResponse();
-    const next = vi.fn();
+  it('should block PHP file extensions and patterns', () => {
+    const phpPaths = [
+      '/index.php',
+      '/test.php.bak',
+      '/api/v1/test.php',
+      '/info.php?foo=bar'
+    ];
 
-    middleware(req, res, next);
+    phpPaths.forEach(path => {
+      const req: any = { originalUrl: path };
+      const res = mockResponse();
+      const next = vi.fn();
 
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.end).toHaveBeenCalled();
-    expect(next).not.toHaveBeenCalled();
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.end).toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+    });
   });
 
-  it('should block PHP in path parameters', () => {
-    const req: any = { path: '/test.php.bak' };
-    const res = mockResponse();
-    const next = vi.fn();
-
-    middleware(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.end).toHaveBeenCalled();
-    expect(next).not.toHaveBeenCalled();
-  });
-
-  it('should block WordPress scan paths', () => {
+  it('should block WordPress scan paths via prefix, exact, or query matching', () => {
     const wpPaths = [
       '/wp-login.php',
       '/wp-admin/index.php',
@@ -68,7 +66,7 @@ describe('BlockedPaths Middleware', () => {
     ];
 
     wpPaths.forEach(path => {
-      const req: any = { path };
+      const req: any = { originalUrl: path };
       const res = mockResponse();
       const next = vi.fn();
 
@@ -97,7 +95,7 @@ describe('BlockedPaths Middleware', () => {
     ];
 
     phpPaths.forEach(path => {
-      const req: any = { path };
+      const req: any = { originalUrl: path };
       const res = mockResponse();
       const next = vi.fn();
 
@@ -121,7 +119,7 @@ describe('BlockedPaths Middleware', () => {
     ];
 
     envFilePaths.forEach(path => {
-      const req: any = { path };
+      const req: any = { originalUrl: path };
       const res = mockResponse();
       const next = vi.fn();
 
@@ -144,11 +142,13 @@ describe('BlockedPaths Middleware', () => {
       '/firebase-adminsdk',
       '/credentials.json',
       '/service-account.json',
-      '/keyfile.json'
+      '/keyfile.json',
+      '/credentials/stolen-key',
+      '/firebase/config'
     ];
 
     cloudPaths.forEach(path => {
-      const req: any = { path };
+      const req: any = { originalUrl: path };
       const res = mockResponse();
       const next = vi.fn();
 
@@ -173,7 +173,7 @@ describe('BlockedPaths Middleware', () => {
     ];
 
     gitBackupPaths.forEach(path => {
-      const req: any = { path };
+      const req: any = { originalUrl: path };
       const res = mockResponse();
       const next = vi.fn();
 
@@ -194,7 +194,7 @@ describe('BlockedPaths Middleware', () => {
     ];
 
     genericAttackPaths.forEach(path => {
-      const req: any = { path };
+      const req: any = { originalUrl: path };
       const res = mockResponse();
       const next = vi.fn();
 
@@ -204,5 +204,24 @@ describe('BlockedPaths Middleware', () => {
       expect(res.end).toHaveBeenCalled();
       expect(next).not.toHaveBeenCalled();
     });
+  });
+
+  it('should only check queryPatterns on query strings, not path names', () => {
+    // path containing 'rest_route=' without ?
+    const req1: any = { originalUrl: '/api/v1/rest_route=something' };
+    const res1 = mockResponse();
+    const next1 = vi.fn();
+
+    middleware(req1, res1, next1);
+    expect(next1).toHaveBeenCalled();
+
+    // query string containing rest_route=
+    const req2: any = { originalUrl: '/index?rest_route=123' };
+    const res2 = mockResponse();
+    const next2 = vi.fn();
+
+    middleware(req2, res2, next2);
+    expect(res2.status).toHaveBeenCalledWith(404);
+    expect(next2).not.toHaveBeenCalled();
   });
 });
