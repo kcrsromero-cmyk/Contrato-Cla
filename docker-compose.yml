@@ -27,6 +27,19 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
+  migrator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: contrata360_migrator
+    command: sh scripts/migrate.sh
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
   backend:
     build:
       context: ./backend
@@ -49,6 +62,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      migrator:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   worker:
@@ -66,6 +81,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      migrator:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   frontend:
