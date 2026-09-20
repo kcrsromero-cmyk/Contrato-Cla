@@ -1,4 +1,14 @@
 services:
+  migrator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: contrata360_migrator
+    command: sh scripts/migrate.sh
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    restart: "no"
+
   backend:
     build:
       context: ./backend
@@ -16,6 +26,25 @@ services:
       - SOCRATA_APP_TOKEN=${SOCRATA_APP_TOKEN}
       - LOG_LEVEL=info
       - PORT=4000
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: contrata360_worker
+    command: node dist/worker.js
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - LOG_LEVEL=info
+      - SOCRATA_APP_TOKEN=${SOCRATA_APP_TOKEN}
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   frontend:
