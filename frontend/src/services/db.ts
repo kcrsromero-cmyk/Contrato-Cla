@@ -5,7 +5,7 @@ interface CacheItem<T> {
 }
 
 export class CacheService {
-  private static DB_NAME = 'secop_transparencia_cache';
+  private static DB_NAME = 'contrata360_cache';
   private static STORE_NAME = 'queries_cache';
   private static VERSION = 1;
 

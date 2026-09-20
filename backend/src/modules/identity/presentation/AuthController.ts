@@ -102,6 +102,16 @@ export class AuthController {
     }
   }
 
+  async resetPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      await this.identityService.resetPassword(email);
+      res.status(200).json({ message: 'Si el correo electrónico está registrado, recibirás un enlace para restablecer tu contraseña.' });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
   async getMe(req: Request, res: Response) {
     try {
       // In a real scenario, this is often set by the middleware

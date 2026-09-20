@@ -14,3 +14,7 @@ export const LoginSchema = z.object({
 export const RefreshSchema = z.object({
   refreshToken: z.string(),
 });
+
+export const ResetPasswordSchema = z.object({
+  email: z.string().email(),
+});

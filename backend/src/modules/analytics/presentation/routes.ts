@@ -4,7 +4,7 @@ import { AnalyticsService } from '../application/AnalyticsService';
 import { prisma } from '../../../infrastructure/db/prisma';
 import { AuthMiddleware } from '../../identity/presentation/AuthMiddleware';
 import { CurrentUserResolver } from '../../identity/presentation/CurrentUserResolver';
-import { JWTValidator } from '../../identity/infrastructure/JWTValidator';
+import { jwtValidator } from '../../../infrastructure/security/jwtValidator';
 import { IdentityService } from '../../identity/application/IdentityService';
 import { IdentityProviderRegistry } from '../../identity/infrastructure/IdentityProviderRegistry';
 import { requireCapability } from '../../identity/presentation/requireCapability';
@@ -14,7 +14,6 @@ const analyticsRouter = Router();
 const analyticsService = new AnalyticsService(prisma);
 const analyticsController = new AnalyticsController(analyticsService);
 
-const jwtValidator = new JWTValidator(process.env.SUPABASE_JWKS_URL || '');
 const authMiddleware = new AuthMiddleware(jwtValidator);
 const activeProvider = IdentityProviderRegistry.resolve();
 const identityService = new IdentityService(activeProvider);

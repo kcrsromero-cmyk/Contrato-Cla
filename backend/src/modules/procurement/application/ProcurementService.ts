@@ -6,6 +6,9 @@ import { prisma } from '../../../infrastructure/db/prisma';
 import { logger } from '../../../infrastructure/logger';
 import { normalizeDocumentType, maskDocument } from '../../../utils/documentNormalizer';
 
+const TTL_TERRITORIAL = 60 * 60 * 24 * 7; // 7 days - departments, cities, entities
+const TTL_CONTRACTS = 60 * 60 * 24;       // 24 hours - contracts and similarity
+
 export class ProcurementService {
   private similarityService: SimilarityDomainService;
   private cacheAdapter: RedisCacheAdapter;
@@ -37,7 +40,7 @@ export class ProcurementService {
 
     if (dbDepartments.length > 0) {
       const names = dbDepartments.map(d => d.name);
-      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), 604800);
+      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), TTL_TERRITORIAL);
       return names;
     }
 
@@ -52,7 +55,7 @@ export class ProcurementService {
       });
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(departments), 604800); // 7 days
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(departments), TTL_TERRITORIAL);
     return departments;
   }
 
@@ -71,7 +74,7 @@ export class ProcurementService {
 
     if (dbCities.length > 0) {
       const names = dbCities.map(c => c.name);
-      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), 604800);
+      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), TTL_TERRITORIAL);
       return names;
     }
 
@@ -89,7 +92,7 @@ export class ProcurementService {
       }
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(cities), 604800); // 7 days
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(cities), TTL_TERRITORIAL);
     return cities;
   }
 
@@ -113,7 +116,7 @@ export class ProcurementService {
         nit_entidad: e.nit,
         orden: e.order
       }));
-      await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), 604800);
+      await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), TTL_TERRITORIAL);
       return entities;
     }
 
@@ -146,7 +149,7 @@ export class ProcurementService {
       }
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), 604800); // 7 days
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), TTL_TERRITORIAL);
     return entities;
   }
 async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]> {
@@ -249,7 +252,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
             ? maskDocument(c.supervisor.documentNumber, c.supervisor.documentType as any)
             : undefined,
         }));
-        await this.cacheAdapter.set(cacheKey, JSON.stringify(domainData), 86400);
+        await this.cacheAdapter.set(cacheKey, JSON.stringify(domainData), TTL_CONTRACTS);
         return domainData;
       }
     }
@@ -369,7 +372,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
       });
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(contracts), 86400);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(contracts), TTL_CONTRACTS);
 
     return contracts;
   }
@@ -390,7 +393,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
     const clusters = this.similarityService.calculateSimilarity(contracts);
 
     // Cache the result for 24 hours to offload computation
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(clusters), 86400);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(clusters), TTL_CONTRACTS);
 
     return clusters;
   }

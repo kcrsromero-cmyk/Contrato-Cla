@@ -9,6 +9,8 @@ const filterSchema = z.object({
   fechaHasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'fechaHasta must be YYYY-MM-DD'),
 });
 
+const SIMILARITY_PREVIEW_PERCENTAGE = 0.10;
+
 export class ProcurementController {
   constructor(private readonly procurementService: ProcurementService) {}
 
@@ -96,7 +98,7 @@ export class ProcurementController {
       const totalCount = allClusters.length;
 
       if (!hasFullAccess && totalCount > 0) {
-        const previewCount = Math.max(1, Math.round(totalCount * 0.10));
+        const previewCount = Math.max(1, Math.round(totalCount * SIMILARITY_PREVIEW_PERCENTAGE));
         return res.json({
           clusters: allClusters.slice(0, previewCount),
           totalCount,

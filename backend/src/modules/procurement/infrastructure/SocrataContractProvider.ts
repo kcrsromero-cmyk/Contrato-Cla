@@ -1,14 +1,10 @@
 import { ContractProvider } from '../domain/ContractProvider';
 import { Contract, FilterParams } from '../domain/types';
-import { RedisCacheAdapter } from '../../../infrastructure/redis/RedisCacheAdapter';
 
 export class SocrataContractProvider implements ContractProvider {
-  private baseUrl = 'https://www.datos.gov.co/resource/jbjy-vk9h.json';
-  private cacheAdapter: RedisCacheAdapter;
+  private baseUrl = process.env.SOCRATA_DATASET_URL || 'https://www.datos.gov.co/resource/jbjy-vk9h.json';
 
-  constructor() {
-    this.cacheAdapter = new RedisCacheAdapter();
-  }
+  constructor() {}
 
   async fetchContracts(filters: FilterParams): Promise<Contract[]> {
     const { codigoEntidad, fechaDesde, fechaHasta } = filters;

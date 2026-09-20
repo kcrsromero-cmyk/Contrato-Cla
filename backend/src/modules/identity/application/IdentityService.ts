@@ -34,14 +34,6 @@ export class IdentityService {
   }
 
   /**
-   * Validates the provided token.
-   * Throws an error if the token is invalid.
-   */
-  async verifyToken(token: string): Promise<any> {
-    return this.provider.verifyToken(token);
-  }
-
-  /**
    * Retrieves the current user profile based on their token.
    */
   async getCurrentUser(token: string): Promise<AuthenticatedUser | null> {

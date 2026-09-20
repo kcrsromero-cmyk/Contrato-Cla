@@ -18,22 +18,44 @@ export const datasetImportWorker = new Worker('dataset-import', async (job: Job)
     const socrataProvider = new SocrataContractProvider();
     const procurementService = new ProcurementService(socrataProvider);
 
-    // As a default or placeholder, we could fetch data for a well-known entity or use job data
-    const codigoEntidad = job.data?.codigoEntidad || '704283084'; // Example entity if none provided
     const currentDate = new Date();
     const yearStart = `${currentDate.getFullYear()}-01-01`;
     const yearEnd = `${currentDate.getFullYear()}-12-31`;
 
-    await procurementService.getContracts({
-      codigoEntidad: codigoEntidad,
-      fechaDesde: yearStart,
-      fechaHasta: yearEnd
-    });
+    if (job.data?.codigoEntidad) {
+      await procurementService.getContracts({
+        codigoEntidad: job.data.codigoEntidad,
+        fechaDesde: yearStart,
+        fechaHasta: yearEnd
+      });
+      await datasetNormalizationQueue.add('normalize', {
+        sourceJobId: job.id,
+        codigoEntidad: job.data.codigoEntidad,
+        fechaDesde: yearStart,
+        fechaHasta: yearEnd
+      });
+    } else {
+      const entities = await prisma.entity.findMany({ select: { entityCode: true } });
+      for (const entity of entities) {
+        try {
+          await procurementService.getContracts({
+            codigoEntidad: entity.entityCode,
+            fechaDesde: yearStart,
+            fechaHasta: yearEnd
+          });
+          await datasetNormalizationQueue.add('normalize', {
+            sourceJobId: job.id,
+            codigoEntidad: entity.entityCode,
+            fechaDesde: yearStart,
+            fechaHasta: yearEnd
+          });
+        } catch (e) {
+          logger.error(`Failed importing entity ${entity.entityCode}`, { error: e });
+        }
+      }
+    }
 
     logger.info(`Completed dataset import job ${job.id}`);
-
-    // Trigger the next step in the pipeline (normalization / similarity calculation)
-    await datasetNormalizationQueue.add('normalize', { sourceJobId: job.id, codigoEntidad, fechaDesde: yearStart, fechaHasta: yearEnd });
 
   } catch (error) {
     logger.error(`Failed job ${job.id} dataset import`, { error });
