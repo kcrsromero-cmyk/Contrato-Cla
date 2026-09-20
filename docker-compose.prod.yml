@@ -24,6 +24,7 @@ services:
       - AUTH_JWKS_URL=${AUTH_JWKS_URL}
       - FRONTEND_URL=${FRONTEND_URL}
       - SOCRATA_APP_TOKEN=${SOCRATA_APP_TOKEN}
+      - SOCRATA_DATASET_URL=${SOCRATA_DATASET_URL}
       - LOG_LEVEL=info
       - PORT=4000
     depends_on:
@@ -42,6 +43,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - LOG_LEVEL=info
       - SOCRATA_APP_TOKEN=${SOCRATA_APP_TOKEN}
+      - SOCRATA_DATASET_URL=${SOCRATA_DATASET_URL}
     depends_on:
       migrator:
         condition: service_completed_successfully

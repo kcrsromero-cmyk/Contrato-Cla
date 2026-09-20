@@ -107,7 +107,7 @@ app.use('/api/v1/analytics', analyticsRouter);
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error', message: err.message });
+  res.status(500).json({ error: 'Internal Server Error' });
 });
 
 app.listen(port, () => {
