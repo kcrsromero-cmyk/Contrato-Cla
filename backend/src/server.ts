@@ -6,8 +6,8 @@ const REQUIRED_ENV_VARS = [
   'DATABASE_URL',
   'REDIS_URL',
   'SUPABASE_URL',
-  'SUPABASE_JWKS_URL',
   'SUPABASE_PUBLISHABLE_KEY',
+  'AUTH_JWKS_URL',
   'FRONTEND_URL',
   'SOCRATA_APP_TOKEN',
 ];
@@ -107,7 +107,7 @@ app.use('/api/v1/analytics', analyticsRouter);
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error', message: err.message });
+  res.status(500).json({ error: 'Internal Server Error' });
 });
 
 app.listen(port, () => {

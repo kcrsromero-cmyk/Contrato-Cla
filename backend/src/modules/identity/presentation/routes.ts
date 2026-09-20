@@ -5,14 +5,14 @@ import { CurrentUserResolver } from './CurrentUserResolver';
 import { IdentityService } from '../application/IdentityService';
 import { SupabaseIdentityProvider } from '../infrastructure/SupabaseIdentityProvider';
 import { IdentityProviderRegistry } from '../infrastructure/IdentityProviderRegistry';
-import { JWTValidator } from '../infrastructure/JWTValidator';
+import { jwtValidator } from '../../../infrastructure/security/jwtValidator';
 import { prisma } from '../../../infrastructure/db/prisma';
 import { AuditService } from '../../audit/application/AuditService';
 import rateLimit from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
 import { redisAppClient } from '../../../infrastructure/redis/redisAppClient';
 import { validateRequest } from './ValidationMiddleware';
-import { RegisterSchema, LoginSchema, RefreshSchema } from './AuthSchemas';
+import { RegisterSchema, LoginSchema, RefreshSchema, ResetPasswordSchema } from './AuthSchemas';
 
 // Initialize router
 const authRouter = Router();
@@ -48,9 +48,6 @@ const activeProvider = IdentityProviderRegistry.resolve();
 // Create application service
 const identityService = new IdentityService(activeProvider);
 
-// Create infrastructure validator
-const jwtValidator = new JWTValidator(process.env.SUPABASE_JWKS_URL!);
-
 // Create presentation components
 const authController = new AuthController(identityService, auditService);
 const authMiddleware = new AuthMiddleware(jwtValidator);
@@ -62,6 +59,7 @@ const currentUserResolver = new CurrentUserResolver(identityService);
 authRouter.post('/register', authRateLimiter, validateRequest(RegisterSchema), (req, res) => authController.register(req, res));
 authRouter.post('/login', authRateLimiter, validateRequest(LoginSchema), (req, res) => authController.login(req, res));
 authRouter.post('/refresh', authRateLimiter, validateRequest(RefreshSchema), (req, res) => authController.refresh(req, res));
+authRouter.post('/reset-password', authRateLimiter, validateRequest(ResetPasswordSchema), (req, res) => authController.resetPassword(req, res));
 
 // Protected routes
 authRouter.post('/logout', authMiddleware.handle, (req, res) => authController.logout(req, res));

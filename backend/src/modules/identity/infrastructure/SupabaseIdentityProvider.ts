@@ -87,19 +87,13 @@ export class SupabaseIdentityProvider implements IdentityProvider {
     };
   }
 
-  async verifyToken(token: string): Promise<any> {
-    const { data, error } = await this.client.auth.getUser(token);
-
-    if (error) throw new Error(error.message);
-    if (!data.user) throw new Error('Invalid token');
-
-    return data.user;
-  }
-
   async getUser(token: string): Promise<AuthenticatedUser | null> {
     try {
-      const payload = await this.verifyToken(token);
-      return SupabaseIdentityMapper.fromProviderPayload(payload);
+      const { data, error } = await this.client.auth.getUser(token);
+      if (error || !data.user) {
+        return null;
+      }
+      return SupabaseIdentityMapper.fromProviderPayload(data.user);
     } catch {
       return null;
     }

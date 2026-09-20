@@ -10,7 +10,7 @@ import { AuthMiddleware } from '../../identity/presentation/AuthMiddleware';
 import { CurrentUserResolver } from '../../identity/presentation/CurrentUserResolver';
 import { IdentityService } from '../../identity/application/IdentityService';
 import { IdentityProviderRegistry } from '../../identity/infrastructure/IdentityProviderRegistry';
-import { JWTValidator } from '../../identity/infrastructure/JWTValidator';
+import { jwtValidator } from '../../../infrastructure/security/jwtValidator';
 
 const procurementRouter = Router();
 
@@ -45,7 +45,6 @@ const searchEntitiesLimiter = rateLimit({
 // Setting up auth dependencies (simplified for route setup)
 const activeProvider = IdentityProviderRegistry.resolve();
 const identityService = new IdentityService(activeProvider);
-const jwtValidator = new JWTValidator(process.env.SUPABASE_JWKS_URL!);
 const authMiddleware = new AuthMiddleware(jwtValidator);
 const currentUserResolver = new CurrentUserResolver(identityService);
 

@@ -407,7 +407,7 @@ const COLOMBIA_PRESET_MAP: Record<string, WikipediaSymbol> = {
     locationName: "Barranquilla"
   },
   "cartagena": {
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Flag_of_Barranquilla.svg/330px-Flag_of_Barranquilla.svg.png",
+    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Flag_of_Cartagena_de_Indias.svg/330px-Flag_of_Cartagena_de_Indias.svg.png",
     title: "Bandera Cuadrilonga de Cartagena",
     description: "Símbolo heroico de Cartagena de Indias",
     extract: "La bandera cuadrilonga fue la primera bandera de Colombia independiente adoptada en Cartagena en 1811.",

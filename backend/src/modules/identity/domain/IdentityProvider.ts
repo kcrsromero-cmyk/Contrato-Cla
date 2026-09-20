@@ -26,12 +26,6 @@ export interface IdentityProvider {
   refresh(refreshToken: string): Promise<AuthResult>;
 
   /**
-   * Verifies the given token and returns its payload if valid.
-   * @param token The JWT token
-   */
-  verifyToken(token: string): Promise<any>;
-
-  /**
    * Gets the authenticated user details using their token.
    * @param token The access token
    */

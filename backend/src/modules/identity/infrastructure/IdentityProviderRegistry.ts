@@ -25,10 +25,4 @@ export class IdentityProviderRegistry {
     return provider;
   }
 
-  /**
-   * Sets the default provider name.
-   */
-  static setDefault(name: string): void {
-    this.defaultProviderName = name;
-  }
 }

@@ -9,7 +9,8 @@ export class AnalyticsController {
       const result = await this.analyticsService.getSupplierDocTypes();
       res.json(result);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 
@@ -22,47 +23,48 @@ export class AnalyticsController {
       }
       res.json(result);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 
   async getTopSuppliersByCount(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getTopSuppliersByCount()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getTopSuppliersByCount()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 
   async getTopSuppliersByValue(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getTopSuppliersByValue()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getTopSuppliersByValue()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 
   async getContractsPerDepartment(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getContractsPerDepartment()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getContractsPerDepartment()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 
   async getContractsPerModality(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getContractsPerModality()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getContractsPerModality()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 
   async getContractsPerType(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getContractsPerType()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getContractsPerType()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 
   async getSpendingPerDepartment(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getSpendingPerDepartment()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getSpendingPerDepartment()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 
   async getContractsByStatus(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getContractsByStatus()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getContractsByStatus()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 
   async getTopEntitiesByContractCount(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getTopEntitiesByContractCount()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getTopEntitiesByContractCount()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 
   async getTopEntitiesBySpending(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getTopEntitiesBySpending()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getTopEntitiesBySpending()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 
   async getContractTrends(req: Request, res: Response) {
-    try { res.json(await this.analyticsService.getContractTrends()); } catch (error: any) { res.status(500).json({ error: error.message }); }
+    try { res.json(await this.analyticsService.getContractTrends()); } catch (error: any) { console.error(error); res.status(500).json({ error: 'Internal Server Error' }); }
   }
 }
