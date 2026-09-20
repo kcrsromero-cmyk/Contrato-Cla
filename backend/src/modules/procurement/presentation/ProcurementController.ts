@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { prisma } from '../../../infrastructure/db/prisma';
 
 const filterSchema = z.object({
-  codigoEntidad: z.string(),
-  fechaDesde: z.string(),
-  fechaHasta: z.string()
+  codigoEntidad: z.string().min(1).max(50),
+  fechaDesde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'fechaDesde must be YYYY-MM-DD'),
+  fechaHasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'fechaHasta must be YYYY-MM-DD'),
 });
 
 export class ProcurementController {

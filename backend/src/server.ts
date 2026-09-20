@@ -2,6 +2,23 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+const REQUIRED_ENV_VARS = [
+  'DATABASE_URL',
+  'REDIS_URL',
+  'SUPABASE_URL',
+  'SUPABASE_JWKS_URL',
+  'SUPABASE_PUBLISHABLE_KEY',
+  'FRONTEND_URL',
+  'SOCRATA_APP_TOKEN',
+];
+
+for (const key of REQUIRED_ENV_VARS) {
+  if (!process.env[key]) {
+    console.error(`[FATAL] Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+}
+
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';

@@ -73,7 +73,7 @@ export class AuthController {
         resource: 'identity/login',
         ipAddress: req.ip || req.socket.remoteAddress,
       });
-      res.status(401).json({ error: error.message });
+      res.status(401).json({ error: 'Credenciales inválidas' });
     }
   }
 
