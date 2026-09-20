@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { IdentityService } from '../application/IdentityService';
 import { prisma } from '../../../infrastructure/db/prisma';
 import { AuditService } from '../../audit/application/AuditService';
+import { z } from 'zod';
 
 export class AuthController {
   constructor(
@@ -141,15 +142,27 @@ export class AuthController {
       const user = (req as any).user;
       if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-      const { name, phone, telegramUsername, notifyEmail, notifyTelegram, notifySms } = req.body;
+      const UpdateProfileSchema = z.object({
+        name:              z.string().min(1).max(100).optional(),
+        phone:             z.string().max(20).optional().nullable(),
+        telegramUsername:  z.string().max(32).optional().nullable(),
+        notifyEmail:       z.boolean().optional(),
+        notifyTelegram:    z.boolean().optional(),
+        notifySms:         z.boolean().optional(),
+      });
+      const parsed = UpdateProfileSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: 'Invalid profile data', details: parsed.error.flatten() });
+      }
+      const { name, phone, telegramUsername, notifyEmail, notifyTelegram, notifySms } = parsed.data;
 
       // Solo actualizar campos que vienen en el body
       const updateData: any = {};
       if (name !== undefined) updateData.name = name.trim();
-      if (phone !== undefined) updateData.phone = phone.trim() || null;
+      if (phone !== undefined) updateData.phone = phone ? (phone.trim() || null) : null;
       if (telegramUsername !== undefined) {
         // Normalizar: remover @ si el usuario lo incluye
-        updateData.telegramUsername = telegramUsername.trim().replace(/^@/, '') || null;
+        updateData.telegramUsername = telegramUsername ? (telegramUsername.trim().replace(/^@/, '') || null) : null;
       }
       if (notifyEmail !== undefined) updateData.notifyEmail = Boolean(notifyEmail);
       if (notifyTelegram !== undefined) updateData.notifyTelegram = Boolean(notifyTelegram);
