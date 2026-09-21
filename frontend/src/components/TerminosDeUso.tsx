@@ -30,7 +30,7 @@ export default function TerminosDeUso() {
       num: 2,
       title: "Fuente de los datos",
       icon: <Database className="w-3.5 h-3.5 text-slate-500" />,
-      content: "Toda la información mostrada proviene de la plataforma de Datos Abiertos de Colombia (datos.gov.co), dataset SECOP II — Contratos Electrónicos, publicado bajo Licencia Abierta. Los datos se consultan en tiempo real o desde un caché temporal en el navegador del usuario."
+      content: "Toda la información mostrada proviene de la plataforma de Datos Abiertos de Colombia (datos.gov.co), dataset SECOP II — Contratos Electrónicos, publicado bajo Licencia Abierta. Los datos se consultan en tiempo real o desde un caché administrado en el servidor del servicio."
     },
     {
       num: 3,
@@ -94,9 +94,9 @@ export default function TerminosDeUso() {
     },
     {
       num: 13,
-      title: "Autoría y Licencia de Software Libre",
+      title: "Propiedad Intelectual",
       icon: <Award className="w-3.5 h-3.5 text-indigo-500" />,
-      content: "Esta aplicación es una creación original de EDWIN MAURICIO CACERES ROMERO y está distribuida bajo la licencia libre GNU Affero General Public License v3.0 (GNU AGPLv3). Todo despliegue en red o modificación debe publicar el código fuente correspondiente bajo la misma licencia."
+      content: "Esta aplicación es propiedad de Contrata360. El software, su código fuente, diseño y arquitectura son confidenciales y están protegidos por las leyes de propiedad intelectual aplicables. Queda prohibida su reproducción, distribución o modificación sin autorización expresa y por escrito de Contrata360."
     }
   ];
 
