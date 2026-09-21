@@ -43,7 +43,16 @@ const exactPaths = [
   '/server-status',
   '/server-info',
   '/haan',
-  '/bank'
+  '/bank',
+  '/signin',
+  '/signup',
+  '/register',
+  '/dashboard',
+  '/account',
+  '/auth/callback',
+  '/api/auth/signin',
+  '/api/auth/signup',
+  '/api/auth/register'
 ];
 
 // prefixPaths — solo startsWith
@@ -94,7 +103,9 @@ const filePatterns = [
   /\.php$/i,
   /\.php\./i,
   /\.sql$/i,
-  /\.bak$/i
+  /\.bak$/i,
+  /\/\.env(\.|$|~|_|\d)/i,
+  /\/_environment/i
 ];
 
 // queryPatterns — includes solo en query string
