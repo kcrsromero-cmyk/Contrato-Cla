@@ -285,18 +285,15 @@ export default function Dashboard({
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1.5">
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="font-bold text-slate-750 dark:text-slate-350">Datos locales sincronizados (IndexedDB Cache)</span>
+                <span className="font-bold text-slate-750 dark:text-slate-350">Datos actualizados</span>
               </div>
               <span className="hidden md:inline text-slate-300 dark:text-slate-800">•</span>
-              <span className="bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-450 px-2 py-0.5 rounded text-[9px] font-semibold border border-slate-200/40 dark:border-slate-750/30">
-                Cache Total: <strong className="text-slate-800 dark:text-slate-200">{formatBytes(dbSize)}</strong>
-              </span>
               <span className="bg-indigo-50/70 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded text-[9px] font-semibold border border-indigo-100/30 dark:border-indigo-900/10">
-                Datos Consultados: <strong className="text-indigo-600 dark:text-indigo-350">{formatBytes(contratosSize)}</strong>
+                Sesión: <strong className="text-indigo-600 dark:text-indigo-350">{formatBytes(contratosSize)}</strong>
               </span>
             </div>
             {lastUpdated && (
-              <span className="text-slate-450 dark:text-slate-500 shrink-0">Última sincronización: {lastUpdated} COP Local</span>
+              <span className="text-slate-450 dark:text-slate-500 shrink-0">Última actualización: {lastUpdated}</span>
             )}
           </div>
 

@@ -189,7 +189,7 @@ export default function AppLayout({
             <button
               onClick={handleClearCache}
               className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 hover:border-indigo-600 dark:hover:border-indigo-400 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 rounded-xl text-xs font-medium bg-white dark:bg-slate-900 transition-all shadow-xs cursor-pointer"
-              title="Limpiar caché IndexedDB"
+              title="Limpiar caché local"
             >
               Limpiar Caché
             </button>
@@ -247,7 +247,7 @@ export default function AppLayout({
                 Contrato-Claro
               </h3>
               <p className="text-slate-500 dark:text-slate-450 leading-relaxed max-w-sm">
-                Plataforma abierta de datos abiertos para fortalecer el control ciudadano.
+                La forma más clara de entender la contratación pública en Colombia.
               </p>
             </div>
 
@@ -268,7 +268,7 @@ export default function AppLayout({
               </h4>
               <div className="space-y-1">
                 <p className="text-slate-800 dark:text-slate-200 font-bold font-mono">SECOP II</p>
-                <p className="text-slate-500 dark:text-slate-450">API Datos Abiertos</p>
+                <p className="text-slate-500 dark:text-slate-450">Sistema de Contratación Pública</p>
               </div>
             </div>
 
@@ -277,11 +277,11 @@ export default function AppLayout({
           {/* Parte Inferior */}
           <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-400 dark:text-slate-500 text-[11px]">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-2 font-mono">
-              <span className="font-bold text-slate-650 dark:text-slate-400">Community Edition</span>
-              <span className="hidden sm:inline text-slate-300 dark:text-slate-800">•</span>
-              <span>GNU AGPLv3 License</span>
-              <span className="hidden sm:inline text-slate-300 dark:text-slate-800">•</span>
               <span>© 2026 Contrato-Claro</span>
+              <span className="hidden sm:inline text-slate-300 dark:text-slate-800">•</span>
+              <a href="https://github.com/kcrsromero-cmyk/Contrato-Cla/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                Licencia AGPLv3 ↗
+              </a>
             </div>
             <div className="text-center md:text-right">
               <span>No afiliado al Gobierno de Colombia.</span>
@@ -295,9 +295,9 @@ export default function AppLayout({
         <div className={`flex items-center justify-center gap-1.5 transition-all duration-500 ease-in-out ${
           isAtBottom ? 'opacity-100' : 'opacity-0'
         }`}>
-          <span>Software libre</span>
+          <span>Contratación Pública</span>
           <span className="text-indigo-500 font-bold">•</span>
-          <span>Código Abierto</span>
+          <span>Colombia</span>
           <span className="text-indigo-500 font-bold">•</span>
           <span>Datos Oficiales SECOP II</span>
         </div>
