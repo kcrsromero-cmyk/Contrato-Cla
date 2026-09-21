@@ -130,7 +130,7 @@ model Contract {
   contractType       String? @map("contract_type") // tipo_de_contrato
   modality           String? // modalidad_de_contratacion
   justification      String? // justificacion_modalidad_de
-  object             String // objeto_del_contrato
+  object             String? // objeto_del_contrato
   deliveryConditions String? @map("delivery_conditions") // condiciones_de_entrega
 
   signatureDate DateTime? @map("signature_date") // fecha_de_firma
@@ -161,7 +161,7 @@ model Contract {
 
   department String?
   city       String?
-  entityName String  @map("entity_name")
+  entityName String? @map("entity_name")
   entityCode String  @map("entity_code")
   entityNit  String? @map("entity_nit")
 

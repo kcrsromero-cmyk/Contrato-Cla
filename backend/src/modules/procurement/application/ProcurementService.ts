@@ -214,7 +214,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           contractType: c.contractType ?? undefined,
           modality: c.modality ?? undefined,
           justification: c.justification ?? undefined,
-          object: c.object,
+          object: c.object ?? undefined,
           deliveryConditions: c.deliveryConditions ?? undefined,
           signatureDate: c.signatureDate ?? undefined,
           startDate: c.startDate ?? undefined,
@@ -239,7 +239,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           spenderName: c.spenderName ?? undefined,
           department: c.department ?? undefined,
           city: c.city ?? undefined,
-          entityName: c.entityName,
+          entityName: c.entityName ?? undefined,
           entityCode: c.entityCode,
           entityNit: c.entityNit ?? undefined,
           urlproceso: c.procurementProcess?.url ?? undefined,
@@ -263,6 +263,14 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
 
     // Persist contracts to Postgres
     for (const contractData of contracts) {
+      // Contratos sin entityCode son inválidos en SECOP II — descartar
+      if (!contractData.entityCode?.trim()) {
+        logger.warn('Skipping contract with missing entityCode', {
+          contractId: contractData.contractId,
+        });
+        continue;
+      }
+
       let procurementProcessUUID: string | undefined;
 
       if (contractData.procurementProcessId) {
@@ -327,7 +335,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           contractType: contractData.contractType,
           modality: contractData.modality,
           justification: contractData.justification,
-          object: contractData.object || 'Unknown Object',
+          object: contractData.object ?? null,
           deliveryConditions: contractData.deliveryConditions,
 
           signatureDate: contractData.signatureDate,
@@ -358,8 +366,8 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
 
           department: contractData.department,
           city: contractData.city,
-          entityName: contractData.entityName || 'Unknown Entity',
-          entityCode: contractData.entityCode || '000',
+          entityName: contractData.entityName ?? null,
+          entityCode: contractData.entityCode,
           entityNit: contractData.entityNit,
           procurementProcessId: procurementProcessUUID,
 

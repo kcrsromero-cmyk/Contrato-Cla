@@ -21,7 +21,7 @@ export interface Contract {
   contractType?: string;
   modality?: string;
   justification?: string;
-  object: string;
+  object?: string;
   deliveryConditions?: string;
 
   signatureDate?: Date;
@@ -52,7 +52,7 @@ export interface Contract {
 
   department?: string;
   city?: string;
-  entityName: string;
+  entityName?: string;
   entityCode: string;
   entityNit?: string;
 
