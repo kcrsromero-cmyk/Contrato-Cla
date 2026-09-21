@@ -277,11 +277,7 @@ export default function AppLayout({
           {/* Parte Inferior */}
           <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-400 dark:text-slate-500 text-[11px]">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-2 font-mono">
-              <span>© 2026 Contrato-Claro</span>
-              <span className="hidden sm:inline text-slate-300 dark:text-slate-800">•</span>
-              <a href="https://github.com/kcrsromero-cmyk/Contrato-Cla/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-                Licencia AGPLv3 ↗
-              </a>
+              <span>© 2026 Contrata360. Todos los derechos reservados.</span>
             </div>
             <div className="text-center md:text-right">
               <span>No afiliado al Gobierno de Colombia.</span>
