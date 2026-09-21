@@ -22,7 +22,7 @@ export function mapContractToViewModel(c: any): Contrato {
     modalidad_de_contratacion: c.modality,
     justificacion_modalidad_de: c.justification,
 
-    objeto_del_contrato: c.object,
+    objeto_del_contrato: c.object ?? undefined,
     condiciones_de_entrega: c.deliveryConditions,
 
     fecha_de_firma: c.signatureDate,

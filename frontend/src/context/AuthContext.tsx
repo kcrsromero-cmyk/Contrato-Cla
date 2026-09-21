@@ -65,8 +65,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setPlanExpiresAt(data.planExpiresAt || null);
         setMaxFavoriteEntities(data.maxFavoriteEntities ?? null);
         setCapabilities(data.capabilities || []);
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
+      } catch {
+        // Token expired or invalid — user stays unauthenticated
       } finally {
         setIsLoading(false);
       }
