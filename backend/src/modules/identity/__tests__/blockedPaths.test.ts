@@ -14,6 +14,8 @@ describe('BlockedPaths Middleware', () => {
   it('should allow clean application paths', () => {
     const validPaths = [
       '/api/v1/procurement/contracts',
+      '/api/v1/auth/login',
+      '/api/v1/auth/register',
       '/api/v1/auth/me',
       '/api/v1/analytics/overview',
       '/api/v1/user/credentials-list' // should not match prefix /credentials because it starts with /api
@@ -115,7 +117,11 @@ describe('BlockedPaths Middleware', () => {
       '/.env.local',
       '/production/.env',
       '/development/.env',
-      '/staging/.env'
+      '/staging/.env',
+      '/app/.env',
+      '/docker/.env',
+      '/laravel/.env.production',
+      '/webroot/index.php/_environment'
     ];
 
     envFilePaths.forEach(path => {
@@ -190,7 +196,11 @@ describe('BlockedPaths Middleware', () => {
       '/license.txt',
       '/haan',
       '/bank',
-      '/readme.html'
+      '/readme.html',
+      '/signin',
+      '/signup',
+      '/register',
+      '/api/auth/signin'
     ];
 
     genericAttackPaths.forEach(path => {
