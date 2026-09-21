@@ -1,8 +1,9 @@
 import { ContractProvider } from '../domain/ContractProvider';
 import { Contract, FilterParams } from '../domain/types';
+import { config } from '../../../infrastructure/config/env';
 
 export class SocrataContractProvider implements ContractProvider {
-  private baseUrl = process.env.SOCRATA_DATASET_URL || 'https://www.datos.gov.co/resource/jbjy-vk9h.json';
+  private baseUrl = config.SOCRATA_DATASET_URL;
 
   constructor() {}
 
@@ -98,11 +99,7 @@ export class SocrataContractProvider implements ContractProvider {
   }
 
   private getSocrataHeaders(): HeadersInit {
-    const token = process.env.SOCRATA_APP_TOKEN;
-    if (token && token.trim() !== '') {
-      return { 'X-App-Token': token };
-    }
-    return {};
+    return { 'X-App-Token': config.SOCRATA_APP_TOKEN };
   }
 
   private escapeSoQL(text: string): string {
