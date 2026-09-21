@@ -48,7 +48,6 @@ export function useContratos(
       );
       await updateDbSize();
     } catch (err: any) {
-      console.error(err);
       setError(
         'No se pudieron obtener los contratos. Por favor intente nuevamente o elija otro periodo/entidad.'
       );

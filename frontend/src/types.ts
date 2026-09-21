@@ -15,7 +15,7 @@ export interface Contrato {
   modalidad_de_contratacion: string;
   justificacion_modalidad_de?: string;
 
-  objeto_del_contrato: string;
+  objeto_del_contrato?: string;
   descripcion_del_proceso?: string;
   condiciones_de_entrega?: string;
 
