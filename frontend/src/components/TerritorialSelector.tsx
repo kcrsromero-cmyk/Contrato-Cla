@@ -167,7 +167,7 @@ export default function TerritorialSelector({
                 Información oficial
               </h4>
               <p className="text-xs text-slate-650 dark:text-slate-300 leading-relaxed">
-                Datos obtenidos directamente de SECOP II mediante la API de Datos Abiertos.
+                Información contractual del registro oficial del Estado colombiano, organizada y lista para consultar.
               </p>
             </div>
 

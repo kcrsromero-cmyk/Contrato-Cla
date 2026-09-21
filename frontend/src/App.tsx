@@ -193,20 +193,16 @@ function AppContent() {
               {/* Dynamic lastUpdated timestamp & storage usage */}
               <div className="space-y-2">
                 <div className="space-y-1">
-                  <div className="text-[9px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sincronización Local</div>
+                  <div className="text-[9px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">Última actualización</div>
                   <div className="text-xs text-slate-700 dark:text-slate-350 font-semibold flex items-center gap-1.5 font-mono">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     {lastUpdated ? lastUpdated : 'Pendiente'}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[10px] font-mono">
-                  <div className="bg-slate-50 dark:bg-slate-950/40 p-2 rounded-xl border border-slate-100 dark:border-slate-850">
-                    <div className="text-slate-400 dark:text-slate-500 mb-0.5 text-[8px] uppercase tracking-wider">Cache Total</div>
-                    <div className="font-extrabold text-slate-800 dark:text-slate-200">{formatBytes(dbSize)}</div>
-                  </div>
+                <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[10px] font-mono">
                   <div className="bg-indigo-50/50 dark:bg-indigo-950/20 p-2 rounded-xl border border-indigo-100/20 dark:border-indigo-900/10">
-                    <div className="text-indigo-500/80 dark:text-indigo-400/80 mb-0.5 text-[8px] uppercase tracking-wider">En pantalla</div>
+                    <div className="text-indigo-500/80 dark:text-indigo-400/80 mb-0.5 text-[8px] uppercase tracking-wider">Datos en sesión</div>
                     <div className="font-extrabold text-indigo-650 dark:text-indigo-400">{formatBytes(contratosSizeInBytes)}</div>
                   </div>
                 </div>
@@ -353,7 +349,7 @@ function AppContent() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">¿Limpiar caché local?</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Se borrarán los datos guardados en este dispositivo. Tendrás que volver a descargar los datos.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Se limpiará la caché local del navegador.</p>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
