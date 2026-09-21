@@ -70,7 +70,11 @@ export class AuthController {
     } catch (error: any) {
       await this.auditService.logAction({
         action: 'LOGIN_FAILED',
-        details: { error: error.message, email: req.body.email },
+        details: {
+          errorCode: 'INVALID_CREDENTIALS',
+          providerHint: error.code ?? null,
+          email: req.body.email,
+        },
         resource: 'identity/login',
         ipAddress: req.ip || req.socket.remoteAddress,
       });
@@ -86,7 +90,7 @@ export class AuthController {
       }
       res.status(200).json({ message: 'Logged out successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'Error al cerrar sesión' });
     }
   }
 
@@ -99,7 +103,7 @@ export class AuthController {
       const result = await this.identityService.refresh(refreshToken);
       res.status(200).json(result);
     } catch (error: any) {
-      res.status(401).json({ error: error.message });
+      res.status(401).json({ error: 'Token inválido o expirado' });
     }
   }
 
@@ -109,7 +113,7 @@ export class AuthController {
       await this.identityService.resetPassword(email);
       res.status(200).json({ message: 'Si el correo electrónico está registrado, recibirás un enlace para restablecer tu contraseña.' });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(500).json({ error: 'No se pudo procesar la solicitud' });
     }
   }
 
@@ -133,7 +137,7 @@ export class AuthController {
 
       res.status(200).json(currentUser);
     } catch (error: any) {
-      res.status(401).json({ error: error.message });
+      res.status(401).json({ error: 'No autorizado' });
     }
   }
 
