@@ -4,19 +4,13 @@ import { AuthResult, LoginCredentials, RegisterCredentials } from '../domain/dto
 import { AuthenticatedUser } from '../domain/AuthenticatedUser';
 import { IdentityMapper } from '../application/IdentityMapper';
 import { SupabaseIdentityMapper } from './SupabaseIdentityMapper';
+import { config } from '../../../infrastructure/config/env';
 
 export class SupabaseIdentityProvider implements IdentityProvider {
   private client: SupabaseClient;
 
   constructor() {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase configuration is missing. Ensure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are set.');
-    }
-
-    this.client = createClient(supabaseUrl, supabaseKey);
+    this.client = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY);
   }
 
   async register(credentials: RegisterCredentials): Promise<AuthResult> {

@@ -1,23 +1,5 @@
-import dotenv from 'dotenv';
-// Load environment variables
-dotenv.config();
-
-const REQUIRED_ENV_VARS = [
-  'DATABASE_URL',
-  'REDIS_URL',
-  'SUPABASE_URL',
-  'SUPABASE_PUBLISHABLE_KEY',
-  'AUTH_JWKS_URL',
-  'FRONTEND_URL',
-  'SOCRATA_APP_TOKEN',
-];
-
-for (const key of REQUIRED_ENV_VARS) {
-  if (!process.env[key]) {
-    console.error(`[FATAL] Missing required environment variable: ${key}`);
-    process.exit(1);
-  }
-}
+import { config } from './infrastructure/config/env';
+import { logger } from './infrastructure/logger';
 
 import express from 'express';
 import cors from 'cors';
@@ -27,7 +9,6 @@ import rateLimit from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
 import { redisAppClient } from './infrastructure/redis/redisAppClient';
 import { prisma } from './infrastructure/db/prisma';
-import { logger } from './infrastructure/logger';
 import { AuditService } from './modules/audit/application/AuditService';
 import { AuditMiddleware } from './modules/audit/presentation/AuditMiddleware';
 import { blockedPathsMiddleware } from './infrastructure/security/blockedPathsMiddleware';
@@ -38,8 +19,8 @@ const app = express();
 // Confiar en el proxy de Traefik (primer proxy en la cadena)
 app.set('trust proxy', 1);
 
-const port = process.env.PORT || 4000;
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+const port = config.PORT;
+const frontendUrl = config.FRONTEND_URL;
 
 const auditService = new AuditService(prisma);
 const auditMiddleware = new AuditMiddleware(auditService);
@@ -106,12 +87,12 @@ app.use('/api/v1/analytics', analyticsRouter);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
+  logger.error('Unhandled error', { message: err.message, stack: err.stack });
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
 app.listen(port, () => {
-  console.log(`🚀 Contrata360 API Gateway is running on port ${port}`);
+  logger.info(`🚀 Contrata360 API Gateway running on port ${port}`);
 });
 
 export default app;
