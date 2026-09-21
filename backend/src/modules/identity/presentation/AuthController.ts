@@ -3,6 +3,7 @@ import { IdentityService } from '../application/IdentityService';
 import { prisma } from '../../../infrastructure/db/prisma';
 import { AuditService } from '../../audit/application/AuditService';
 import { z } from 'zod';
+import { logger } from '../../../infrastructure/logger';
 
 export class AuthController {
   constructor(
@@ -198,7 +199,7 @@ export class AuthController {
 
       res.json(updatedUser);
     } catch (error: any) {
-      console.error(error);
+      logger.error('Profile update error', { error: error?.message });
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
