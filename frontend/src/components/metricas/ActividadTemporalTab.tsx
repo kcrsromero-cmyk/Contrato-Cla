@@ -2,398 +2,672 @@ import React, { useState, useMemo } from 'react';
 import { Contrato } from '../../types';
 import { useActividadTemporal, DiaActividad } from '../../hooks/useActividadTemporal';
 import { useAuth } from '../../context/AuthContext';
+import { formatCurrencyMillions, formatCOP } from '../../utils/helpers';
 import {
-  BarChart2 as Activity,
+  BarChart2,
   CalendarDays,
-  BarChart4,
+  Flame,
+  TrendingDown,
   TrendingUp,
-  ArrowUpRight,
-  AlertCircle,
-  Clock,
+  Activity,
+  DollarSign,
   Lock,
-  Star
+  Star,
+  ChevronRight,
+  Info,
+  X,
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  ReferenceLine,
+  ResponsiveContainer,
+} from 'recharts';
+
+// ─── Tipos ───────────────────────────────────────────────────────────────────
 
 interface ActividadTemporalTabProps {
   contratos: Contrato[];
+  allContratos?: Contrato[];
   fechaDesde: string;
   fechaHasta: string;
+  monthlyData?: { key: string; name: string; 'Cantidad Contratos': number }[];
+  selectedMonthKey?: string;
+  onSelectMonthKey?: (key: string) => void;
 }
 
 type SubViewType = 'indice' | 'semana' | 'calendario' | 'dias-semana';
 type FilterLevel = 'all' | 'pico' | 'alta' | 'regular' | 'valle';
+type DiaSemanaFilter = 'all' | 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Dom, 1=Lun...6=Sáb
 
-export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({ contratos, fechaDesde, fechaHasta }) => {
+const NOMBRES_DIA_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const NOMBRES_MES_COMPLETO: Record<string, string> = {
+  '01': 'Enero', '02': 'Febrero', '03': 'Marzo', '04': 'Abril',
+  '05': 'Mayo', '06': 'Junio', '07': 'Julio', '08': 'Agosto',
+  '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre',
+};
+
+// ─── Componente principal ─────────────────────────────────────────────────────
+
+export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
+  contratos,
+  allContratos,
+  fechaDesde,
+  fechaHasta,
+  monthlyData,
+  selectedMonthKey,
+  onSelectMonthKey,
+}) => {
   const { plan } = useAuth();
   const isFreeOrStarter = plan === 'FREE' || plan === 'STARTER';
 
-  const metricas = useActividadTemporal(contratos, fechaDesde, fechaHasta);
+  const metricas = useActividadTemporal(contratos, fechaDesde, fechaHasta, allContratos);
+
   const [subView, setSubView] = useState<SubViewType>('indice');
   const [filterLevel, setFilterLevel] = useState<FilterLevel>('all');
+  const [diaSemanaFilter, setDiaSemanaFilter] = useState<DiaSemanaFilter>('all');
+  const [showPicoModal, setShowPicoModal] = useState(false);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      maximumFractionDigits: 0
-    }).format(value);
-  };
-
+  // ── Umbrales estadísticos ──────────────────────────────────────────────────
   const media = metricas.promedioDiario;
-
-  // Calculate standard deviation for threshold
   const desviacion = useMemo(() => {
     if (metricas.porDia.length === 0) return 0;
     const sum = metricas.porDia.reduce((s, d) => s + Math.pow(d.contratos - media, 2), 0);
     return Math.sqrt(sum / metricas.porDia.length);
   }, [metricas.porDia, media]);
-
-  const thresholdAlto = media;
   const thresholdPico = media + desviacion;
 
   const getDayLevel = (d: DiaActividad): FilterLevel => {
     if (d.contratos === 0) return 'valle';
     if (d.contratos > thresholdPico) return 'pico';
-    if (d.contratos > thresholdAlto) return 'alta';
+    if (d.contratos > media) return 'alta';
     return 'regular';
   };
 
-  const getDayColor = (level: FilterLevel) => {
+  // También clasifica como valle el día con el mínimo si es muy bajo
+  const getDayLevelExtended = (d: DiaActividad): FilterLevel => {
+    if (d.contratos === 0) return 'valle';
+    if (d.contratos === metricas.minimoDiarioValor && metricas.minimoDiarioValor > 0 && d.contratos < media * 0.2) return 'valle';
+    if (d.contratos > thresholdPico) return 'pico';
+    if (d.contratos > media) return 'alta';
+    return 'regular';
+  };
+
+  // ── Conteos por categoría para la leyenda ─────────────────────────────────
+  const conteosPorNivel = useMemo(() => {
+    const counts = { pico: 0, alta: 0, regular: 0, valle: 0 };
+    const sumas = { pico: 0, alta: 0, regular: 0, valle: 0 };
+    metricas.porDia.forEach(d => {
+      const lvl = getDayLevelExtended(d);
+      counts[lvl]++;
+      sumas[lvl] += d.contratos;
+    });
+    return { counts, sumas };
+  }, [metricas.porDia, thresholdPico, media, metricas.minimoDiarioValor]);
+
+  // ── Conteos por día de semana ─────────────────────────────────────────────
+  const conteosPorDiaSemana = useMemo(() => {
+    const result: Record<number, { dias: number; firmas: number }> = {};
+    for (let i = 0; i < 7; i++) result[i] = { dias: 0, firmas: 0 };
+    metricas.porDia.forEach(d => {
+      result[d.diaSemana].dias++;
+      result[d.diaSemana].firmas += d.contratos;
+    });
+    return result;
+  }, [metricas.porDia]);
+
+  // ── Datos filtrados para el gráfico ────────────────────────────────────────
+  const datosFiltrados = useMemo(() => {
+    return metricas.porDia.filter(d => {
+      const nivelOk = filterLevel === 'all' || getDayLevelExtended(d) === filterLevel;
+      const diaOk = diaSemanaFilter === 'all' || d.diaSemana === diaSemanaFilter;
+      return nivelOk && diaOk;
+    });
+  }, [metricas.porDia, filterLevel, diaSemanaFilter, thresholdPico, media, metricas.minimoDiarioValor]);
+
+  // ── Contratos del día pico (para modal) ───────────────────────────────────
+  const contratosPico = useMemo(() => {
+    if (!metricas.maximoDiario.fecha) return [];
+    return contratos.filter(c => c.fecha_de_firma?.startsWith(metricas.maximoDiario.fecha));
+  }, [contratos, metricas.maximoDiario.fecha]);
+
+  // ── Formateo ───────────────────────────────────────────────────────────────
+  const formatMillones = (v: number) => {
+    const m = v / 1_000_000;
+    return `$${new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 }).format(m)} millones`;
+  };
+
+  const labelMes = (key: string) => {
+    if (!key || key === 'all') return 'Todos los meses (Vigencia)';
+    const [, mm] = key.split('-');
+    return NOMBRES_MES_COMPLETO[mm] || key;
+  };
+
+  const filtroLabel = selectedMonthKey && selectedMonthKey !== 'all'
+    ? labelMes(selectedMonthKey)
+    : 'Todos los meses (Vigencia)';
+
+  const colorDia = (level: FilterLevel) => {
     switch (level) {
-      case 'pico': return 'bg-orange-500 border-orange-600 text-white';
-      case 'alta': return 'bg-indigo-500 border-indigo-600 text-white';
-      case 'regular': return 'bg-indigo-200 border-indigo-300 text-indigo-900';
-      case 'valle': return 'bg-white border-slate-200 text-slate-400';
-      default: return 'bg-white border-slate-200 text-slate-400';
+      case 'pico': return '#f97316';       // orange-500
+      case 'alta': return '#4f46e5';       // indigo-600
+      case 'regular': return '#818cf8';    // indigo-400
+      case 'valle': return '#cbd5e1';      // slate-300
     }
   };
 
-  const filteredDias = useMemo(() => {
-    if (filterLevel === 'all') return metricas.porDia;
-    return metricas.porDia.filter(d => getDayLevel(d) === filterLevel);
-  }, [metricas.porDia, filterLevel, thresholdPico, thresholdAlto]);
+  // ─── Sub-tabs: bloqueados si FREE/STARTER ─────────────────────────────────
+  const subTabs: { id: SubViewType; label: string; locked: boolean }[] = [
+    { id: 'indice', label: 'Vista Mes', locked: false },
+    { id: 'semana', label: 'Por Semana', locked: isFreeOrStarter },
+    { id: 'calendario', label: 'Tipo Calendario', locked: isFreeOrStarter },
+    { id: 'dias-semana', label: 'Días Semana', locked: isFreeOrStarter },
+  ];
 
-  return (
-    <div className="space-y-6 animate-fade-in pb-10">
-      {/* Sub-view Selector */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800">
-        <div className="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-full sm:w-auto overflow-x-auto custom-scrollbar">
-          <button
-            onClick={() => setSubView('indice')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${
-              subView === 'indice'
-                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
-            }`}
-          >
-            Índice de Actividad
-          </button>
+  // ─── KPIs compartidos (indice + dias-semana) ──────────────────────────────
+  const renderKPIs = () => {
+    const varM = metricas.variacionMensual;
+    const varColor = varM ? (varM.porcentaje >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400') : '';
+    const totalDias = metricas.totalDiasPeriodo;
 
-          <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1 self-center hidden sm:block"></div>
-
-          <button
-            onClick={() => !isFreeOrStarter && setSubView('semana')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              subView === 'semana'
-                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                : isFreeOrStarter
-                  ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
-            }`}
-            title={isFreeOrStarter ? 'Disponible en plan Profesional' : ''}
-          >
-            Por Semana
-            {isFreeOrStarter && <Lock className="w-3 h-3" />}
-          </button>
-
-          <button
-            onClick={() => !isFreeOrStarter && setSubView('calendario')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              subView === 'calendario'
-                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                : isFreeOrStarter
-                  ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
-            }`}
-            title={isFreeOrStarter ? 'Disponible en plan Profesional' : ''}
-          >
-            Tipo Calendario
-            {isFreeOrStarter && <Lock className="w-3 h-3" />}
-          </button>
-
-          <button
-            onClick={() => !isFreeOrStarter && setSubView('dias-semana')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              subView === 'dias-semana'
-                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                : isFreeOrStarter
-                  ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
-            }`}
-            title={isFreeOrStarter ? 'Disponible en plan Profesional' : ''}
-          >
-            Días Semana
-            {isFreeOrStarter && <Lock className="w-3 h-3" />}
-          </button>
-        </div>
-
-        {/* Interactive Legend */}
-        <div className="flex gap-2 text-[10px] sm:text-xs font-bold overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 hide-scrollbar">
-          <button
-            onClick={() => setFilterLevel('all')}
-            className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${filterLevel === 'all' ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-          >
-            TODAS
-          </button>
-          <button
-            onClick={() => setFilterLevel('pico')}
-            className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap flex items-center gap-1 ${filterLevel === 'pico' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-          >
-            <span>🔥</span> PICO
-          </button>
-          <button
-            onClick={() => setFilterLevel('alta')}
-            className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap flex items-center gap-1 ${filterLevel === 'alta' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-          >
-            <span>↗</span> ALTA {`>`}MEDIA
-          </button>
-          <button
-            onClick={() => setFilterLevel('regular')}
-            className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap flex items-center gap-1 ${filterLevel === 'regular' ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-          >
-            <span>~</span> REGULAR
-          </button>
-          <button
-            onClick={() => setFilterLevel('valle')}
-            className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap flex items-center gap-1 ${filterLevel === 'valle' ? 'bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-          >
-            <span>-</span> VALLE / 0
-          </button>
-        </div>
-      </div>
-
-      {isFreeOrStarter && subView !== 'indice' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-10 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mb-5">
-            <Star className="w-8 h-8 text-amber-400" />
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* MÁXIMO DIARIO */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-orange-200 dark:border-orange-900/40 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Flame className="w-3.5 h-3.5 text-orange-500" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">Máximo Diario</span>
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">
-            Funcionalidad exclusiva para suscriptores
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
-            Las vistas detalladas de Calendario, Semanas y Días de Semana están disponibles desde el plan Profesional.
-          </p>
-          <button
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all"
-          >
-            Ver planes
-          </button>
-        </div>
-      )}
-
-      {/* Sub-view 1: Índice de Actividad */}
-      {subView === 'indice' && (
-        <div className="space-y-6">
-          {/* Pico Máximo Banner */}
-          {metricas.maximoDiario.contratos > 0 && (
-            <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-20">
-                <TrendingUp className="w-24 h-24" />
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
-                    PICO MÁXIMO DEL MES
-                  </span>
-                </div>
-                <div className="flex items-end gap-4">
-                  <div>
-                    <h3 className="text-4xl font-black">{metricas.maximoDiario.contratos}</h3>
-                    <p className="text-orange-100 text-sm font-medium">contratos firmados</p>
-                  </div>
-                  <div className="pb-1">
-                    <p className="text-lg font-bold">Día {metricas.maximoDiario.dia}</p>
-                    <p className="text-orange-100 text-sm">Valor: {formatCurrency(metricas.maximoDiario.valor)}</p>
-                  </div>
-                </div>
-              </div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+            {metricas.maximoDiario.contratos}
+          </div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">contratos/día</div>
+          {metricas.maximoDiario.dia > 0 && (
+            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+              Día {metricas.maximoDiario.dia} del mes
             </div>
           )}
-
-          {/* KPIs Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
-                <CalendarDays className="w-4 h-4" />
-                <span className="text-xs font-bold">Total Días Rango</span>
-              </div>
-              <div className="text-2xl font-black text-slate-900 dark:text-white">
-                {metricas.totalDiasPeriodo}
-              </div>
+          {metricas.maximoDiario.valor > 0 && (
+            <div className="text-xs font-semibold text-orange-500 mt-1">
+              {formatMillones(metricas.maximoDiario.valor)}
             </div>
+          )}
+        </div>
 
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
-                <Activity className="w-4 h-4" />
-                <span className="text-xs font-bold">Días con Firmas</span>
-              </div>
-              <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
-                {metricas.diasConFirmas}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">
-                {Math.round((metricas.diasConFirmas / metricas.totalDiasPeriodo) * 100)}% del periodo
-              </div>
-            </div>
+        {/* MÍNIMO DIARIO */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-2">
+            <TrendingDown className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">Mínimo Diario</span>
+          </div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+            {metricas.minimoDiarioValor}
+          </div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">contratos/día</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            En {metricas.minimoDiarioCount} {metricas.minimoDiarioCount === 1 ? 'día' : 'días'}
+            {metricas.minimoDiarioFinDeSemanaCount > 0
+              ? ` (${metricas.minimoDiarioFinDeSemanaCount} en fin de semana).`
+              : ' (0 en fin de semana).'}
+          </div>
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Cota inferior de actividad.</div>
+        </div>
 
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
-                <BarChart4 className="w-4 h-4" />
-                <span className="text-xs font-bold">Promedio Diario</span>
-              </div>
-              <div className="text-2xl font-black text-slate-900 dark:text-white">
-                {metricas.promedioDiario}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">
-                contratos por día
-              </div>
-            </div>
+        {/* PROMEDIO */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-2">
+            <TrendingUp className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">Promedio</span>
+          </div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+            {metricas.promedioDiario}
+          </div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">contratos/día</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">Días activos: {metricas.promedioHabil}/día</div>
+          <div className="text-xs font-semibold text-indigo-500 dark:text-indigo-400">Días hábiles: {metricas.promedioHabil}/día</div>
+        </div>
 
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
-                <Clock className="w-4 h-4" />
-                <span className="text-xs font-bold">Días en Valle (0)</span>
-              </div>
-              <div className="text-2xl font-black text-slate-900 dark:text-white">
-                {metricas.diasEnCero}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">
-                sin actividad
-              </div>
-            </div>
+        {/* MEDIANA */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Activity className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">Mediana</span>
+          </div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+            {metricas.medianaDiaria}
+          </div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">contratos/día</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">Punto medio del flujo diario.</div>
+          <div className="text-xs font-semibold text-indigo-500 dark:text-indigo-400">Libre de distorsiones por picos.</div>
+        </div>
 
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
-                <ArrowUpRight className="w-4 h-4" />
-                <span className="text-xs font-bold">Mediana Diaria</span>
-              </div>
-              <div className="text-2xl font-black text-slate-900 dark:text-white">
-                {metricas.medianaDiaria}
-              </div>
-            </div>
+        {/* DÍAS ACTIVOS */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-900/40 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Activity className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">Días Activos</span>
+          </div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+            {metricas.diasConFirmas}
+          </div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">días con firmas</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            {totalDias > 0 ? Math.round((metricas.diasConFirmas / totalDias) * 100) : 0}% del total de {totalDias} días del periodo.
+          </div>
+          <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Jornadas con actividad efectiva.</div>
+        </div>
 
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
-                <AlertCircle className="w-4 h-4" />
-                <span className="text-xs font-bold">Firmas Fin de Semana</span>
-              </div>
-              <div className="text-2xl font-black text-orange-600 dark:text-orange-500">
-                {metricas.firmasFinDeSemana.reduce((sum, d) => sum + d.contratos, 0)}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">
-                en {metricas.firmasFinDeSemana.length} días
-              </div>
-            </div>
+        {/* DÍAS SIN CONTRATACIÓN */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-2">
+            <CalendarDays className="w-3.5 h-3.5 text-red-400" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">Días sin Contratación</span>
+          </div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+            {metricas.diasEnCero}
+          </div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">días en cero</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            {totalDias > 0 ? Math.round((metricas.diasEnCero / totalDias) * 100) : 0}% del total de días del periodo.
+          </div>
+          <div className="text-xs font-semibold text-red-500 dark:text-red-400">Jornadas sin registro de firmas.</div>
+        </div>
 
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm col-span-2">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
-                <CalendarDays className="w-4 h-4" />
-                <span className="text-xs font-bold">Día Mayor Concentración (General)</span>
+        {/* VALOR PROM./CONTRATO */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-2">
+            <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">Valor Prom./Contrato</span>
+          </div>
+          <div className="text-xl font-black text-slate-900 dark:text-white leading-none mt-1">
+            {formatCurrencyMillions(metricas.valorPromedioPorContrato)}
+          </div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+            $ {new Intl.NumberFormat('es-CO').format(Math.round(metricas.valorPromedioPorContrato))}
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Total {metricas.totalContratos} contratos firmados.</div>
+        </div>
+
+        {/* VARIACIÓN MENSUAL */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-2">
+            {varM && varM.porcentaje >= 0
+              ? <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+              : <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+            }
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">Variación Mensual</span>
+          </div>
+          {varM ? (
+            <>
+              <div className={`text-3xl font-black leading-none ${varColor}`}>
+                {varM.porcentaje >= 0 ? '+' : ''}{varM.porcentaje.toFixed(1)}%
               </div>
-              <div className="text-2xl font-black text-slate-900 dark:text-white">
-                {metricas.mesConMayorConcentracion || 'N/A'}
+              <div className={`text-xs font-semibold mt-0.5 ${varColor}`}>
+                {varM.diferencia >= 0 ? '+' : ''}{varM.diferencia} contratos
               </div>
-              <div className="text-xs text-slate-500 mt-1">
-                día de la semana más frecuente
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                vs. {varM.mesActualLabel} vs {varM.mesAnteriorLabel}
               </div>
+            </>
+          ) : (
+            <div className="text-sm text-slate-400 dark:text-slate-500 mt-2">Sin datos de mes anterior</div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Pico Banner ──────────────────────────────────────────────────────────
+  const renderPicoBanner = () => {
+    if (metricas.maximoDiario.contratos === 0) return null;
+    return (
+      <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-xl shrink-0">
+            <Flame className="w-4 h-4 text-orange-500" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-orange-700 dark:text-orange-400 font-mono">
+                Pico Máximo Registrado: {filtroLabel}
+              </span>
+              <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 text-[10px] font-bold rounded-full border border-orange-200 dark:border-orange-800">
+                {metricas.maximoDiario.contratos} contratos registrados en 1 día
+              </span>
             </div>
+            <p className="text-xs text-orange-800 dark:text-orange-300 mt-1 font-medium">
+              El Día {metricas.maximoDiario.dia} del mes representó la mayor concentración de firmas acumuladas con{' '}
+              <strong>{metricas.maximoDiario.contratos} contratos</strong> y un valor de{' '}
+              <strong>{formatCOP(metricas.maximoDiario.valor)}</strong>.
+            </p>
           </div>
         </div>
-      )}
+        {contratosPico.length > 0 && (
+          <button
+            onClick={() => setShowPicoModal(true)}
+            className="shrink-0 flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-extrabold transition-all shadow-sm whitespace-nowrap"
+          >
+            VER {metricas.maximoDiario.contratos} CONTRATOS
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+    );
+  };
 
-      {/* Sub-view 2: Por Semana */}
-      {!isFreeOrStarter && subView === 'semana' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {metricas.porSemana.map((semana, index) => {
-            const hasMatches = semana.dias.some(f => filteredDias.find(fd => fd.fecha === f));
-            if (filterLevel !== 'all' && !hasMatches) return null;
+  // ─── Footer bar ───────────────────────────────────────────────────────────
+  const renderFooterBar = () => {
+    const diaMayor = metricas.porDiaSemana.reduce(
+      (max, d) => d.contratos > max.contratos ? d : max,
+      metricas.porDiaSemana[0] || { dia: '', contratos: 0, porcentaje: 0, valor: 0 }
+    );
+    return (
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5">
+        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+          <CalendarDays className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+          <span>
+            Día de la semana con mayor concentración:{' '}
+            <strong className="text-slate-900 dark:text-white">{diaMayor.dia}</strong>
+            {diaMayor.contratos > 0 && (
+              <> ({diaMayor.contratos} contratos, {diaMayor.porcentaje.toFixed(1)}% del total del periodo)</>
+            )}
+          </span>
+        </div>
+        <div className="shrink-0 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-900/40">
+          Monto acumulado: {formatCurrencyMillions(metricas.totalValor)}
+        </div>
+      </div>
+    );
+  };
 
+  // ─── Leyenda interactiva ──────────────────────────────────────────────────
+  const renderLeyenda = () => {
+    const cats: { id: FilterLevel; label: string; emoji: string; bg: string; activeBg: string }[] = [
+      { id: 'all', label: 'TODAS', emoji: '📊', bg: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700', activeBg: 'bg-indigo-600 border-indigo-600 text-white' },
+      { id: 'pico', label: 'PICO', emoji: '🔥', bg: 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900', activeBg: 'bg-orange-500 border-orange-500 text-white' },
+      { id: 'alta', label: 'ALTA (>MEDIA)', emoji: '↗', bg: 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900', activeBg: 'bg-indigo-500 border-indigo-500 text-white' },
+      { id: 'regular', label: 'REGULAR', emoji: '~', bg: 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800', activeBg: 'bg-slate-500 border-slate-500 text-white' },
+      { id: 'valle', label: 'VALLE / 0', emoji: '↘', bg: 'bg-slate-50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800', activeBg: 'bg-slate-400 border-slate-400 text-white' },
+    ];
+
+    const totalDias = metricas.porDia.length;
+    const totalFirmas = metricas.totalContratos;
+
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-indigo-500" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 font-mono">
+              Leyenda Interactiva de Intensidad y Rangos
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">
+              Haga clic en cualquier categoría para resaltar o filtrar los días en el calendario.
+            </span>
+            <button className="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-[10px] font-bold text-slate-600 dark:text-slate-300 transition-colors border border-slate-200 dark:border-slate-700">
+              Guía Lectura Fácil
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {cats.map(cat => {
+            const isActive = filterLevel === cat.id;
+            const dias = cat.id === 'all' ? totalDias : conteosPorNivel.counts[cat.id as keyof typeof conteosPorNivel.counts] || 0;
+            const firs = cat.id === 'all' ? totalFirmas : conteosPorNivel.sumas[cat.id as keyof typeof conteosPorNivel.sumas] || 0;
             return (
+              <button
+                key={cat.id}
+                onClick={() => setFilterLevel(cat.id)}
+                className={`flex flex-col gap-0.5 p-2.5 rounded-xl border text-left transition-all min-w-[90px] ${isActive ? cat.activeBg : `${cat.bg} text-slate-700 dark:text-slate-300`}`}
+              >
+                <span className="flex items-center gap-1 text-[10px] font-extrabold font-mono uppercase">
+                  <span>{cat.emoji}</span> {cat.label}
+                  {isActive && <span className="ml-auto text-[9px] font-bold opacity-80 px-1 py-0.5 bg-white/20 rounded">ACTIVO</span>}
+                </span>
+                <span className="text-[11px] font-bold">{dias} días</span>
+                <span className="text-[10px] opacity-80">{firs} fir.</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Filtro por día de semana ─────────────────────────────────────────────
+  const renderFiltroDiaSemana = () => {
+    const totalDias = metricas.porDia.length;
+    return (
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono mr-1">
+          Filtrar día semana:
+        </span>
+        <button
+          onClick={() => setDiaSemanaFilter('all')}
+          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors ${diaSemanaFilter === 'all' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-400'}`}
+        >
+          Todos ({totalDias})
+        </button>
+        {NOMBRES_DIA_CORTO.map((nombre, i) => {
+          const count = conteosPorDiaSemana[i]?.firmas || 0;
+          const isActive = diaSemanaFilter === i;
+          const isWeekend = i === 0 || i === 6;
+          return (
+            <button
+              key={i}
+              onClick={() => setDiaSemanaFilter(i as DiaSemanaFilter)}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
+                isActive
+                  ? 'bg-indigo-600 border-indigo-600 text-white'
+                  : isWeekend
+                    ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400 hover:border-orange-400'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-400'
+              }`}
+            >
+              {nombre} ({count})
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // ─── Gráfico de barras ────────────────────────────────────────────────────
+  const renderBarChart = () => {
+    const datosGrafico = metricas.porDia
+      .filter(d => diaSemanaFilter === 'all' || d.diaSemana === diaSemanaFilter)
+      .map(d => ({
+        dia: d.dia,
+        contratos: d.contratos,
+        level: getDayLevelExtended(d),
+        nombre: `${d.nombreDia} ${d.dia}`,
+      }));
+
+    const CustomTooltip = ({ active, payload, label }: any) => {
+      if (active && payload?.length) {
+        return (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-md text-xs">
+            <p className="font-bold text-slate-900 dark:text-white mb-1">{payload[0]?.payload?.nombre}</p>
+            <p className="text-slate-600 dark:text-slate-400">Contratos: <span className="font-bold text-slate-900 dark:text-white">{payload[0]?.value}</span></p>
+          </div>
+        );
+      }
+      return null;
+    };
+
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            Distribución de firmas por día del mes ({filtroLabel})
+          </span>
+          <div className="flex items-center gap-3 text-[10px] font-medium text-slate-500">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-orange-500 inline-block" /> Día Pico</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-indigo-400 inline-block" /> Regular</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-slate-300 dark:bg-slate-600 inline-block" /> Mínimo/Valle</span>
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={datosGrafico} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+            <XAxis
+              dataKey="dia"
+              tick={{ fontSize: 9, fill: '#94a3b8' }}
+              tickLine={false}
+              axisLine={false}
+              label={{ value: `Días del Mes (1 - ${datosGrafico.length} Acumulado Vigencia)`, position: 'insideBottom', offset: -2, fontSize: 9, fill: '#94a3b8' }}
+            />
+            <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+            <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.05)' }} />
+            <ReferenceLine
+              y={media}
+              stroke="#94a3b8"
+              strokeDasharray="4 4"
+              label={{ value: `Media: ${media}`, position: 'right', fontSize: 9, fill: '#94a3b8' }}
+            />
+            <Bar dataKey="contratos" radius={[3, 3, 0, 0]}>
+              {datosGrafico.map((entry, index) => (
+                <Cell key={index} fill={colorDia(entry.level as FilterLevel)} fillOpacity={filterLevel === 'all' || filterLevel === entry.level ? 1 : 0.25} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  // ─── Modal Pico ───────────────────────────────────────────────────────────
+  const renderPicoModal = () => {
+    if (!showPicoModal) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowPicoModal(false)}>
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <div className="relative bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                {metricas.maximoDiario.contratos} contratos — Día {metricas.maximoDiario.dia} del mes
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Día pico de mayor concentración de firmas</p>
+            </div>
+            <button onClick={() => setShowPicoModal(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="overflow-y-auto p-5 space-y-2">
+            {contratosPico.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-6">No se encontraron contratos para esa fecha</p>
+            ) : (
+              contratosPico.map((c, i) => (
+                <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{c.proveedor_adjudicado || 'Sin proveedor'}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{c.objeto_del_contrato || c.descripcion_del_proceso || 'Sin descripción'}</p>
+                    </div>
+                    <div className="shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400 text-right">
+                      {formatCurrencyMillions(Number(c.valor_del_contrato) || 0)}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Vista: Por Semana ────────────────────────────────────────────────────
+  const renderPorSemana = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+        <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+          Desglose Semanal del Mes seleccionado ({filtroLabel})
+        </span>
+        <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-medium">
+          Haga clic en un día dentro de la semana para inspeccionar sus contratos
+        </span>
+      </div>
+
+      {metricas.porMes.map(mes => (
+        <div key={mes.key} className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-indigo-500" />
+              <h4 className="text-sm font-extrabold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide font-mono">{mes.label}</h4>
+            </div>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {mes.totalContratos} contratos ({formatCurrencyMillions(mes.totalValor)})
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            {mes.semanas.map(sem => (
               <div
-                key={semana.semana}
-                className={`p-5 rounded-2xl border shadow-sm relative overflow-hidden transition-all ${
-                  semana.esPico
-                    ? 'bg-orange-50/50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-900/50'
+                key={sem.numero}
+                className={`p-4 rounded-2xl border shadow-sm relative overflow-hidden transition-all ${
+                  sem.esPico
+                    ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-200 dark:ring-indigo-800'
                     : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
                 }`}
               >
-                {semana.esPico && (
-                  <div className="absolute top-0 right-0 px-3 py-1 bg-orange-500 text-white text-[10px] font-bold rounded-bl-xl">
-                    PICO SEMANAL
+                {sem.esPico && (
+                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-orange-500 text-white text-[9px] font-extrabold rounded-bl-xl font-mono">
+                    🔥 PICO SEMANAL
                   </div>
                 )}
 
-                <h4 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4">
-                  Semana {semana.semana}
-                </h4>
-
-                <div className="mb-4">
-                  <div className="text-3xl font-black text-slate-900 dark:text-white">
-                    {semana.contratos}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    contratos en {semana.dias.length} días
-                  </div>
+                <div className="mb-3">
+                  <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500 font-mono">
+                    SEMANA {sem.numero} ({sem.rangoLabel})
+                  </span>
                 </div>
 
-                <div className="space-y-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Valor total:</span>
-                    <span className="font-bold">{formatCurrency(semana.valor)}</span>
-                  </div>
-                  {semana.mayorDia && (
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-500">Día mayor:</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                        {semana.mayorDia.nombre} ({semana.mayorDia.contratos})
-                      </span>
+                <div className="text-2xl font-black text-slate-900 dark:text-white">{sem.contratos}</div>
+                <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrencyMillions(sem.valor)}</div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400">Promedio: {sem.promedioPorDia}/día</div>
+
+                {sem.mayorDia && (
+                  <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className="text-[9px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-mono font-bold mb-1">Mayor día de la semana:</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{sem.mayorDia.nombre}</span>
+                      <span className="text-xs font-extrabold text-orange-500">{sem.mayorDia.contratos} firm.</span>
                     </div>
-                  )}
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Promedio/día:</span>
-                    <span className="font-bold">
-                      {Math.round((semana.contratos / semana.dias.length) * 10) / 10}
-                    </span>
                   </div>
-                </div>
+                )}
 
-                {/* Días de la semana mini */}
-                <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                  <p className="text-[9px] uppercase tracking-wide text-slate-400 mb-2 font-bold">
-                    Días de la semana:
-                  </p>
-                  <div className="flex gap-1">
-                    {semana.dias.map(fecha => {
-                      const diaData = metricas.porDia.find(d => d.fecha === fecha);
-                      if (!diaData) return null;
-                      const esMayorDia = semana.mayorDia?.nombre.includes(diaData.nombreDia.substring(0,3));
+                {/* Mini días de la semana */}
+                <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="text-[9px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-mono font-bold mb-1">Días de la semana:</div>
+                  <div className="flex gap-1 flex-wrap">
+                    {sem.dias.map(dia => {
+                      const esMayor = sem.mayorDia?.dia === dia.dia;
+                      const tieneActividad = dia.contratos > 0;
                       return (
                         <div
-                          key={fecha}
-                          className={`flex-1 flex flex-col items-center p-1 rounded-lg text-center ${
-                            esMayorDia && diaData.contratos > 0
+                          key={dia.fecha}
+                          title={`${dia.nombreDia} ${dia.dia}: ${dia.contratos} contratos`}
+                          className={`flex flex-col items-center p-1 rounded-md text-center cursor-pointer transition-colors min-w-[22px] ${
+                            esMayor && tieneActividad
                               ? 'bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700'
-                              : diaData.contratos > 0
-                              ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800'
-                              : 'bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800'
+                              : tieneActividad
+                                ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100'
+                                : 'bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800'
                           }`}
                         >
                           <span className="text-[8px] font-bold text-slate-500 dark:text-slate-400">
-                            {diaData.nombreDia.substring(0, 1)}
+                            {dia.nombreDia.substring(0, 1)}
                           </span>
-                          <span className={`text-[9px] font-bold mt-0.5 ${
-                            diaData.contratos > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'
-                          }`}>
-                            {diaData.dia}
+                          <span className={`text-[9px] font-black mt-0.5 ${tieneActividad ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-300 dark:text-slate-600'}`}>
+                            {dia.dia}
                           </span>
                         </div>
                       );
@@ -401,83 +675,113 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({ cont
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Sub-view 3: Tipo Calendario */}
-      {!isFreeOrStarter && subView === 'calendario' && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm overflow-x-auto">
-          <div className="min-w-[600px]">
-            {/* Headers */}
-            <div className="grid grid-cols-7 gap-2 mb-2">
-              {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map((day, i) => (
-                <div key={day} className={`text-center text-xs font-bold py-2 ${i === 0 || i === 6 ? 'text-orange-500' : 'text-slate-500'}`}>
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            {/* Grid */}
-            <div className="grid grid-cols-7 gap-2">
-              {/* Pad empty days at start */}
-              {metricas.porDia.length > 0 && Array.from({ length: metricas.porDia[0].diaSemana }).map((_, i) => (
-                <div key={`empty-start-${i}`} className="h-24 rounded-xl bg-slate-50/50 dark:bg-slate-950/30 border border-dashed border-slate-200 dark:border-slate-800"></div>
-              ))}
-
-              {/* Days */}
-              {metricas.porDia.map((dia) => {
-                const isVisible = filterLevel === 'all' || getDayLevel(dia) === filterLevel;
-                const level = getDayLevel(dia);
-                const isWeekend = dia.esFinDeSemana;
-
-                return (
-                  <div
-                    key={dia.fecha}
-                    className={`h-24 p-2 rounded-xl border flex flex-col transition-all ${
-                      !isVisible ? 'opacity-20 grayscale' : ''
-                    } ${
-                      isWeekend && level === 'valle'
-                        ? 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800'
-                        : level === 'valle'
-                          ? 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/80'
-                          : `${getDayColor(level)}`
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className={`text-xs font-bold ${level !== 'valle' && level !== 'regular' ? 'text-white' : 'text-slate-400'}`}>
-                        {dia.dia}
-                      </span>
-                      {level === 'pico' && <span className="text-white text-[10px]">🔥</span>}
-                    </div>
-
-                    {dia.contratos > 0 && (
-                      <div className="mt-auto">
-                        <div className={`text-lg font-black leading-none ${level !== 'valle' && level !== 'regular' ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'}`}>
-                          {dia.contratos}
-                        </div>
-                        <div className={`text-[9px] truncate mt-1 ${level !== 'valle' && level !== 'regular' ? 'text-white/80' : 'text-slate-500'}`}>
-                          {formatCurrency(dia.valor)}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      ))}
+    </div>
+  );
 
-      {/* Sub-view 4: Días Semana */}
-      {!isFreeOrStarter && subView === 'dias-semana' && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-          {metricas.porDiaSemana.map((dia, index) => {
-            const isMayor = metricas.mesConMayorConcentracion === dia.dia;
-            // Map index (0-6) to weekend check
-            const isWeekend = index === 0 || index === 6;
+  // ─── Vista: Tipo Calendario ───────────────────────────────────────────────
+  const renderCalendario = () => {
+    const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+            Matriz de Calendario Diario ({filtroLabel})
+          </span>
+          <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-medium">
+            Haga clic en cualquier casilla para inspeccionar la fecha
+          </span>
+        </div>
 
+        {metricas.porMes.map(mes => (
+          <div key={mes.key} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-indigo-500" />
+                <h4 className="text-sm font-extrabold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide font-mono">{mes.label}</h4>
+              </div>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {mes.totalContratos} contratos ({formatCurrencyMillions(mes.totalValor)})
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <div className="min-w-[560px]">
+                {/* Cabeceras días de semana */}
+                <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+                  {diasSemana.map((d, i) => (
+                    <div key={d} className={`text-center text-[10px] font-bold py-1 ${i === 0 || i === 6 ? 'text-orange-500' : 'text-slate-500 dark:text-slate-400'}`}>
+                      {d}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Grid días */}
+                <div className="grid grid-cols-7 gap-1.5">
+                  {/* Celdas vacías al inicio */}
+                  {mes.dias.length > 0 && Array.from({ length: mes.dias[0].diaSemana }).map((_, i) => (
+                    <div key={`empty-${i}`} className="h-16 rounded-xl bg-slate-50/50 dark:bg-slate-950/30 border border-dashed border-slate-100 dark:border-slate-800" />
+                  ))}
+
+                  {/* Días del mes */}
+                  {mes.dias.map(dia => {
+                    const isWeekend = dia.esFinDeSemana;
+                    const tieneActividad = dia.contratos > 0;
+                    return (
+                      <div
+                        key={dia.fecha}
+                        title={`${dia.nombreDia} ${dia.dia}: ${dia.contratos} contratos — ${formatCOP(dia.valor)}`}
+                        className={`h-16 p-2 rounded-xl border flex flex-col cursor-pointer transition-all hover:shadow-md ${
+                          isWeekend && !tieneActividad
+                            ? 'bg-orange-50/30 dark:bg-orange-950/10 border-orange-100 dark:border-orange-900/30'
+                            : !tieneActividad
+                              ? 'bg-slate-50 dark:bg-slate-900/60 border-slate-100 dark:border-slate-800'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className={`text-xs font-bold ${isWeekend ? 'text-orange-500' : 'text-slate-700 dark:text-slate-300'}`}>{dia.dia}</span>
+                        </div>
+                        {tieneActividad ? (
+                          <div className="mt-auto">
+                            <div className="text-xs font-black text-slate-900 dark:text-white">{dia.contratos} firm.</div>
+                            <div className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 truncate">
+                              {formatCurrencyMillions(dia.valor)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-auto text-[9px] text-slate-300 dark:text-slate-700">0 firm.</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ─── Vista: Días Semana ───────────────────────────────────────────────────
+  const renderDiasSemana = () => (
+    <div className="space-y-6">
+      {renderPicoBanner()}
+      {renderKPIs()}
+      {renderFooterBar()}
+
+      <div>
+        <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-3">
+          Distribución agregada de contratación por día de la semana (Lunes a Domingo)
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {metricas.porDiaSemana.map((dia, idx) => {
+            const isMayor = dia.dia === metricas.mesConMayorConcentracion;
+            const isWeekend = idx === 0 || idx === 6;
             return (
               <div
                 key={dia.dia}
@@ -490,46 +794,134 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({ cont
                 }`}
               >
                 {isMayor && (
-                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-bold rounded-bl-lg">
-                    MAYOR
-                  </div>
+                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-bold rounded-bl-lg">MAYOR</div>
                 )}
-
-                <h4 className={`text-xs font-bold mb-3 ${isWeekend ? 'text-orange-500' : 'text-slate-500'}`}>
+                <h4 className={`text-xs font-extrabold mb-2 uppercase ${isWeekend ? 'text-orange-500' : 'text-slate-500 dark:text-slate-400'}`}>
                   {dia.dia}
                 </h4>
-
-                <div className="mb-3">
-                  <div className={`text-2xl font-black ${isMayor ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
-                    {dia.contratos}
-                  </div>
-                  <div className="text-[10px] text-slate-500">
-                    contratos totales
-                  </div>
+                <div className={`text-3xl font-black ${isMayor ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
+                  {dia.contratos}
                 </div>
-
-                <div className="mt-auto space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <div>
-                    <div className="flex justify-between text-[10px] mb-1">
-                      <span className="text-slate-500">Distribución</span>
-                      <span className="font-bold">{dia.porcentaje.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
-                      <div
-                        className={`h-1.5 rounded-full ${isMayor ? 'bg-indigo-500' : 'bg-slate-400'}`}
-                        style={{ width: `${dia.porcentaje}%` }}
-                      ></div>
-                    </div>
+                <div className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">{dia.porcentaje.toFixed(1)}% del total</div>
+                <div className="mt-auto pt-2 border-t border-slate-100 dark:border-slate-800 mt-2 space-y-1">
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Promedio: {metricas.totalDiasPeriodo > 0 ? (dia.contratos / Math.ceil(metricas.totalDiasPeriodo / 7)).toFixed(1) : 0}/día
                   </div>
-                  <div className="text-[10px] font-medium text-slate-600 dark:text-slate-400 truncate" title={formatCurrency(dia.valor)}>
-                    {formatCurrency(dia.valor)}
+                  <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 truncate" title={formatCOP(dia.valor)}>
+                    {formatCurrencyMillions(dia.valor)}
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+
+  // ─── Gate para plan FREE/STARTER ─────────────────────────────────────────
+  const renderPremiumGate = () => (
+    <div className="flex flex-col items-center justify-center p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mb-5">
+        <Star className="w-8 h-8 text-amber-400" />
+      </div>
+      <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Funcionalidad exclusiva para suscriptores</h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
+        Las vistas detalladas de Calendario, Semanas y Días de Semana están disponibles desde el plan Profesional.
+      </p>
+      <button className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all">
+        Ver planes
+      </button>
+    </div>
+  );
+
+  // ─── RENDER PRINCIPAL ─────────────────────────────────────────────────────
+  return (
+    <div className="space-y-5 animate-fade-in pb-10">
+      {renderPicoModal()}
+
+      {/* ── Cabecera con título + sub-tabs + SINCRONIZAR MES ── */}
+      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <BarChart2 className="w-4 h-4 text-indigo-500" />
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Índice de Actividad Contractual Diaria</h3>
+          </div>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
+            Indicadores estadísticos clave del ritmo de contratación: máximo diario, mínimo, promedio, mediana, días activos, días sin firmas, valor promedio por contrato y variación mensual en SECOP II.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
+          {/* SINCRONIZAR MES */}
+          {monthlyData && onSelectMonthKey && (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono whitespace-nowrap">
+                Sincronizar mes:
+              </span>
+              <select
+                value={selectedMonthKey || 'all'}
+                onChange={e => onSelectMonthKey(e.target.value)}
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold font-mono focus:outline-none focus:border-indigo-500 transition-all cursor-pointer shadow-sm"
+              >
+                <option value="all">📅 Todos los meses (Vigencia)</option>
+                {monthlyData.map(m => (
+                  <option key={m.key} value={m.key}>
+                    {m.name} ({m['Cantidad Contratos']} contratos)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Sub-tabs */}
+          <div className="flex bg-slate-100 dark:bg-slate-800/60 rounded-xl p-1 gap-0.5 overflow-x-auto">
+            {subTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => !tab.locked && setSubView(tab.id)}
+                title={tab.locked ? 'Disponible en plan Profesional' : ''}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  subView === tab.id
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : tab.locked
+                      ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer'
+                }`}
+              >
+                {tab.label}
+                {tab.locked && <Lock className="w-2.5 h-2.5" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Contenido por sub-vista ── */}
+
+      {/* Vista: Índice de Actividad */}
+      {subView === 'indice' && (
+        <div className="space-y-4">
+          {renderPicoBanner()}
+          {renderKPIs()}
+          {renderFooterBar()}
+          {renderLeyenda()}
+          {renderFiltroDiaSemana()}
+          {renderBarChart()}
+        </div>
       )}
+
+      {/* Vistas premium: gate si no tiene plan */}
+      {isFreeOrStarter && subView !== 'indice' && renderPremiumGate()}
+
+      {/* Vista: Por Semana */}
+      {!isFreeOrStarter && subView === 'semana' && renderPorSemana()}
+
+      {/* Vista: Tipo Calendario */}
+      {!isFreeOrStarter && subView === 'calendario' && renderCalendario()}
+
+      {/* Vista: Días Semana */}
+      {!isFreeOrStarter && subView === 'dias-semana' && renderDiasSemana()}
     </div>
   );
 };

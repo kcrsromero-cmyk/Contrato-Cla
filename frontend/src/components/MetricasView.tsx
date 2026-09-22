@@ -351,6 +351,7 @@ export default function MetricasView({ contratos, fechaDesde, fechaHasta }: Metr
           <ActividadTemporalTab
             key={selectedMonthKey}
             contratos={filteredContratos}
+            allContratos={contratos}
             fechaDesde={selectedMonthKey !== 'all'
               ? `${selectedMonthKey}-01`
               : fechaDesde}
@@ -361,6 +362,9 @@ export default function MetricasView({ contratos, fechaDesde, fechaHasta }: Metr
                   0
                 ).getDate()}`
               : fechaHasta}
+            monthlyData={monthlyData}
+            selectedMonthKey={selectedMonthKey}
+            onSelectMonthKey={setSelectedMonthKey}
           />
         )}
 
