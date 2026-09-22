@@ -3,6 +3,7 @@ import { Contrato } from '../../types';
 import { useActividadTemporal, DiaActividad } from '../../hooks/useActividadTemporal';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrencyMillions, formatCOP, formatDate } from '../../utils/helpers';
+import ContractDetailModal from '../ContractDetailModal';
 import {
   BarChart2,
   CalendarDays,
@@ -74,6 +75,7 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
 
   const [clickedDay, setClickedDay] = useState<DiaActividad | null>(null);
   const [clickedDayEstadoFilter, setClickedDayEstadoFilter] = useState<string>('all');
+  const [selectedContrato, setSelectedContrato] = useState<Contrato | null>(null);
 
   // ── Umbrales estadísticos ──────────────────────────────────────────────────
   const media = metricas.promedioDiario;
@@ -707,6 +709,12 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
                           ● {c.estado_contrato}
                         </span>
                       )}
+                      <button
+                        onClick={() => setSelectedContrato(c)}
+                        className="px-2.5 py-1 text-[10px] font-extrabold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      >
+                        Ver Detalle
+                      </button>
                       {c.urlproceso && (
                         <a
                           href={c.urlproceso}
@@ -760,6 +768,24 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
                     <div className="shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400 text-right">
                       {formatCurrencyMillions(Number(c.valor_del_contrato) || 0)}
                     </div>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setSelectedContrato(c)}
+                      className="px-2.5 py-1 text-[10px] font-extrabold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    >
+                      Ver Detalle
+                    </button>
+                    {c.urlproceso && (
+                      <a
+                        href={typeof c.urlproceso === 'object' ? (c.urlproceso as any).url : c.urlproceso}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                      >
+                        SECOP ↗
+                      </a>
+                    )}
                   </div>
                 </div>
               ))
@@ -1034,6 +1060,10 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
     <div className="space-y-5 animate-fade-in pb-10">
       {renderPicoModal()}
       {renderDiaDetalleModal()}
+      <ContractDetailModal
+        contract={selectedContrato}
+        onClose={() => setSelectedContrato(null)}
+      />
 
       {/* ── Cabecera con título + sub-tabs + SINCRONIZAR MES ── */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
