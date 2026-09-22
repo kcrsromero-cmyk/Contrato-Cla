@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Contrato } from '../../types';
 import { useActividadTemporal, DiaActividad } from '../../hooks/useActividadTemporal';
 import { useAuth } from '../../context/AuthContext';
-import { formatCurrencyMillions, formatCOP } from '../../utils/helpers';
+import { formatCurrencyMillions, formatCOP, formatDate } from '../../utils/helpers';
 import {
   BarChart2,
   CalendarDays,
@@ -72,6 +72,9 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
   const [diaSemanaFilter, setDiaSemanaFilter] = useState<DiaSemanaFilter>('all');
   const [showPicoModal, setShowPicoModal] = useState(false);
 
+  const [clickedDay, setClickedDay] = useState<DiaActividad | null>(null);
+  const [clickedDayEstadoFilter, setClickedDayEstadoFilter] = useState<string>('all');
+
   // ── Umbrales estadísticos ──────────────────────────────────────────────────
   const media = metricas.promedioDiario;
   const desviacion = useMemo(() => {
@@ -134,6 +137,24 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
     if (!metricas.maximoDiario.fecha) return [];
     return contratos.filter(c => c.fecha_de_firma?.startsWith(metricas.maximoDiario.fecha));
   }, [contratos, metricas.maximoDiario.fecha]);
+
+  // Contratos del día seleccionado para el modal de detalle
+  const contratosDelDia = useMemo(() => {
+    if (!clickedDay) return [];
+    return contratos.filter(c => c.fecha_de_firma?.startsWith(clickedDay.fecha));
+  }, [contratos, clickedDay]);
+
+  // Estados únicos de los contratos del día (para filtro)
+  const estadosDelDia = useMemo(() => {
+    const estados = new Set(contratosDelDia.map(c => c.estado_contrato || 'Sin estado'));
+    return Array.from(estados).sort();
+  }, [contratosDelDia]);
+
+  // Contratos del día filtrados por estado
+  const contratosDelDiaFiltrados = useMemo(() => {
+    if (clickedDayEstadoFilter === 'all') return contratosDelDia;
+    return contratosDelDia.filter(c => (c.estado_contrato || 'Sin estado') === clickedDayEstadoFilter);
+  }, [contratosDelDia, clickedDayEstadoFilter]);
 
   // ── Formateo ───────────────────────────────────────────────────────────────
   const formatMillones = (v: number) => {
@@ -542,6 +563,171 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
     );
   };
 
+  const handleDayClick = (dia: DiaActividad) => {
+    if (dia.contratos === 0) return; // No abrir modal para días sin contratos
+    setClickedDay(dia);
+    setClickedDayEstadoFilter('all');
+  };
+
+  // ─── Modal Detalle del Día ────────────────────────────────────────────────
+  const renderDiaDetalleModal = () => {
+    if (!clickedDay) return null;
+
+    const totalValorDia = contratosDelDia.reduce((s, c) => s + (Number(c.valor_del_contrato) || 0), 0);
+    const nombreDiaCompleto = `${clickedDay.nombreDia}, ${formatDate(clickedDay.fecha)}`;
+
+    const getStatusColor = (estado: string | undefined) => {
+      const e = (estado || '').toLowerCase();
+      if (e.includes('ejecuci')) return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+      if (e.includes('liquidado')) return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700';
+      if (e.includes('terminado') || e.includes('finalizado')) return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+      if (e.includes('aprobado')) return 'bg-indigo-100 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800';
+      if (e.includes('suspendido') || e.includes('cancelado')) return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
+      return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700';
+    };
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setClickedDay(null)}>
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <div
+          className="relative bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Cabecera */}
+          <div className="flex items-start justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl shrink-0">
+                <CalendarDays className="w-4 h-4 text-indigo-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                  Detalle de Firmas del Día: {nombreDiaCompleto}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Se firmaron{' '}
+                  <strong className="text-indigo-600 dark:text-indigo-400">{clickedDay.contratos} contratos</strong>
+                  {' '}por un valor total de{' '}
+                  <strong className="text-emerald-600 dark:text-emerald-400">{formatCOP(totalValorDia)}</strong>.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setClickedDay(null)}
+              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Filtro por estado */}
+          {estadosDelDia.length > 1 && (
+            <div className="px-5 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">
+                Filtrar por estado contractual:
+              </span>
+              <button
+                onClick={() => setClickedDayEstadoFilter('all')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                  clickedDayEstadoFilter === 'all'
+                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-400'
+                }`}
+              >
+                Todos ({contratosDelDia.length})
+              </button>
+              {estadosDelDia.map(estado => {
+                const count = contratosDelDia.filter(c => (c.estado_contrato || 'Sin estado') === estado).length;
+                return (
+                  <button
+                    key={estado}
+                    onClick={() => setClickedDayEstadoFilter(estado)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                      clickedDayEstadoFilter === estado
+                        ? 'bg-indigo-600 border-indigo-600 text-white'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-400'
+                    }`}
+                  >
+                    {estado} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Lista de contratos */}
+          <div className="overflow-y-auto flex-1 p-4 space-y-2.5">
+            {contratosDelDiaFiltrados.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-8">No hay contratos para este filtro</p>
+            ) : (
+              contratosDelDiaFiltrados.map((c, i) => (
+                <div
+                  key={c.id_contrato || i}
+                  className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800"
+                >
+                  {/* Fila superior: índice + badges + fecha */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 font-mono">
+                        #{i + 1} de {contratosDelDiaFiltrados.length}
+                      </span>
+                      {c.id_contrato && (
+                        <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-mono font-bold rounded border border-slate-200 dark:border-slate-700">
+                          ID: {c.id_contrato}
+                        </span>
+                      )}
+                      {c.referencia_del_contrato && (
+                        <span className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 text-[9px] font-mono font-bold rounded border border-indigo-100 dark:border-indigo-900">
+                          Ref: {c.referencia_del_contrato}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono shrink-0">
+                      Firma: {formatDate(c.fecha_de_firma)}
+                    </span>
+                  </div>
+
+                  {/* Contratista y objeto */}
+                  <p className="text-sm font-bold text-slate-900 dark:text-white mb-0.5">
+                    {c.proveedor_adjudicado || 'Sin contratista'}
+                  </p>
+                  {(c.objeto_del_contrato || c.descripcion_del_proceso) && (
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mb-2">
+                      {c.objeto_del_contrato || c.descripcion_del_proceso}
+                    </p>
+                  )}
+
+                  {/* Fila inferior: valor + estado + links */}
+                  <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <span className="text-base font-black text-slate-900 dark:text-white">
+                      {formatCOP(Number(c.valor_del_contrato) || 0)}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {c.estado_contrato && (
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border ${getStatusColor(c.estado_contrato)}`}>
+                          ● {c.estado_contrato}
+                        </span>
+                      )}
+                      {c.urlproceso && (
+                        <a
+                          href={c.urlproceso}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2.5 py-1 text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                        >
+                          SECOP ↗
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ─── Modal Pico ───────────────────────────────────────────────────────────
   const renderPicoModal = () => {
     if (!showPicoModal) return null;
@@ -655,7 +841,10 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
                         <div
                           key={dia.fecha}
                           title={`${dia.nombreDia} ${dia.dia}: ${dia.contratos} contratos`}
-                          className={`flex flex-col items-center p-1 rounded-md text-center cursor-pointer transition-colors min-w-[22px] ${
+                          onClick={() => handleDayClick(dia)}
+                          className={`flex flex-col items-center p-1 rounded-md text-center transition-colors min-w-[22px] ${
+                            tieneActividad ? 'cursor-pointer' : 'cursor-default'
+                          } ${
                             esMayor && tieneActividad
                               ? 'bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700'
                               : tieneActividad
@@ -734,12 +923,17 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
                       <div
                         key={dia.fecha}
                         title={`${dia.nombreDia} ${dia.dia}: ${dia.contratos} contratos — ${formatCOP(dia.valor)}`}
-                        className={`h-16 p-2 rounded-xl border flex flex-col cursor-pointer transition-all hover:shadow-md ${
+                        onClick={() => handleDayClick(dia)}
+                        className={`h-16 p-2 rounded-xl border flex flex-col transition-all ${
+                          tieneActividad
+                            ? 'cursor-pointer hover:shadow-md hover:border-indigo-400 hover:ring-1 hover:ring-indigo-200 dark:hover:ring-indigo-900'
+                            : 'cursor-default'
+                        } ${
                           isWeekend && !tieneActividad
                             ? 'bg-orange-50/30 dark:bg-orange-950/10 border-orange-100 dark:border-orange-900/30'
                             : !tieneActividad
                               ? 'bg-slate-50 dark:bg-slate-900/60 border-slate-100 dark:border-slate-800'
-                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
                         }`}
                       >
                         <div className="flex justify-between items-start">
@@ -839,6 +1033,7 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
   return (
     <div className="space-y-5 animate-fade-in pb-10">
       {renderPicoModal()}
+      {renderDiaDetalleModal()}
 
       {/* ── Cabecera con título + sub-tabs + SINCRONIZAR MES ── */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">

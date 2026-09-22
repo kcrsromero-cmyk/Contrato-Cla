@@ -228,18 +228,29 @@ export function useActividadTemporal(
       const [anio, mes] = mesKey.split('-');
       const mesLabel = `${NOMBRES_MES_COMPLETO[mes] || mes} ${anio}`;
 
-      // Dividir en chunks de 7 días (días 1-7, 8-14, 15-21, 22-28, 29+)
+      // Dividir en semanas calendario (Dom–Sáb)
       const semanas: SemanaEnMes[] = [];
-      for (let i = 0; i < diasDelMes.length; i += 7) {
-        const chunk = diasDelMes.slice(i, i + 7);
-        const numSemana = Math.floor(i / 7) + 1;
+      let currentIdx = 0;
+      let semanaNum = 1;
+
+      while (currentIdx < diasDelMes.length) {
+        // La semana termina en el primer Sábado (diaSemana === 6) o al final del mes
+        let endIdx = currentIdx;
+        while (endIdx < diasDelMes.length - 1 && diasDelMes[endIdx].diaSemana !== 6) {
+          endIdx++;
+        }
+
+        const chunk = diasDelMes.slice(currentIdx, endIdx + 1);
         const diaInicio = chunk[0].dia;
         const diaFin = chunk[chunk.length - 1].dia;
-        const totalChunk = chunk.reduce((s, d) => ({ contratos: s.contratos + d.contratos, valor: s.valor + d.valor }), { contratos: 0, valor: 0 });
+        const totalChunk = chunk.reduce(
+          (s, d) => ({ contratos: s.contratos + d.contratos, valor: s.valor + d.valor }),
+          { contratos: 0, valor: 0 }
+        );
         const mayorChunk = chunk.reduce((max, d) => d.contratos > max.contratos ? d : max, chunk[0]);
 
         semanas.push({
-          numero: numSemana,
+          numero: semanaNum,
           rangoLabel: `DÍAS ${diaInicio}-${diaFin}`,
           dias: chunk,
           contratos: totalChunk.contratos,
@@ -250,6 +261,9 @@ export function useActividadTemporal(
             ? { nombre: `${mayorChunk.nombreDia} ${mayorChunk.dia}`, dia: mayorChunk.dia, fecha: mayorChunk.fecha, contratos: mayorChunk.contratos }
             : null,
         });
+
+        currentIdx = endIdx + 1;
+        semanaNum++;
       }
 
       // Marcar semana pico dentro del mes
@@ -259,7 +273,11 @@ export function useActividadTemporal(
       }
 
       const totalMes = diasDelMes.reduce((s, d) => ({ contratos: s.contratos + d.contratos, valor: s.valor + d.valor }), { contratos: 0, valor: 0 });
-      porMes.push({ key: mesKey, label: mesLabel, totalContratos: totalMes.contratos, totalValor: totalMes.valor, dias: diasDelMes, semanas });
+
+      // Solo incluir meses que tienen al menos un contrato
+      if (totalMes.contratos > 0) {
+        porMes.push({ key: mesKey, label: mesLabel, totalContratos: totalMes.contratos, totalValor: totalMes.valor, dias: diasDelMes, semanas });
+      }
     });
 
     return {
