@@ -5,6 +5,7 @@ import { RedisCacheAdapter } from '../../../infrastructure/redis/RedisCacheAdapt
 import { prisma } from '../../../infrastructure/db/prisma';
 import { logger } from '../../../infrastructure/logger';
 import { normalizeDocumentType, maskDocument } from '../../../utils/documentNormalizer';
+import { toContractResponseDto } from './mappers/ContractResponseMapper';
 
 const TTL_TERRITORIAL = 60 * 60 * 24 * 7; // 7 days - departments, cities, entities
 const TTL_CONTRACTS = 60 * 60 * 24;       // 24 hours - contracts and similarity
@@ -206,7 +207,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
       }
 
       if (isFresh) {
-        const domainData: Contract[] = dbContracts.map(c => ({
+        let domainData: Contract[] = dbContracts.map(c => ({
           id: c.id,
           contractId: c.contractId,
           reference: c.reference ?? undefined,
@@ -251,7 +252,17 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           supervisorDocumentDisplay: c.supervisor
             ? maskDocument(c.supervisor.documentNumber, c.supervisor.documentType as any)
             : undefined,
+          supplierDocument: c.supplier?.documentNumber ?? undefined,
+          supplierDocumentType: c.supplier?.documentType ?? undefined,
+          supervisorDocument: c.supervisor?.documentNumber ?? undefined,
+          supervisorDocumentType: c.supervisor?.documentType ?? undefined,
+          legalRepDocument: c.legalRep?.documentNumber ?? undefined,
+          legalRepDocumentType: c.legalRep?.documentType ?? undefined,
+          legalRepName: c.legalRep?.name ?? undefined,
         }));
+
+        domainData = domainData.map(toContractResponseDto);
+
         await this.cacheAdapter.set(cacheKey, JSON.stringify(domainData), TTL_CONTRACTS);
         return domainData;
       }
@@ -380,9 +391,11 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
       });
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(contracts), TTL_CONTRACTS);
+    const maskedContracts = contracts.map(toContractResponseDto);
 
-    return contracts;
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(maskedContracts), TTL_CONTRACTS);
+
+    return maskedContracts;
   }
 
   /**

@@ -99,7 +99,10 @@ export class SocrataContractProvider implements ContractProvider {
   }
 
   private getSocrataHeaders(): HeadersInit {
-    return { 'X-App-Token': config.SOCRATA_APP_TOKEN };
+    if (config.SOCRATA_APP_TOKEN && config.SOCRATA_APP_TOKEN !== "your-app-token") {
+      return { 'X-App-Token': config.SOCRATA_APP_TOKEN };
+    }
+    return {};
   }
 
   private escapeSoQL(text: string): string {
