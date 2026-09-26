@@ -9,3 +9,4 @@ coverage/
 backend/.agents/
 backend/.claude/
 backend/skills-lock.json
+dump.rdb

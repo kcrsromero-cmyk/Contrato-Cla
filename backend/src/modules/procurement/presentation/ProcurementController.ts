@@ -78,6 +78,7 @@ export class ProcurementController {
       const contracts = await this.procurementService.getContracts(filters);
       res.json(contracts);
     } catch (error: any) {
+      console.error('Error in getContracts:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.format() });
       }
