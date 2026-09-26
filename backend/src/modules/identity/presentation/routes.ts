@@ -32,6 +32,23 @@ const authRateLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
+// Límite por cuenta (email) para login: frena la fuerza bruta distribuida aunque se roten IPs.
+const loginAccountLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
+    prefix: 'rl:login-account:'
+  }),
+  keyGenerator: (req) => String(req.body?.email ?? '').trim().toLowerCase() || 'anonymous',
+  handler: (req, res, next, options) => {
+    res.status(options.statusCode).json({ error: options.message });
+  },
+  message: 'Demasiados intentos para esta cuenta. Intenta de nuevo en 15 minutos.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // 1. Setup Dependencies (Wiring)
 // In a real application, this might be handled by a DI container (like Awilix or NestJS)
 // For now, we wire them manually.
@@ -57,7 +74,7 @@ const currentUserResolver = new CurrentUserResolver(identityService);
 
 // Public routes
 authRouter.post('/register', authRateLimiter, validateRequest(RegisterSchema), (req, res) => authController.register(req, res));
-authRouter.post('/login', authRateLimiter, validateRequest(LoginSchema), (req, res) => authController.login(req, res));
+authRouter.post('/login', authRateLimiter, validateRequest(LoginSchema), loginAccountLimiter, (req, res) => authController.login(req, res));
 authRouter.post('/refresh', authRateLimiter, validateRequest(RefreshSchema), (req, res) => authController.refresh(req, res));
 authRouter.post('/reset-password', authRateLimiter, validateRequest(ResetPasswordSchema), (req, res) => authController.resetPassword(req, res));
 

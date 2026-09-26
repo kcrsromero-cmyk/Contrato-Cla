@@ -1,8 +1,13 @@
+export interface JWTValidatorOptions {
+  issuer?: string;
+  audience?: string;
+}
+
 export class JWTValidator {
   private readonly jwksUrl: string;
   private jwks: any;
 
-  constructor(jwksUrl: string) {
+  constructor(jwksUrl: string, private readonly options: JWTValidatorOptions = {}) {
     this.jwksUrl = jwksUrl;
   }
 
@@ -14,6 +19,8 @@ export class JWTValidator {
 
     const { payload } = await jwtVerify(token, this.jwks, {
       algorithms: ['ES256'],
+      issuer: this.options.issuer,
+      audience: this.options.audience,
     });
     return payload;
   }

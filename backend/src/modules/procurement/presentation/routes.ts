@@ -42,6 +42,33 @@ const searchEntitiesLimiter = rateLimit({
   message: { error: 'Too many search requests, please try again in a minute.' }
 });
 
+// Catálogos territoriales y años: baratos (cacheados) pero públicos; evita usar la API como proxy de Socrata.
+const publicCatalogLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
+    prefix: 'rl:catalog:'
+  }),
+  message: { error: 'Too many requests, please try again in a minute.' }
+});
+
+// Similitud: cálculo costoso en CPU; límite por usuario autenticado (sub del JWT).
+const similarityLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
+    prefix: 'rl:similarity:'
+  }),
+  keyGenerator: (req) => String((req as any).tokenPayload?.sub ?? 'anonymous'),
+  message: { error: 'Too many similarity requests, please try again in a minute.' }
+});
+
 // Setting up auth dependencies (simplified for route setup)
 const activeProvider = IdentityProviderRegistry.resolve();
 const identityService = new IdentityService(activeProvider);
@@ -49,16 +76,17 @@ const authMiddleware = new AuthMiddleware(jwtValidator);
 const currentUserResolver = new CurrentUserResolver(identityService);
 
 
-procurementRouter.get('/departments', (req, res) => procurementController.getDepartments(req, res));
-procurementRouter.get('/cities', (req, res) => procurementController.getCities(req, res));
-procurementRouter.get('/entities', (req, res) => procurementController.getEntities(req, res));
+procurementRouter.get('/departments', publicCatalogLimiter, (req, res) => procurementController.getDepartments(req, res));
+procurementRouter.get('/cities', publicCatalogLimiter, (req, res) => procurementController.getCities(req, res));
+procurementRouter.get('/entities', publicCatalogLimiter, (req, res) => procurementController.getEntities(req, res));
 procurementRouter.get('/entities/search', searchEntitiesLimiter, (req, res) => procurementController.searchEntities(req, res));
-procurementRouter.get('/years', (req, res) => procurementController.getContractYears(req, res));
+procurementRouter.get('/years', publicCatalogLimiter, (req, res) => procurementController.getContractYears(req, res));
 
 procurementRouter.get('/contracts', contractsLimiter, (req, res) => procurementController.getContracts(req, res));
 
 procurementRouter.get('/similarity',
   authMiddleware.handle,
+  similarityLimiter,
   currentUserResolver.resolve,
   (req, res) => procurementController.calculateSimilarity(req, res)
 );

@@ -5,6 +5,12 @@ import { AuditService } from '../../audit/application/AuditService';
 import { z } from 'zod';
 import { logger } from '../../../infrastructure/logger';
 
+export const maskEmail = (email: unknown): string | null => {
+  if (typeof email !== 'string' || !email.includes('@')) return null;
+  const [local, domain] = email.trim().toLowerCase().split('@');
+  return `${local.slice(0, 2)}***@${domain}`;
+};
+
 export class AuthController {
   constructor(
     private readonly identityService: IdentityService,
@@ -23,6 +29,12 @@ export class AuthController {
         resource: 'identity/register',
         ipAddress: req.ip || req.socket.remoteAddress,
       });
+
+      // Con confirmación de correo activa no hay sesión: responder igual que cuando el email ya existe,
+      // para que la respuesta no permita saber si una cuenta está registrada.
+      if (!result.accessToken) {
+        return res.status(201).json(genericMessage);
+      }
 
       res.status(201).json(result);
     } catch (error: any) {
@@ -74,7 +86,8 @@ export class AuthController {
         details: {
           errorCode: 'INVALID_CREDENTIALS',
           providerHint: error.code ?? null,
-          email: req.body.email,
+          // Email enmascarado: suficiente para correlacionar ataques sin guardar el dato completo.
+          email: maskEmail(req.body.email),
         },
         resource: 'identity/login',
         ipAddress: req.ip || req.socket.remoteAddress,

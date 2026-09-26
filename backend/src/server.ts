@@ -1,4 +1,4 @@
-import { config } from './infrastructure/config/env';
+import { config, parseTrustProxy } from './infrastructure/config/env';
 import { logger } from './infrastructure/logger';
 
 import express from 'express';
@@ -16,8 +16,8 @@ import { healthCheckHandler } from './modules/health/presentation/healthControll
 
 const app = express();
 
-// Confiar en el proxy de Traefik (primer proxy en la cadena)
-app.set('trust proxy', 1);
+// Confiar solo en los proxies declarados (Traefik/Coolify = 1). Ver TRUST_PROXY en .env.example.
+app.set('trust proxy', parseTrustProxy(config.TRUST_PROXY));
 
 const port = config.PORT;
 const frontendUrl = config.FRONTEND_URL;
@@ -45,7 +45,7 @@ const globalLimiter = rateLimit({
     sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
     prefix: 'rl:global:'
   }),
-  skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1',
+  // Sin excepción para localhost: detrás de un proxy, "127.0.0.1" se puede falsificar vía X-Forwarded-For.
   message: { error: 'Too many requests, please try again later.' }
 });
 

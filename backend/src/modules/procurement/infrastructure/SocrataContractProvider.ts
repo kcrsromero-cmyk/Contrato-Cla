@@ -75,8 +75,13 @@ export class SocrataContractProvider implements ContractProvider {
     let hasMore = true;
 
     while (hasMore) {
-      const query = `?$select=${selectFields}&$where=${whereClause}&$order=${orderClause}&$limit=${limit}&$offset=${offset}`;
-      const url = `${this.baseUrl}${encodeURI(query)}`;
+      const url = `${this.baseUrl}${this.buildQuery({
+        $select: selectFields,
+        $where: whereClause,
+        $order: orderClause,
+        $limit: limit,
+        $offset: offset,
+      })}`;
 
       const response = await fetch(url, { headers: this.getSocrataHeaders() });
       if (!response.ok) {
@@ -102,6 +107,18 @@ export class SocrataContractProvider implements ContractProvider {
     return { 'X-App-Token': config.SOCRATA_APP_TOKEN };
   }
 
+  /**
+   * Construye el query string codificando cada valor por separado.
+   * encodeURI() sobre la URL completa no codifica '&', '#' ni '+', lo que permitía
+   * inyectar parámetros SoQL adicionales ($limit, $where...) desde la entrada del usuario.
+   */
+  private buildQuery(params: Record<string, string | number>): string {
+    const parts = Object.entries(params).map(
+      ([key, value]) => `${key}=${encodeURIComponent(String(value))}`
+    );
+    return `?${parts.join('&')}`;
+  }
+
   private escapeSoQL(text: string): string {
     return text.replace(/'/g, "''");
   }
@@ -113,8 +130,13 @@ export class SocrataContractProvider implements ContractProvider {
   }
 
   async getDepartments(): Promise<string[]> {
-    const query = `?$select=distinct departamento&$order=departamento&$where=departamento is not null&$limit=100`;
-    const response = await fetch(`${this.baseUrl}${encodeURI(query)}`, { headers: this.getSocrataHeaders() });
+    const query = this.buildQuery({
+      $select: 'distinct departamento',
+      $order: 'departamento',
+      $where: 'departamento is not null',
+      $limit: 100,
+    });
+    const response = await fetch(`${this.baseUrl}${query}`, { headers: this.getSocrataHeaders() });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const data = await response.json();
     const list = data
@@ -126,8 +148,13 @@ export class SocrataContractProvider implements ContractProvider {
 
   async getCities(department: string): Promise<string[]> {
     const escapedDept = this.escapeSoQL(department);
-    const query = `?$select=distinct ciudad&$where=departamento='${escapedDept}'&$order=ciudad&$limit=1000`;
-    const response = await fetch(`${this.baseUrl}${encodeURI(query)}`, { headers: this.getSocrataHeaders() });
+    const query = this.buildQuery({
+      $select: 'distinct ciudad',
+      $where: `departamento='${escapedDept}'`,
+      $order: 'ciudad',
+      $limit: 1000,
+    });
+    const response = await fetch(`${this.baseUrl}${query}`, { headers: this.getSocrataHeaders() });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const data = await response.json();
     const list = data
@@ -235,9 +262,15 @@ export class SocrataContractProvider implements ContractProvider {
 
   async getContractYears(entityCode: string): Promise<string[]> {
     const escapedCodigo = this.escapeSoQL(entityCode);
-    const query = `?$select=date_extract_y(fecha_de_firma) as anio&$where=codigo_entidad='${escapedCodigo}' and fecha_de_firma IS NOT NULL&$group=anio&$order=anio DESC&$limit=50`;
+    const query = this.buildQuery({
+      $select: 'date_extract_y(fecha_de_firma) as anio',
+      $where: `codigo_entidad='${escapedCodigo}' and fecha_de_firma IS NOT NULL`,
+      $group: 'anio',
+      $order: 'anio DESC',
+      $limit: 50,
+    });
 
-    const response = await fetch(`${this.baseUrl}${encodeURI(query)}`, { headers: this.getSocrataHeaders() });
+    const response = await fetch(`${this.baseUrl}${query}`, { headers: this.getSocrataHeaders() });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const data = await response.json();
     const anios = data

@@ -8,6 +8,31 @@ import { normalizeDocumentType, maskDocument } from '../../../utils/documentNorm
 
 const TTL_TERRITORIAL = 60 * 60 * 24 * 7; // 7 days - departments, cities, entities
 const TTL_CONTRACTS = 60 * 60 * 24;       // 24 hours - contracts and similarity
+const TTL_YEARS = 60 * 60 * 12;           // 12 hours - años con contratos por entidad
+
+/**
+ * Convierte un contrato del proveedor en el DTO público: elimina los números de documento
+ * en claro (proveedor, supervisor, representante legal) y expone solo la versión enmascarada.
+ */
+export function toPublicContract(contract: Contract): Contract {
+  const {
+    supplierDocument,
+    supervisorDocument,
+    legalRepDocument,
+    legalRepDocumentType,
+    ...rest
+  } = contract;
+
+  return {
+    ...rest,
+    supplierDocumentDisplay: supplierDocument?.trim()
+      ? maskDocument(supplierDocument.trim(), normalizeDocumentType(contract.supplierDocumentType))
+      : rest.supplierDocumentDisplay,
+    supervisorDocumentDisplay: supervisorDocument?.trim()
+      ? maskDocument(supervisorDocument.trim(), normalizeDocumentType(contract.supervisorDocumentType))
+      : rest.supervisorDocumentDisplay,
+  };
+}
 
 export class ProcurementService {
   private similarityService: SimilarityDomainService;
@@ -157,12 +182,19 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
   }
 
   async getContractYears(entityCode: string): Promise<string[]> {
-    return this.provider.getContractYears(entityCode);
+    const cacheKey = `years:${entityCode}`;
+    const cached = await this.cacheAdapter.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
+    const years = await this.provider.getContractYears(entityCode);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(years), TTL_YEARS);
+    return years;
   }
 
   async getContracts(filters: FilterParams): Promise<Contract[]> {
     const { codigoEntidad, fechaDesde, fechaHasta } = filters;
-    const cacheKey = `contracts:${codigoEntidad}:${fechaDesde}:${fechaHasta}`;
+    // v2: las entradas antiguas (sin versión) podían contener documentos sin enmascarar.
+    const cacheKey = `contracts:v2:${codigoEntidad}:${fechaDesde}:${fechaHasta}`;
 
     // 1. Check Redis Cache
     const cachedData = await this.cacheAdapter.get(cacheKey);
@@ -245,6 +277,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
           urlproceso: c.procurementProcess?.url ?? undefined,
           supplierName: c.supplierName ?? undefined, // Prisma uses supplierId to relation Supplier, but Domain Contract expects supplierName
           procurementProcessId: c.procurementProcessId ?? undefined,
+          supplierDocumentType: c.supplier?.documentType ?? undefined,
           supplierDocumentDisplay: c.supplier
             ? maskDocument(c.supplier.documentNumber, c.supplier.documentType as any)
             : undefined,
@@ -380,9 +413,11 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
       });
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(contracts), TTL_CONTRACTS);
+    // Nunca devolver ni cachear números de documento en claro (Ley 1581 / habeas data).
+    const publicContracts = contracts.map(toPublicContract);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(publicContracts), TTL_CONTRACTS);
 
-    return contracts;
+    return publicContracts;
   }
 
   /**
@@ -390,7 +425,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
    * Can be pre-computed or on-the-fly.
    */
   async calculateSimilarity(filters: FilterParams): Promise<SimilarObjectGroup[]> {
-    const cacheKey = `similarity:${filters.codigoEntidad}:${filters.fechaDesde}:${filters.fechaHasta}`;
+    const cacheKey = `similarity:v2:${filters.codigoEntidad}:${filters.fechaDesde}:${filters.fechaHasta}`;
     const cached = await this.cacheAdapter.get(cacheKey);
 
     if (cached) {

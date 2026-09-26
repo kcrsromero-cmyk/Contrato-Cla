@@ -6,11 +6,26 @@ import { IdentityMapper } from '../application/IdentityMapper';
 import { SupabaseIdentityMapper } from './SupabaseIdentityMapper';
 import { config } from '../../../infrastructure/config/env';
 
-export class SupabaseIdentityProvider implements IdentityProvider {
-  private client: SupabaseClient;
+/**
+ * Crea un cliente Supabase sin estado para uso en servidor.
+ * El backend atiende a muchos usuarios a la vez: un cliente con sesión en memoria
+ * haría que logout/refresh actúen sobre la sesión del último usuario que hizo login.
+ */
+export const createStatelessSupabaseClient = (): SupabaseClient =>
+  createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
 
-  constructor() {
-    this.client = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY);
+export class SupabaseIdentityProvider implements IdentityProvider {
+  constructor(private readonly clientFactory: () => SupabaseClient = createStatelessSupabaseClient) {}
+
+  // Un cliente nuevo por operación: aislamiento total entre peticiones concurrentes.
+  private get client(): SupabaseClient {
+    return this.clientFactory();
   }
 
   async register(credentials: RegisterCredentials): Promise<AuthResult> {
@@ -60,8 +75,9 @@ export class SupabaseIdentityProvider implements IdentityProvider {
     };
   }
 
-  async logout(_token: string): Promise<void> {
-    const { error: signOutError } = await this.client.auth.signOut();
+  async logout(token: string): Promise<void> {
+    // Revoca la sesión del dueño del JWT recibido, no una sesión guardada en el servidor.
+    const { error: signOutError } = await this.client.auth.admin.signOut(token, 'local');
     if (signOutError) throw new Error(signOutError.message);
   }
 

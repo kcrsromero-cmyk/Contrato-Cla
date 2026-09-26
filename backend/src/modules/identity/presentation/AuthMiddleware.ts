@@ -21,8 +21,9 @@ export class AuthMiddleware {
       (req as any).tokenPayload = payload;
 
       next();
-    } catch (error: any) {
-      return res.status(401).json({ error: error.message });
+    } catch {
+      // No exponer el detalle de la validación (algoritmo, claims, JWKS) al cliente.
+      return res.status(401).json({ error: 'Token inválido o expirado' });
     }
   };
 }

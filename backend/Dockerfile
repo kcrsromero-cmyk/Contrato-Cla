@@ -18,5 +18,8 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Ejecutar sin privilegios de root (usuario "node" de la imagen oficial)
+USER node
+
 EXPOSE 4000
 CMD ["node", "dist/server.js"]
