@@ -21,12 +21,20 @@ RUN npm run build
 
 FROM nginx:alpine
 
+ARG VITE_API_URL
+
 # Copy built assets to Nginx html folder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Configuración propia: puerto 3000, SPA fallback y cabeceras de seguridad (CSP en Report-Only).
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY security-headers.conf /etc/nginx/snippets/security-headers.conf
+
+# Inyectar el origen de la API (esquema + host) en connect-src de la CSP.
+RUN API_ORIGIN="$(echo "${VITE_API_URL:-}" | grep -oE '^https?://[^/]+' || true)" \
+    && sed -i "s#__API_ORIGIN__#${API_ORIGIN}#" /etc/nginx/snippets/security-headers.conf \
+    && nginx -t
+
 EXPOSE 3000
-# We will use our reverse proxy for routing, but this container serves its own static files on 3000 if accessed directly
-# Nginx default config listens on 80. Let's make it listen on 3000 to match the compose.
-RUN sed -i 's/80/3000/g' /etc/nginx/conf.d/default.conf
 
 CMD ["nginx", "-g", "daemon off;"]

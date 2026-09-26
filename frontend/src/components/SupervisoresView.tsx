@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { getSafeSecopUrl } from '../utils/safeUrl';
 import { Contrato } from '../types';
 import { formatCOP, formatNumber, normalizeName, formatDate } from '../utils/helpers';
 import ContractDetailModal from './ContractDetailModal';
@@ -25,14 +26,7 @@ import {
 
 // Safe external URL parser for Socrata schema variants
 const getSecopUrl = (contrato: Contrato) => {
-  if (!contrato.urlproceso) return null;
-  if (typeof contrato.urlproceso === 'object' && contrato.urlproceso.url) {
-    return contrato.urlproceso.url;
-  }
-  if (typeof contrato.urlproceso === 'string') {
-    return contrato.urlproceso;
-  }
-  return null;
+  return getSafeSecopUrl(contrato.urlproceso);
 };
 
 interface SupervisoresViewProps {
@@ -328,7 +322,7 @@ export default function SupervisoresView({ contratos }: SupervisoresViewProps) {
                     </div>
                   ) : (
                     filteredContractsForSupervisor.map((c, sIdx) => {
-                      const secopUrl = c.urlproceso && (typeof c.urlproceso === 'object' ? c.urlproceso.url : c.urlproceso);
+                      const secopUrl = getSafeSecopUrl(c.urlproceso);
                       return (
                         <div 
                           key={c.id_contrato} 

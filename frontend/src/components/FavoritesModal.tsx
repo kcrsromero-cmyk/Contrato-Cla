@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getSafeSecopUrl } from '../utils/safeUrl';
 import { EntidadResumen, Contrato } from '../types';
 import { X, Star, Trash2, ArrowRight, Heart, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -308,7 +309,7 @@ export default function FavoritesModal({ isOpen, onClose, onSelectEntity, defaul
                     const cid = contract.id_contrato || (contract as any).contractId;
                     const isExpanded = expandedContractId === cid;
                     const urlProcesoObj = contract.urlproceso || (contract as any).url_proceso;
-                    const url = typeof urlProcesoObj === 'string' ? urlProcesoObj : urlProcesoObj?.url;
+                    const url = getSafeSecopUrl(urlProcesoObj);
 
                     return (
                       <div key={cid} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">

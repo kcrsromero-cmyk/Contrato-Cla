@@ -1,4 +1,5 @@
 import React from 'react';
+import { getSafeSecopUrl } from '../utils/safeUrl';
 import { Contrato } from '../types';
 import { formatCOP, formatDate, normalizeName } from '../utils/helpers';
 import { X, ExternalLink, Calendar, Building, DollarSign, FileText, Scale, User } from 'lucide-react';
@@ -10,14 +11,7 @@ interface ContractDetailModalProps {
 }
 
 const getSecopUrl = (contrato: Contrato) => {
-  if (!contrato.urlproceso) return null;
-  if (typeof contrato.urlproceso === 'object' && contrato.urlproceso.url) {
-    return contrato.urlproceso.url;
-  }
-  if (typeof contrato.urlproceso === 'string') {
-    return contrato.urlproceso;
-  }
-  return null;
+  return getSafeSecopUrl(contrato.urlproceso);
 };
 
 // Helpers from ContratosView

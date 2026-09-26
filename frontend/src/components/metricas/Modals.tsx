@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getSafeSecopUrl } from '../../utils/safeUrl';
 import { X, Info, ShieldAlert, CheckCircle2, ExternalLink, Coins, Sparkles, BadgeAlert, CopyCheck, FileStack, Clock } from 'lucide-react';
 import { Contrato } from '../../types';
 import { ContractorAggregate, MultiContractorAggregate, RepeatedObjectGroup, SimilarObjectGroup } from './types';
@@ -71,7 +72,7 @@ export const TopContractorModal: React.FC<TopContractorModalProps> = ({
             <div className="text-xs font-bold font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">Contratos Adjudicados:</div>
             
             {selectedTopContractor.contratos.map((c: Contrato, cIdx: number) => {
-              const secopUrl = c.urlproceso && (typeof c.urlproceso === 'object' ? c.urlproceso.url : c.urlproceso);
+              const secopUrl = getSafeSecopUrl(c.urlproceso);
               return (
                 <div 
                   key={c.id_contrato} 
@@ -273,7 +274,7 @@ export const MultiContractorAuditModal: React.FC<MultiContractorAuditModalProps>
             <div className="text-xs font-bold font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">Detalle de Contratos y Análisis de Cruces:</div>
             
             {selectedMultiContractor.contratos.map((c, cIdx) => {
-              const secopUrl = c.urlproceso && (typeof c.urlproceso === 'object' ? c.urlproceso.url : c.urlproceso);
+              const secopUrl = getSafeSecopUrl(c.urlproceso);
               const cOverlaps = overlapsMap[c.id_contrato] || [];
               const isOverlapped = cOverlaps.length > 0;
 
@@ -433,7 +434,7 @@ export const RepeatedGroupModal: React.FC<RepeatedGroupModalProps> = ({
             <div className="text-xs font-bold font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">Desglose de contratos identificados:</div>
             
             {selectedRepeatedGroup.contracts.map((c: Contrato, cIdx: number) => {
-              const secopUrl = c.urlproceso && (typeof c.urlproceso === 'object' ? c.urlproceso.url : c.urlproceso);
+              const secopUrl = getSafeSecopUrl(c.urlproceso);
               return (
                 <div 
                   key={c.id_contrato} 
@@ -720,7 +721,7 @@ export const SimilarGroupModal: React.FC<SimilarGroupModalProps> = ({
               <div className="text-xs font-bold font-mono uppercase tracking-wider text-slate-400 dark:text-slate-550">Desglose de contratos incluidos:</div>
               
               {selectedSimilarGroup.contracts.map((c: Contrato, cIdx: number) => {
-                const secopUrl = c.urlproceso && (typeof c.urlproceso === 'object' ? c.urlproceso.url : c.urlproceso);
+                const secopUrl = getSafeSecopUrl(c.urlproceso);
                 return (
                   <div 
                     key={c.id_contrato} 
@@ -855,7 +856,7 @@ export const IndicatorListModal: React.FC<IndicatorListModalProps> = ({
 
           <div className="space-y-3">
             {selectedIndicatorList.list.map((c, index) => {
-              const secopUrl = c.urlproceso && (typeof c.urlproceso === 'object' ? c.urlproceso.url : c.urlproceso);
+              const secopUrl = getSafeSecopUrl(c.urlproceso);
               return (
                 <div key={c.id_contrato} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2.5 bg-slate-50/20 dark:bg-slate-950/20">
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-1.5">

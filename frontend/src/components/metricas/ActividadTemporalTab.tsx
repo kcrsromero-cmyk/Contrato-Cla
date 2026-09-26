@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { getSafeSecopUrl } from '../../utils/safeUrl';
 import { Contrato } from '../../types';
 import { useActividadTemporal, DiaActividad } from '../../hooks/useActividadTemporal';
 import { useAuth } from '../../context/AuthContext';
@@ -715,9 +716,9 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
                       >
                         Ver Detalle
                       </button>
-                      {c.urlproceso && (
+                      {getSafeSecopUrl(c.urlproceso) && (
                         <a
-                          href={c.urlproceso}
+                          href={getSafeSecopUrl(c.urlproceso) ?? undefined}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-2.5 py-1 text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
@@ -776,9 +777,9 @@ export const ActividadTemporalTab: React.FC<ActividadTemporalTabProps> = ({
                     >
                       Ver Detalle
                     </button>
-                    {c.urlproceso && (
+                    {getSafeSecopUrl(c.urlproceso) && (
                       <a
-                        href={typeof c.urlproceso === 'object' ? (c.urlproceso as any).url : c.urlproceso}
+                        href={getSafeSecopUrl(c.urlproceso) ?? undefined}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-2.5 py-1 text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
