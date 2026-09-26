@@ -10,7 +10,12 @@ export class SupabaseIdentityProvider implements IdentityProvider {
   private client: SupabaseClient;
 
   constructor() {
-    this.client = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY);
+    this.client = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
   }
 
   async register(credentials: RegisterCredentials): Promise<AuthResult> {
@@ -60,8 +65,8 @@ export class SupabaseIdentityProvider implements IdentityProvider {
     };
   }
 
-  async logout(_token: string): Promise<void> {
-    const { error: signOutError } = await this.client.auth.signOut();
+  async logout(token: string): Promise<void> {
+    const { error: signOutError } = await this.client.auth.admin.signOut(token);
     if (signOutError) throw new Error(signOutError.message);
   }
 
