@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// Append /api/v1 to ensure all requests hit the correctly prefixed API routes
+const API_URL = BASE_URL.endsWith('/api/v1') ? BASE_URL : `${BASE_URL}/api/v1`;
 
 export const registerUser = async (data: { name?: string; email: string; password: string }) => {
   const res = await fetch(`${API_URL}/auth/register`, {

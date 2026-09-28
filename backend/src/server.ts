@@ -31,9 +31,11 @@ app.use(helmet());
 // Bloquear rutas de scanners ANTES de llegar a cualquier middleware de rate limit o audit_log
 app.use(blockedPathsMiddleware);
 
+const API_PREFIX = '/api/v1';
+
 // Real Health Check Routes (ANTES del rate limiter global)
-app.get('/api/v1/health', healthCheckHandler);
-app.get('/api/health', healthCheckHandler);
+app.get('/health/live', healthCheckHandler);
+app.get('/health/ready', healthCheckHandler);
 
 // Rate limit global — 500 requests por IP cada 15 minutos
 const globalLimiter = rateLimit({
@@ -81,9 +83,9 @@ import { procurementRouter } from './modules/procurement/presentation/routes';
 import { analyticsRouter } from './modules/analytics/presentation/routes';
 
 // Mount API routes
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/procurement', procurementRouter);
-app.use('/api/v1/analytics', analyticsRouter);
+app.use(`${API_PREFIX}/auth`, authRouter);
+app.use(`${API_PREFIX}/procurement`, procurementRouter);
+app.use(`${API_PREFIX}/analytics`, analyticsRouter);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
