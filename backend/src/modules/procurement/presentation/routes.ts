@@ -3,7 +3,7 @@ import { ProcurementController } from './ProcurementController';
 import { ProcurementService } from '../application/ProcurementService';
 import { SocrataContractProvider } from '../infrastructure/SocrataContractProvider';
 import rateLimit from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
+import { FallbackRedisStore } from '../../../infrastructure/security/rateLimitStore';
 import { redisAppClient } from '../../../infrastructure/redis/redisAppClient';
 // Import auth middlewares to protect routes
 import { AuthMiddleware } from '../../identity/presentation/AuthMiddleware';
@@ -23,10 +23,7 @@ const contractsLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  store: new RedisStore({
-    sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
-    prefix: 'rl:contracts:'
-  }),
+  store: new FallbackRedisStore(redisAppClient, 'rl:contracts:'),
   message: { error: 'Too many contract queries, please try again in a minute.' }
 });
 
@@ -35,10 +32,7 @@ const searchEntitiesLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  store: new RedisStore({
-    sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
-    prefix: 'rl:search:'
-  }),
+  store: new FallbackRedisStore(redisAppClient, 'rl:search:'),
   message: { error: 'Too many search requests, please try again in a minute.' }
 });
 

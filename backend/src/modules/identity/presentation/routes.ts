@@ -9,7 +9,7 @@ import { jwtValidator } from '../../../infrastructure/security/jwtValidator';
 import { prisma } from '../../../infrastructure/db/prisma';
 import { AuditService } from '../../audit/application/AuditService';
 import rateLimit from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
+import { FallbackRedisStore } from '../../../infrastructure/security/rateLimitStore';
 import { redisAppClient } from '../../../infrastructure/redis/redisAppClient';
 import { validateRequest } from './ValidationMiddleware';
 import { RegisterSchema, LoginSchema, RefreshSchema, ResetPasswordSchema } from './AuthSchemas';
@@ -20,10 +20,7 @@ const authRouter = Router();
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // Limit each IP to 10 requests per `window` (here, per 15 minutes)
-  store: new RedisStore({
-    sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
-    prefix: 'rl:auth:'
-  }),
+  store: new FallbackRedisStore(redisAppClient, 'rl:auth:'),
   handler: (req, res, next, options) => {
     res.status(options.statusCode).json({ error: options.message });
   },

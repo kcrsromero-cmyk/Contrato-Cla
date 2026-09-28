@@ -6,7 +6,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
+import { FallbackRedisStore } from './infrastructure/security/rateLimitStore';
 import { redisAppClient } from './infrastructure/redis/redisAppClient';
 import { prisma } from './infrastructure/db/prisma';
 import { AuditService } from './modules/audit/application/AuditService';
@@ -41,10 +41,7 @@ const globalLimiter = rateLimit({
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
-  store: new RedisStore({
-    sendCommand: (...args: string[]) => redisAppClient.call(args[0], ...args.slice(1)) as Promise<any>,
-    prefix: 'rl:global:'
-  }),
+  store: new FallbackRedisStore(redisAppClient, 'rl:global:'),
   skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1',
   message: { error: 'Too many requests, please try again later.' }
 });
