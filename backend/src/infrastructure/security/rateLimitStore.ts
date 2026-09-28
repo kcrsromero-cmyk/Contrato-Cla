@@ -3,13 +3,31 @@ import { MemoryStore, Store } from 'express-rate-limit';
 import { logger } from '../logger';
 import Redis from 'ioredis';
 
+/**
+ * Rate limit store con fallback de Redis a MemoryStore.
+ *
+ * COMPORTAMIENTO EN MODO NORMAL (Redis disponible):
+ * Los contadores son compartidos entre todas las instancias del proceso
+ * a través de Redis. El límite configurado (max) aplica de forma
+ * distribuida sobre todos los procesos.
+ *
+ * COMPORTAMIENTO EN MODO FALLBACK (Redis no disponible):
+ * Cada proceso usa su propio MemoryStore. Con N instancias en ejecución,
+ * el límite efectivo es max × N por ventana de tiempo.
+ * Este comportamiento es intencional: el objetivo del fallback es mantener
+ * protección básica y disponibilidad, no equivalencia exacta con Redis.
+ *
+ * El fallback es transitorio: cuando Redis se recupera, el store vuelve
+ * automáticamente a Redis en la siguiente request.
+ */
 export class FallbackRedisStore implements Store {
   private redisStore: RedisStore;
   private memoryStore: MemoryStore;
   private redisClient: Redis;
   private isRedisWarned: boolean = false;
+  private wasUsingFallback: boolean = false;
 
-  constructor(client: Redis, prefix: string) {
+  constructor(client: Redis, public readonly prefix: string) {
     this.redisClient = client;
     this.memoryStore = new MemoryStore();
     this.redisStore = new RedisStore({
@@ -21,13 +39,28 @@ export class FallbackRedisStore implements Store {
   }
 
   private isRedisAvailable(): boolean {
-    return this.redisClient.status === 'ready';
+    const ready = this.redisClient.status === 'ready';
+
+    if (ready && this.wasUsingFallback) {
+      // Redis se recuperó — loguear recuperación y resetear estado
+      logger.info('Redis rate limiting recovered — switching back from MemoryStore', {
+        prefix: this.prefix
+      });
+      this.wasUsingFallback = false;
+      this.isRedisWarned = false; // permitir warning en próxima caída
+    }
+
+    return ready;
   }
 
-  private handleRedisError(error: any) {
+  private handleRedisError(error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
     if (!this.isRedisWarned) {
-      logger.warn('Redis not available for rate limiting, falling back to MemoryStore', { error: error.message });
-      this.isRedisWarned = true; // Log only once to avoid flooding
+      logger.warn('Redis not available for rate limiting, falling back to MemoryStore', {
+        error: msg
+      });
+      this.isRedisWarned = true;
+      this.wasUsingFallback = true;
     }
   }
 
