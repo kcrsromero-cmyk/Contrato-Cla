@@ -78,11 +78,13 @@ app.use(auditMiddleware.logApiConsumption);
 import { authRouter } from './modules/identity/presentation/routes';
 import { procurementRouter } from './modules/procurement/presentation/routes';
 import { analyticsRouter } from './modules/analytics/presentation/routes';
+import { notificationsRouter } from './modules/notifications/presentation/routes';
 
 // Mount API routes
 app.use(`${API_PREFIX}/auth`, authRouter);
 app.use(`${API_PREFIX}/procurement`, procurementRouter);
 app.use(`${API_PREFIX}/analytics`, analyticsRouter);
+app.use(`${API_PREFIX}/notifications`, notificationsRouter);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

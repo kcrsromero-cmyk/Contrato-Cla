@@ -305,7 +305,7 @@
       "backend/src/server.ts",
       "backend/src/modules/notifications/__tests__/NotificationsRoutes.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T7",
