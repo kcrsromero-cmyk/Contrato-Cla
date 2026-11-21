@@ -1,0 +1,488 @@
+[
+  {
+    "id": "E1-T1",
+    "title": "Add FeatureFlag, ApiKey and plan API limit to schema",
+    "epic": "01-flags-and-seed",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `(cd backend && npx prisma generate)` runs THE SYSTEM SHALL exit 0 and `backend/node_modules/.prisma/client/index.d.ts` SHALL contain `FeatureFlagDelegate`, `ApiKeyDelegate`, `apiRequestsPerMinute:` and `keyHash:`.",
+      "WHEN `backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql` is read THE SYSTEM SHALL contain `CREATE TABLE IF NOT EXISTS \"feature_flags\" (`, `CREATE TABLE IF NOT EXISTS \"api_keys\" (`, the unique index `api_keys_key_hash_key`, the index `api_keys_user_id_idx`, the `api_keys_user_id_fkey` cascade constraint and `ALTER TABLE \"plans\" ADD COLUMN IF NOT EXISTS \"api_requests_per_minute\" INTEGER;`.",
+      "WHEN that migration file is searched case-insensitively for `DROP`, `ALTER COLUMN` or `SET NOT NULL` THE SYSTEM SHALL find no match.",
+      "WHEN the timestamped directories in `backend/prisma/migrations/` are sorted THE SYSTEM SHALL list `20261121000000_add_api_keys_and_feature_flags` last.",
+      "WHEN `git diff -U0 HEAD -- backend/prisma/schema.prisma` runs THE SYSTEM SHALL show zero removed lines.",
+      "WHEN `(cd backend && npx tsc --noEmit)` and the frozen-interface tests `UpdateProfile.test.ts` and `CurrentUserResolver.test.ts` run THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx prisma generate)",
+      "grep -q 'FeatureFlagDelegate' backend/node_modules/.prisma/client/index.d.ts",
+      "grep -q 'ApiKeyDelegate' backend/node_modules/.prisma/client/index.d.ts",
+      "grep -q 'apiRequestsPerMinute:' backend/node_modules/.prisma/client/index.d.ts",
+      "grep -q 'keyHash:' backend/node_modules/.prisma/client/index.d.ts",
+      "grep -qF 'CREATE TABLE IF NOT EXISTS \"feature_flags\" (' backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql",
+      "grep -qF 'CREATE TABLE IF NOT EXISTS \"api_keys\" (' backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql",
+      "grep -qF 'CREATE UNIQUE INDEX IF NOT EXISTS \"api_keys_key_hash_key\" ON \"api_keys\"(\"key_hash\");' backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql",
+      "grep -qF 'CREATE INDEX IF NOT EXISTS \"api_keys_user_id_idx\" ON \"api_keys\"(\"user_id\");' backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql",
+      "grep -qF 'ADD CONSTRAINT \"api_keys_user_id_fkey\" FOREIGN KEY (\"user_id\") REFERENCES \"users\"(\"id\") ON DELETE CASCADE ON UPDATE CASCADE;' backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql",
+      "grep -qF 'ALTER TABLE \"plans\" ADD COLUMN IF NOT EXISTS \"api_requests_per_minute\" INTEGER;' backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql",
+      "status=0; grep -qiE 'DROP|ALTER COLUMN|SET NOT NULL' backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql || status=$?; test \"$status\" -eq 1",
+      "test \"$(ls backend/prisma/migrations | grep -E '^[0-9]{14}_' | sort | tail -n 1)\" = 20261121000000_add_api_keys_and_feature_flags",
+      "git rev-parse --verify -q HEAD >/dev/null && test -z \"$(git diff -U0 HEAD -- backend/prisma/schema.prisma | grep -E '^-([^-]|$)')\"",
+      "(cd backend && npx tsc --noEmit)",
+      "(cd backend && npx vitest run src/modules/identity/__tests__/UpdateProfile.test.ts src/modules/identity/__tests__/CurrentUserResolver.test.ts)"
+    ],
+    "checkpoint": "step-01-flags-apikeys-schema",
+    "files": [
+      "backend/prisma/schema.prisma",
+      "backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T2",
+    "title": "Add platform feature-flag helper and middleware",
+    "epic": "01-flags-and-seed",
+    "dependencies": ["E1-T1"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `isFeatureEnabled` gets no `feature_flags` row for a key THE SYSTEM SHALL return `true` (default-open).",
+      "WHEN `isFeatureEnabled` gets a row with `enabled: false` THE SYSTEM SHALL return `false`, and for `enabled: true` SHALL return `true`.",
+      "WHEN a request passes `requireFeatureEnabled('ANALYTICS')` while that row has `enabled: false` THE SYSTEM SHALL respond 503 `{ error: 'Esta funcionalidad está deshabilitada temporalmente. Intenta de nuevo más tarde.', code: 'FEATURE_DISABLED' }` and SHALL NOT call `next`.",
+      "WHEN the flag row is missing or the lookup throws THE SYSTEM SHALL call `next()` exactly once, and on a throw SHALL log `Feature flag lookup failed, treating as enabled` at warn.",
+      "WHEN `(cd backend && npm run build)` runs and `node` requires the built `dist/modules/platform/application/isFeatureEnabled.js` THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/platform/__tests__/requireFeatureEnabled.test.ts)",
+      "(cd backend && npx tsc --noEmit)",
+      "(cd backend && npm run build)",
+      "(cd backend && node -e \"require('./dist/modules/platform/application/isFeatureEnabled.js')\")"
+    ],
+    "checkpoint": "step-02-feature-flag-helper",
+    "files": [
+      "backend/src/modules/platform/domain/featureFlags.ts",
+      "backend/src/modules/platform/application/isFeatureEnabled.ts",
+      "backend/src/modules/platform/presentation/requireFeatureEnabled.ts",
+      "backend/src/modules/platform/__tests__/requireFeatureEnabled.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T3",
+    "title": "Seed USE_ANALYTICS capability for paid plans",
+    "epic": "01-flags-and-seed",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `backend/src/__tests__/seed.test.ts` runs `backend/prisma/seed.ts` against the mocked `PrismaClient` THE SYSTEM SHALL upsert a capability named `USE_ANALYTICS` with `update: {}`.",
+      "WHEN the seed test runs THE SYSTEM SHALL link `USE_ANALYTICS` to `PROFESIONAL` and `ENTERPRISE` and SHALL NOT link it to `STARTER` or `FREE`.",
+      "WHEN the seed test runs THE SYSTEM SHALL still link `STARTER`→`USE_FAVORITES`, `PROFESIONAL`→`USE_FAVORITES` and `VIEW_SIMILARITY_ANALYSIS`, `ENTERPRISE`→`USE_FAVORITES` and `VIEW_SIMILARITY_ANALYSIS`, upsert the departments `Amazonas` and `Vichada`, call `$disconnect`, and never call `process.exit`.",
+      "WHEN `git diff -U0 HEAD -- backend/prisma/seed.ts` runs THE SYSTEM SHALL show zero removed lines.",
+      "WHEN the standalone strict typecheck of `prisma/seed.ts` and `(cd backend && npx tsc --noEmit)` run THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/__tests__/seed.test.ts)",
+      "(cd backend && npx tsc --noEmit --strict --esModuleInterop --skipLibCheck --target ES2022 --module node16 --moduleResolution node16 prisma/seed.ts)",
+      "git rev-parse --verify -q HEAD >/dev/null && test -z \"$(git diff -U0 HEAD -- backend/prisma/seed.ts | grep -E '^-([^-]|$)')\"",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-03-seed-use-analytics",
+    "files": [
+      "backend/prisma/seed.ts",
+      "backend/src/__tests__/seed.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T4",
+    "title": "Seed the three default-open feature flags",
+    "epic": "01-flags-and-seed",
+    "dependencies": ["E1-T1", "E1-T3"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the seed test runs THE SYSTEM SHALL upsert feature flags `NOTIFICATIONS`, `ANALYTICS` and `API_ACCESS`, each with `create.enabled` equal to `true`.",
+      "WHEN the seed test runs THE SYSTEM SHALL give every feature-flag upsert `update: {}`, so re-seeding never re-enables a flag an operator disabled.",
+      "WHEN `git diff -U0 HEAD -- backend/prisma/seed.ts` runs THE SYSTEM SHALL show zero removed lines.",
+      "WHEN the seed test, the standalone strict typecheck of `prisma/seed.ts` and `(cd backend && npx tsc --noEmit)` run THE SYSTEM SHALL exit 0, with the step-3 assertions still passing."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/__tests__/seed.test.ts)",
+      "(cd backend && npx tsc --noEmit --strict --esModuleInterop --skipLibCheck --target ES2022 --module node16 --moduleResolution node16 prisma/seed.ts)",
+      "git rev-parse --verify -q HEAD >/dev/null && test -z \"$(git diff -U0 HEAD -- backend/prisma/seed.ts | grep -E '^-([^-]|$)')\"",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-04-seed-feature-flags",
+    "files": [
+      "backend/prisma/seed.ts",
+      "backend/src/__tests__/seed.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T5",
+    "title": "Gate notifications routes behind NOTIFICATIONS",
+    "epic": "01-flags-and-seed",
+    "dependencies": ["E1-T2"],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN the `NOTIFICATIONS` flag row has `enabled: false` and an authenticated `POST /api/v1/notifications/telegram/link-code` arrives THE SYSTEM SHALL respond 503 with `code: 'FEATURE_DISABLED'` and SHALL NOT write to `users`.",
+      "WHEN the `NOTIFICATIONS` flag row has `enabled: false` and an authenticated `POST /api/v1/notifications/test` arrives THE SYSTEM SHALL respond 503 with `code: 'FEATURE_DISABLED'`.",
+      "WHEN the `NOTIFICATIONS` flag is disabled and the request has no `Authorization` header THE SYSTEM SHALL respond 401, because the existing auth chain runs before the flag check.",
+      "WHEN no `NOTIFICATIONS` row exists THE SYSTEM SHALL issue a link code with status 200, and `NotificationsRoutes.test.ts` and the whole `src/modules/notifications` suite SHALL exit 0.",
+      "WHEN `backend/src/modules/notifications/presentation/routes.ts` is compared with the previous step THE SYSTEM SHALL show zero removed lines and exactly 2 lines reading `  requireNotificationsEnabled,`."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/NotificationsFeatureFlag.test.ts src/modules/notifications/__tests__/NotificationsRoutes.test.ts)",
+      "(cd backend && npx vitest run src/modules/notifications)",
+      "test \"$(grep -c '^  requireNotificationsEnabled,$' backend/src/modules/notifications/presentation/routes.ts)\" -eq 2",
+      "git rev-parse --verify -q HEAD >/dev/null && test -z \"$(git diff -U0 HEAD -- backend/src/modules/notifications/presentation/routes.ts | grep -E '^-([^-]|$)')\"",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-05-notifications-flag",
+    "files": [
+      "backend/src/modules/notifications/presentation/routes.ts",
+      "backend/src/modules/notifications/__tests__/NotificationsRoutes.test.ts",
+      "backend/src/modules/notifications/__tests__/NotificationsFeatureFlag.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T6",
+    "title": "Gate analytics routes behind ANALYTICS",
+    "epic": "01-flags-and-seed",
+    "dependencies": ["E1-T2"],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN each of the 12 analytics `GET` routes is called with a session whose plan grants `USE_ANALYTICS` and no `ANALYTICS` flag row exists THE SYSTEM SHALL respond 200 from the controller.",
+      "WHEN the `ANALYTICS` flag row has `enabled: false` THE SYSTEM SHALL respond 503 with `code: 'FEATURE_DISABLED'` to an authorized `GET /api/v1/analytics/contracts/trends`.",
+      "WHEN the session user's plan lacks `USE_ANALYTICS` THE SYSTEM SHALL respond 403 `{ error: 'Forbidden: Requires USE_ANALYTICS capability' }`, even while the flag is disabled.",
+      "WHEN no `Authorization` header is sent THE SYSTEM SHALL respond 401 `{ error: 'Missing or invalid Authorization header' }`.",
+      "WHEN `backend/src/modules/analytics/presentation/routes.ts` is searched THE SYSTEM SHALL find exactly 12 lines containing `requireAnalytics, requireAnalyticsEnabled, (req, res)` and the unchanged line `const requireAnalytics = requireCapability('USE_ANALYTICS');`."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/analytics/__tests__/AnalyticsRoutes.test.ts)",
+      "test \"$(grep -cF 'requireAnalytics, requireAnalyticsEnabled, (req, res)' backend/src/modules/analytics/presentation/routes.ts)\" -eq 12",
+      "grep -qF \"const requireAnalytics = requireCapability('USE_ANALYTICS');\" backend/src/modules/analytics/presentation/routes.ts",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-06-analytics-flag",
+    "files": [
+      "backend/src/modules/analytics/presentation/routes.ts",
+      "backend/src/modules/analytics/__tests__/AnalyticsRoutes.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T1",
+    "title": "Seed BUSINESS plan, USE_API and API rate limits",
+    "epic": "02-api-key-core",
+    "dependencies": ["E1-T1", "E1-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the seed test runs THE SYSTEM SHALL upsert a plan `BUSINESS` with `maxFavoriteEntities: 25` and a capability `USE_API`.",
+      "WHEN the seed test runs THE SYSTEM SHALL link `BUSINESS` to exactly `USE_FAVORITES`, `VIEW_SIMILARITY_ANALYSIS`, `USE_ANALYTICS` and `USE_API`.",
+      "WHEN the seed test runs THE SYSTEM SHALL link `USE_API` to `BUSINESS` and `ENTERPRISE` only, never to `FREE`, `STARTER` or `PROFESIONAL`.",
+      "WHEN the seed test runs THE SYSTEM SHALL call `plan.update` setting `apiRequestsPerMinute` to 60 for `BUSINESS` and 600 for `ENTERPRISE`, and for no other plan.",
+      "WHEN `git diff -U0 HEAD -- backend/prisma/seed.ts` runs THE SYSTEM SHALL show zero removed lines, and the seed test, the standalone strict typecheck of `prisma/seed.ts` and `(cd backend && npx tsc --noEmit)` SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/__tests__/seed.test.ts)",
+      "(cd backend && npx tsc --noEmit --strict --esModuleInterop --skipLibCheck --target ES2022 --module node16 --moduleResolution node16 prisma/seed.ts)",
+      "git rev-parse --verify -q HEAD >/dev/null && test -z \"$(git diff -U0 HEAD -- backend/prisma/seed.ts | grep -E '^-([^-]|$)')\"",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-07-seed-business-plan",
+    "files": [
+      "backend/prisma/seed.ts",
+      "backend/src/__tests__/seed.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T2",
+    "title": "Add API key format, hashing and typed errors",
+    "epic": "02-api-key-core",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `generateApiKey()` runs THE SYSTEM SHALL return a `plaintext` matching `^ck_live_[A-Za-z0-9_-]{43}$`, a `keyPrefix` equal to its first 12 characters, and a `keyHash` equal to the lowercase hex SHA-256 of the plaintext.",
+      "WHEN `generateApiKey()` runs twice THE SYSTEM SHALL return two different plaintexts and two different hashes.",
+      "WHEN `isApiKeyAuthorization` receives `Bearer ck_live_abc` THE SYSTEM SHALL return `true`, and for a `Bearer eyJ…` JWT, a missing header, a token without the `Bearer ` prefix, a lowercase `bearer ` prefix or a `Basic` header SHALL return `false`.",
+      "WHEN `ApiKeyAuthenticationError`, `ApiAccessNotAllowedError` and `ApiKeyNotFoundError` are constructed THE SYSTEM SHALL expose `code` `INVALID_API_KEY`, `API_ACCESS_NOT_IN_PLAN` and `API_KEY_NOT_FOUND` respectively, each with a `name` equal to its class name.",
+      "WHEN `(cd backend && npm run build)` runs and `node` requires the built `dist/modules/identity/domain/ApiKey.js` THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/identity/__tests__/ApiKey.test.ts)",
+      "(cd backend && npx tsc --noEmit)",
+      "(cd backend && npm run build)",
+      "(cd backend && node -e \"require('./dist/modules/identity/domain/ApiKey.js')\")"
+    ],
+    "checkpoint": "step-08-api-key-domain",
+    "files": [
+      "backend/src/modules/identity/domain/ApiKey.ts",
+      "backend/src/modules/identity/domain/errors.ts",
+      "backend/src/modules/identity/__tests__/ApiKey.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T3",
+    "title": "Map API-key users with CurrentUserResolver parity",
+    "epic": "02-api-key-core",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the mapper receives a user whose non-FREE plan has a future `planExpiresAt` THE SYSTEM SHALL take `plan`, `maxFavoriteEntities`, `capabilities` and `apiRequestsPerMinute` from that plan and SHALL NOT call `loadFreePlan`.",
+      "WHEN the user's non-FREE plan has expired, or the user has no plan, THE SYSTEM SHALL set `plan: 'FREE'` and take `maxFavoriteEntities`, `capabilities` and `apiRequestsPerMinute` from the FREE plan `loadFreePlan` returns.",
+      "WHEN `loadFreePlan` returns `null` THE SYSTEM SHALL set `plan: 'FREE'`, `maxFavoriteEntities: 0`, `capabilities: []` and `apiRequestsPerMinute: null`.",
+      "WHEN `CurrentUserResolver.resolve` and the mapper receive the same database user in each of the active, expired and no-plan states THE SYSTEM SHALL produce equal `plan`, `maxFavoriteEntities`, `capabilities`, `planExpiresAt`, `phone`, `telegramUsername`, `notifyEmail`, `notifyTelegram` and `notifySms`.",
+      "WHEN the mapper builds a user THE SYSTEM SHALL set `id`, `email` and `roles` from the database row and `permissions: []`, and SHALL NOT set `organizationId`.",
+      "WHEN `(cd backend && npx tsc --noEmit)` and `CurrentUserResolver.test.ts` run THE SYSTEM SHALL exit 0, with `CurrentUserResolver.ts` and `AuthenticatedUser.ts` unchanged since the previous step."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/identity/__tests__/ApiKeyUserMapper.test.ts src/modules/identity/__tests__/CurrentUserResolver.test.ts)",
+      "git rev-parse --verify -q HEAD >/dev/null && git diff --quiet HEAD -- backend/src/modules/identity/presentation/CurrentUserResolver.ts backend/src/modules/identity/domain/AuthenticatedUser.ts",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-09-api-key-user-mapper",
+    "files": [
+      "backend/src/modules/identity/application/ApiKeyUserMapper.ts",
+      "backend/src/modules/identity/__tests__/ApiKeyUserMapper.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T4",
+    "title": "Authenticate API keys in ApiKeyService",
+    "epic": "02-api-key-core",
+    "dependencies": ["E1-T1", "E2-T2", "E2-T3"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `authenticate` receives a token that does not match `^ck_live_[A-Za-z0-9_-]{43}$` THE SYSTEM SHALL throw `ApiKeyAuthenticationError` without querying `api_keys`.",
+      "WHEN the SHA-256 of a well-formed key matches no row, or the matching row has `revokedAt` set, THE SYSTEM SHALL throw `ApiKeyAuthenticationError`.",
+      "WHEN the key belongs to an active `BUSINESS` user THE SYSTEM SHALL look it up by `keyHash` with the user, plan and capabilities included, and return `apiKeyId`, a user with `plan: 'BUSINESS'` whose capabilities include `USE_API`, and `apiRequestsPerMinute: 60`.",
+      "WHEN the owner's paid plan has expired and the FREE fallback lacks `USE_API`, or the owner's active plan lacks `USE_API`, THE SYSTEM SHALL throw `ApiAccessNotAllowedError`.",
+      "WHEN `recordUsage(id)` runs THE SYSTEM SHALL update that key's `lastUsedAt` to the injected clock's time.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0, proving the Prisma include result satisfies `UserWithPlan`."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/identity/__tests__/ApiKeyService.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-10-api-key-authenticate",
+    "files": [
+      "backend/src/modules/identity/application/ApiKeyService.ts",
+      "backend/src/modules/identity/__tests__/ApiKeyService.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T5",
+    "title": "Issue, list and revoke API keys in ApiKeyService",
+    "epic": "02-api-key-core",
+    "dependencies": ["E2-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `issue(userId, 'CI')` runs THE SYSTEM SHALL call `apiKey.create` with `data` holding exactly `userId`, `name`, `keyHash` and `keyPrefix`, and SHALL return `{ id, name, keyPrefix, createdAt, key }` where `key` matches `^ck_live_[A-Za-z0-9_-]{43}$`, its SHA-256 hex equals the stored `keyHash`, and `keyPrefix` is its first 12 characters.",
+      "WHEN `listForUser(userId)` runs THE SYSTEM SHALL query `where: { userId }` ordered by `createdAt` descending, selecting only `id`, `name`, `keyPrefix`, `createdAt`, `lastUsedAt` and `revokedAt`.",
+      "WHEN `revoke(userId, id)` targets a key that does not exist or belongs to another user THE SYSTEM SHALL throw `ApiKeyNotFoundError` and SHALL NOT call `apiKey.update`.",
+      "WHEN `revoke` targets the caller's active key THE SYSTEM SHALL set `revokedAt` to the injected clock's time and return the updated summary.",
+      "WHEN `revoke` targets the caller's already-revoked key THE SYSTEM SHALL return the existing summary and SHALL NOT call `apiKey.update`.",
+      "WHEN `ApiKeyService.test.ts` and `(cd backend && npx tsc --noEmit)` run THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/identity/__tests__/ApiKeyServiceManagement.test.ts src/modules/identity/__tests__/ApiKeyService.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-11-api-key-management",
+    "files": [
+      "backend/src/modules/identity/application/ApiKeyService.ts",
+      "backend/src/modules/identity/__tests__/ApiKeyServiceManagement.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T6",
+    "title": "Add ApiKeyAuthMiddleware",
+    "epic": "02-api-key-core",
+    "dependencies": ["E1-T2", "E2-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the `API_ACCESS` flag is disabled THE SYSTEM SHALL respond 503 `{ error: 'Esta funcionalidad está deshabilitada temporalmente. Intenta de nuevo más tarde.', code: 'FEATURE_DISABLED' }` before authenticating any key.",
+      "WHEN authentication throws `ApiKeyAuthenticationError` THE SYSTEM SHALL respond 401 `{ error: 'La clave de API es inválida o fue revocada.', code: 'INVALID_API_KEY' }` and SHALL NOT call `next`.",
+      "WHEN authentication throws `ApiAccessNotAllowedError` THE SYSTEM SHALL respond 403 `{ error: 'Tu plan actual no incluye acceso por API.', code: 'API_ACCESS_NOT_IN_PLAN' }`.",
+      "WHEN authentication succeeds THE SYSTEM SHALL set `req.user` to the resolved `AuthenticatedUser`, set `req.apiKey` to `{ id, apiRequestsPerMinute }`, call `next()` once, and call `recordUsage` with the key id.",
+      "WHEN `recordUsage` rejects THE SYSTEM SHALL still call `next()` and SHALL log `API key usage timestamp update failed` at warn; WHEN any other error is thrown THE SYSTEM SHALL respond 500 `{ error: 'Internal Server Error' }`.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/identity/__tests__/ApiKeyAuthMiddleware.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-12-api-key-middleware",
+    "files": [
+      "backend/src/modules/identity/presentation/ApiKeyAuthMiddleware.ts",
+      "backend/src/modules/identity/__tests__/ApiKeyAuthMiddleware.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T1",
+    "title": "Add the per-API-key rate limiter",
+    "epic": "03-api-key-http",
+    "dependencies": ["E2-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a key whose plan allows 2 requests per minute sends 3 requests within the window THE SYSTEM SHALL answer 200, 200 and then 429 with `{ error: 'Demasiadas solicitudes con esta clave de API. Intenta de nuevo en un minuto.' }`.",
+      "WHEN one key has exhausted its limit THE SYSTEM SHALL still answer 200 to a different key, because the counter is keyed by API key id and not by IP.",
+      "WHEN a key's plan allows 3 requests per minute THE SYSTEM SHALL answer 200 to its third request, proving the limit is read per request from `req.apiKey.apiRequestsPerMinute`.",
+      "WHEN `apiRequestsPerMinute` is `null`, `0` or absent THE SYSTEM SHALL apply the fallback limit of 10.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/identity/__tests__/apiKeyRateLimiter.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-13-api-key-rate-limiter",
+    "files": [
+      "backend/src/modules/identity/presentation/apiKeyRateLimiter.ts",
+      "backend/src/modules/identity/__tests__/apiKeyRateLimiter.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T2",
+    "title": "Add authenticateApiKeyOrSession entry point",
+    "epic": "03-api-key-http",
+    "dependencies": ["E1-T2", "E2-T4", "E2-T6", "E3-T1"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a request carries `Authorization: Bearer ck_live_…` THE SYSTEM SHALL run the API-key handlers in order and SHALL NOT run the session handlers.",
+      "WHEN a request carries a `Bearer eyJ…` JWT or no `Authorization` header THE SYSTEM SHALL run the session handlers in order and SHALL NOT run the API-key handlers.",
+      "WHEN a handler in the chain responds without calling `next` THE SYSTEM SHALL run no later handler, and WHEN an async handler rejects THE SYSTEM SHALL pass the error to Express's error handler.",
+      "WHEN `requireSessionAuth` receives an API key THE SYSTEM SHALL respond 403 `{ error: 'Las claves de API no pueden administrar claves de API. Usa tu sesión de la aplicación web.', code: 'SESSION_REQUIRED' }`, and for a JWT SHALL call `next`.",
+      "WHEN the wired `authenticateApiKeyOrSession` receives an API key while `API_ACCESS` is disabled THE SYSTEM SHALL respond 503 `code: 'FEATURE_DISABLED'` without looking the key up and without running the session handlers.",
+      "WHEN `(cd backend && npm run build)` runs and `node` requires the built `dist/modules/identity/presentation/authenticateApiKeyOrSession.js` THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/identity/__tests__/authenticateApiKeyOrSession.test.ts)",
+      "(cd backend && npx tsc --noEmit)",
+      "(cd backend && npm run build)",
+      "(cd backend && node -e \"require('./dist/modules/identity/presentation/authenticateApiKeyOrSession.js')\")"
+    ],
+    "checkpoint": "step-14-api-key-or-session",
+    "files": [
+      "backend/src/modules/identity/presentation/authenticateApiKeyOrSession.ts",
+      "backend/src/modules/identity/presentation/apiKeyAuth.ts",
+      "backend/src/modules/identity/__tests__/authenticateApiKeyOrSession.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T3",
+    "title": "Add ApiKeyController and schemas",
+    "epic": "03-api-key-http",
+    "dependencies": ["E2-T5"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `create` runs for an authenticated user with body `{ name: '  ERP  ' }` THE SYSTEM SHALL call `issue` with the trimmed name `ERP` and respond 201 with the issued key object.",
+      "WHEN any of `create`, `list` or `revoke` runs without `req.user` THE SYSTEM SHALL respond 401 `{ error: 'Unauthorized' }` and call no service method.",
+      "WHEN `list` runs THE SYSTEM SHALL respond 200 `{ apiKeys: [...] }` with the service's summaries.",
+      "WHEN `revoke` receives an id that is not UUID-shaped, or the service throws `ApiKeyNotFoundError`, THE SYSTEM SHALL respond 404 `{ error: 'Clave de API no encontrada.', code: 'API_KEY_NOT_FOUND' }`.",
+      "WHEN the service throws any other error THE SYSTEM SHALL respond 500 `{ error: 'Internal Server Error' }` and log `API key endpoint error`.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/identity/__tests__/ApiKeyController.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-15-api-key-controller",
+    "files": [
+      "backend/src/modules/identity/presentation/ApiKeySchemas.ts",
+      "backend/src/modules/identity/presentation/ApiKeyController.ts",
+      "backend/src/modules/identity/__tests__/ApiKeyController.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T4",
+    "title": "Mount session-only /auth/api-keys routes",
+    "epic": "03-api-key-http",
+    "dependencies": ["E3-T2", "E3-T3"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a BUSINESS session sends `POST /api/v1/auth/api-keys` with `{ name: 'Integración ERP' }` THE SYSTEM SHALL respond 201 with a `key` matching `^ck_live_[A-Za-z0-9_-]{43}$`, a `keyPrefix` equal to its first 12 characters, and no `keyHash` field.",
+      "WHEN `POST /api/v1/auth/api-keys` arrives with an API key in `Authorization` THE SYSTEM SHALL respond 403 `code: 'SESSION_REQUIRED'` without verifying a JWT and without creating a key.",
+      "WHEN a session whose plan lacks `USE_API` sends the POST THE SYSTEM SHALL respond 403 `{ error: 'Forbidden: Requires USE_API capability' }`, and WHEN the body is `{}` THE SYSTEM SHALL respond 400 `Validation failed`.",
+      "WHEN a session sends `GET /api/v1/auth/api-keys` THE SYSTEM SHALL respond 200 `{ apiKeys: [...] }` whose JSON contains no `keyHash`.",
+      "WHEN a session sends `DELETE /api/v1/auth/api-keys/<uuid>` for a key it does not own THE SYSTEM SHALL respond 404 `code: 'API_KEY_NOT_FOUND'`; WHEN no `Authorization` is sent THE SYSTEM SHALL respond 401; and `GET /api/v1/auth/me` with a session SHALL still respond 200.",
+      "WHEN `backend/src/modules/identity/presentation/routes.ts` is compared with the previous step THE SYSTEM SHALL show zero removed lines, and `(cd backend && npx tsc --noEmit)` and `UpdateProfile.test.ts` SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/identity/__tests__/ApiKeyRoutes.test.ts src/modules/identity/__tests__/UpdateProfile.test.ts)",
+      "git rev-parse --verify -q HEAD >/dev/null && test -z \"$(git diff -U0 HEAD -- backend/src/modules/identity/presentation/routes.ts | grep -E '^-([^-]|$)')\"",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-16-api-key-routes",
+    "files": [
+      "backend/src/modules/identity/presentation/apiKeyRoutes.ts",
+      "backend/src/modules/identity/presentation/routes.ts",
+      "backend/src/modules/identity/__tests__/ApiKeyRoutes.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T5",
+    "title": "Accept API keys on protected procurement routes",
+    "epic": "03-api-key-http",
+    "dependencies": ["E3-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN each of the 7 protected procurement routes is called with an active BUSINESS API key THE SYSTEM SHALL reach the controller with `req.user.id` equal to the key owner's id, without verifying a JWT.",
+      "WHEN each of the 7 protected routes is called with a session token THE SYSTEM SHALL reach the controller with the session user, and WHEN no `Authorization` is sent THE SYSTEM SHALL respond 401 `{ error: 'Missing or invalid Authorization header' }` exactly as before.",
+      "WHEN a revoked API key is used THE SYSTEM SHALL respond 401 `code: 'INVALID_API_KEY'`, and WHEN `API_ACCESS` is disabled THE SYSTEM SHALL respond 503 `code: 'FEATURE_DISABLED'` to the key while a session request to the same route still gets 200.",
+      "WHEN each of the 6 public procurement routes is called without `Authorization` THE SYSTEM SHALL respond 200.",
+      "WHEN `backend/src/modules/procurement/presentation/routes.ts` is searched THE SYSTEM SHALL find no line `  currentUserResolver.resolve,` and exactly 7 lines `  authenticate,`, and `(cd backend && npx tsc --noEmit)` SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/procurement/__tests__/ProcurementApiKeyRoutes.test.ts)",
+      "status=0; grep -q '^  currentUserResolver.resolve,$' backend/src/modules/procurement/presentation/routes.ts || status=$?; test \"$status\" -eq 1",
+      "test \"$(grep -c '^  authenticate,$' backend/src/modules/procurement/presentation/routes.ts)\" -eq 7",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-17-procurement-api-keys",
+    "files": [
+      "backend/src/modules/procurement/presentation/routes.ts",
+      "backend/src/modules/procurement/__tests__/ProcurementApiKeyRoutes.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T6",
+    "title": "Accept API keys on analytics routes",
+    "epic": "03-api-key-http",
+    "dependencies": ["E1-T6", "E3-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN each of the 12 analytics routes is called with an active API key whose plan grants `USE_ANALYTICS` and `USE_API` THE SYSTEM SHALL reach the controller with `req.user.id` equal to the key owner's id.",
+      "WHEN the API key's plan grants `USE_API` but not `USE_ANALYTICS` THE SYSTEM SHALL respond 403 `{ error: 'Forbidden: Requires USE_ANALYTICS capability' }`, and WHEN it grants `USE_ANALYTICS` but not `USE_API` THE SYSTEM SHALL respond 403 `code: 'API_ACCESS_NOT_IN_PLAN'`.",
+      "WHEN the `ANALYTICS` flag is disabled THE SYSTEM SHALL respond 503 `code: 'FEATURE_DISABLED'` to an authorized API key, and WHEN `API_ACCESS` is disabled THE SYSTEM SHALL respond 503 to the key while a session request still gets 200.",
+      "WHEN `AnalyticsRoutes.test.ts` runs THE SYSTEM SHALL still pass every step-6 session case (12 routes at 200, 503 with the flag off, 403 without `USE_ANALYTICS`, 401 without `Authorization`).",
+      "WHEN `backend/src/modules/analytics/presentation/routes.ts` is searched THE SYSTEM SHALL find no route line containing `authMiddleware.handle, currentUserResolver.resolve, requireAnalytics` and exactly 12 lines containing `authenticate, requireAnalytics, requireAnalyticsEnabled, (req, res)`.",
+      "WHEN `(cd backend && npx tsc --noEmit)` and `(cd backend && npm run build)` run THE SYSTEM SHALL exit 0, and the build SHALL produce `backend/dist/server.js` and `backend/dist/worker.js`."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/analytics/__tests__/AnalyticsRoutes.test.ts)",
+      "status=0; grep -qF 'authMiddleware.handle, currentUserResolver.resolve, requireAnalytics' backend/src/modules/analytics/presentation/routes.ts || status=$?; test \"$status\" -eq 1",
+      "test \"$(grep -cF 'authenticate, requireAnalytics, requireAnalyticsEnabled, (req, res)' backend/src/modules/analytics/presentation/routes.ts)\" -eq 12",
+      "(cd backend && npx tsc --noEmit)",
+      "(cd backend && npm run build)",
+      "test -f backend/dist/server.js && test -f backend/dist/worker.js"
+    ],
+    "checkpoint": "step-18-analytics-api-keys",
+    "files": [
+      "backend/src/modules/analytics/presentation/routes.ts",
+      "backend/src/modules/analytics/__tests__/AnalyticsRoutes.test.ts"
+    ],
+    "status": "pending"
+  }
+]
