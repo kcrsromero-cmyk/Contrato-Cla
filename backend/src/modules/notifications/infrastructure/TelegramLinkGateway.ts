@@ -22,6 +22,20 @@ export interface TelegramLinkGatewayOptions {
 
 const START_CODE_PATTERN = /^\/start(?:@\w+)?\s+(\S+)\s*$/;
 
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true }
+    );
+  });
+}
+
 export class TelegramLinkGateway {
   private readonly prisma: Pick<PrismaClient, 'user'>;
   private readonly botToken: string;
@@ -30,6 +44,11 @@ export class TelegramLinkGateway {
   private readonly pollTimeoutSeconds: number;
   private readonly errorBackoffMs: number;
   private readonly now: () => Date;
+
+  private offset = 0;
+  private running = false;
+  private abortController: AbortController | null = null;
+  private loopPromise: Promise<void> | null = null;
 
   constructor(options: TelegramLinkGatewayOptions) {
     this.prisma = options.prisma;
@@ -80,5 +99,64 @@ export class TelegramLinkGateway {
     });
     this.logger.info('Telegram account linked', { userId: user.id });
     return 'linked';
+  }
+
+  async pollOnce(): Promise<void> {
+    const signal = this.abortController?.signal;
+    const query = new URLSearchParams({
+      offset: String(this.offset),
+      timeout: String(this.pollTimeoutSeconds),
+      allowed_updates: '["message"]',
+    });
+    const url = `https://api.telegram.org/bot${this.botToken}/getUpdates?${query.toString()}`;
+
+    const response = await this.fetchImpl(url, { signal });
+
+    if (!response.ok) {
+      throw new Error(`Telegram getUpdates responded ${response.status}`);
+    }
+
+    const { ok, result } = (await response.json()) as { ok: boolean; result: TelegramUpdate[] };
+    if (ok !== true) {
+      throw new Error('Telegram getUpdates returned ok=false');
+    }
+
+    for (const update of result) {
+      try {
+        await this.handleUpdate(update);
+      } catch (e: any) {
+        this.logger.error('Telegram update handling failed', {
+          updateId: update.update_id,
+          error: e?.message,
+        });
+      }
+      this.offset = update.update_id + 1;
+    }
+  }
+
+  start(): void {
+    if (this.running) return;
+    this.running = true;
+    this.abortController = new AbortController();
+    this.loopPromise = this.loop();
+  }
+
+  private async loop(): Promise<void> {
+    while (this.running) {
+      try {
+        await this.pollOnce();
+      } catch (e: any) {
+        if (!this.running) return;
+        this.logger.warn('Telegram getUpdates failed', { error: e?.message });
+        await sleep(this.errorBackoffMs, this.abortController!.signal);
+      }
+    }
+  }
+
+  async stop(): Promise<void> {
+    this.running = false;
+    this.abortController?.abort();
+    await this.loopPromise;
+    this.loopPromise = null;
   }
 }
