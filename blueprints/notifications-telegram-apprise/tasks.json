@@ -219,7 +219,7 @@
       "backend/src/modules/notifications/infrastructure/TelegramLinkGateway.ts",
       "backend/src/modules/notifications/__tests__/TelegramLinkGateway.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T4",
