@@ -15,6 +15,7 @@ import { validateRequest } from '../../identity/presentation/ValidationMiddlewar
 import { IdentityService } from '../../identity/application/IdentityService';
 import { IdentityProviderRegistry } from '../../identity/infrastructure/IdentityProviderRegistry';
 import { jwtValidator } from '../../../infrastructure/security/jwtValidator';
+import { requireFeatureEnabled } from '../../platform/presentation/requireFeatureEnabled';
 
 const notificationsRouter = Router();
 
@@ -42,11 +43,14 @@ const notificationsLimiter = rateLimit({
   message: { error: 'Too many notification requests, please try again in a minute.' },
 });
 
+const requireNotificationsEnabled = requireFeatureEnabled('NOTIFICATIONS');
+
 notificationsRouter.post(
   '/telegram/link-code',
   authMiddleware.handle,
   currentUserResolver.resolve,
   notificationsLimiter,
+  requireNotificationsEnabled,
   validateRequest(EmptyBodySchema),
   (req, res) => notificationsController.createTelegramLinkCode(req, res)
 );
@@ -56,6 +60,7 @@ notificationsRouter.post(
   authMiddleware.handle,
   currentUserResolver.resolve,
   notificationsLimiter,
+  requireNotificationsEnabled,
   validateRequest(EmptyBodySchema),
   (req, res) => notificationsController.sendTest(req, res)
 );

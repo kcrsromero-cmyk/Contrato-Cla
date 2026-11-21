@@ -143,7 +143,7 @@
       "backend/src/modules/notifications/__tests__/NotificationsRoutes.test.ts",
       "backend/src/modules/notifications/__tests__/NotificationsFeatureFlag.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T6",

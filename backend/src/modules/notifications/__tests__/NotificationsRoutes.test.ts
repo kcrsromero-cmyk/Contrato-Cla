@@ -29,6 +29,7 @@ vi.mock('../../../infrastructure/db/prisma', () => ({
       })),
     },
     plan: { findUnique: vi.fn(async () => null) },
+    featureFlag: { findUnique: vi.fn(async () => null) },
   },
 }));
 
