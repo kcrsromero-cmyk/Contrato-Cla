@@ -169,7 +169,7 @@
       "backend/src/modules/analytics/presentation/routes.ts",
       "backend/src/modules/analytics/__tests__/AnalyticsRoutes.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T1",
