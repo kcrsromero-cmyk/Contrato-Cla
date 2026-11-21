@@ -9,6 +9,7 @@ async function main() {
   const capabilities = [
     { name: 'USE_FAVORITES', description: 'Permite agregar y ver contratos favoritos' },
     { name: 'USE_ANALYTICS', description: 'Permite acceder a los tableros y consultas de analítica' },
+    { name: 'USE_API', description: 'Permite crear claves de API y consumir la API de forma programática' },
     { name: 'VIEW_SIMILARITY_ANALYSIS', description: 'Permite ver análisis de similitud entre contratos' }
   ];
 
@@ -26,6 +27,7 @@ async function main() {
     { name: 'FREE', description: 'Plan gratuito básico', maxFavoriteEntities: 0 },
     { name: 'STARTER', description: 'Plan para usuarios iniciales', maxFavoriteEntities: 3 },
     { name: 'PROFESIONAL', description: 'Plan para usuarios profesionales', maxFavoriteEntities: 10 },
+    { name: 'BUSINESS', description: 'Plan para negocios con analítica y acceso por API', maxFavoriteEntities: 25 },
     { name: 'ENTERPRISE', description: 'Plan para empresas con requerimientos avanzados', maxFavoriteEntities: null }
   ];
 
@@ -38,14 +40,31 @@ async function main() {
   }
   console.log('Plans seeded.');
 
+  // 2b. API rate limits per plan (requests per minute per API key). Illustrative values, adjustable.
+  // Only plans that grant USE_API get a value; every other plan keeps NULL.
+  const apiRateLimits = [
+    { name: 'BUSINESS', apiRequestsPerMinute: 60 },
+    { name: 'ENTERPRISE', apiRequestsPerMinute: 600 },
+  ];
+
+  for (const limit of apiRateLimits) {
+    await prisma.plan.update({
+      where: { name: limit.name },
+      data: { apiRequestsPerMinute: limit.apiRequestsPerMinute },
+    });
+  }
+  console.log('API rate limits seeded.');
+
   // Fetch capabilities
   const useFavorites = await prisma.capability.findUnique({ where: { name: 'USE_FAVORITES' } });
   const viewSimilarity = await prisma.capability.findUnique({ where: { name: 'VIEW_SIMILARITY_ANALYSIS' } });
   const useAnalytics = await prisma.capability.findUnique({ where: { name: 'USE_ANALYTICS' } });
+  const useApi = await prisma.capability.findUnique({ where: { name: 'USE_API' } });
 
   // Fetch plans
   const starter = await prisma.plan.findUnique({ where: { name: 'STARTER' } });
   const profesional = await prisma.plan.findUnique({ where: { name: 'PROFESIONAL' } });
+  const business = await prisma.plan.findUnique({ where: { name: 'BUSINESS' } });
   const enterprise = await prisma.plan.findUnique({ where: { name: 'ENTERPRISE' } });
 
   // 3. Link Plans and Capabilities
@@ -57,9 +76,15 @@ async function main() {
   if (profesional && viewSimilarity) planCapabilities.push({ planId: profesional.id, capabilityId: viewSimilarity.id });
   if (profesional && useAnalytics) planCapabilities.push({ planId: profesional.id, capabilityId: useAnalytics.id });
 
+  if (business && useFavorites) planCapabilities.push({ planId: business.id, capabilityId: useFavorites.id });
+  if (business && viewSimilarity) planCapabilities.push({ planId: business.id, capabilityId: viewSimilarity.id });
+  if (business && useAnalytics) planCapabilities.push({ planId: business.id, capabilityId: useAnalytics.id });
+  if (business && useApi) planCapabilities.push({ planId: business.id, capabilityId: useApi.id });
+
   if (enterprise && useFavorites) planCapabilities.push({ planId: enterprise.id, capabilityId: useFavorites.id });
   if (enterprise && viewSimilarity) planCapabilities.push({ planId: enterprise.id, capabilityId: viewSimilarity.id });
   if (enterprise && useAnalytics) planCapabilities.push({ planId: enterprise.id, capabilityId: useAnalytics.id });
+  if (enterprise && useApi) planCapabilities.push({ planId: enterprise.id, capabilityId: useApi.id });
 
   for (const pc of planCapabilities) {
     await prisma.planCapability.upsert({

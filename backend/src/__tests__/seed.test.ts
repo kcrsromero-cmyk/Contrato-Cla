@@ -66,6 +66,37 @@ describe('prisma/seed.ts', () => {
     expect(isLinked('ENTERPRISE', 'VIEW_SIMILARITY_ANALYSIS')).toBe(true);
   });
 
+  it('upserts a BUSINESS plan and a USE_API capability', () => {
+    const businessUpsert = calls.planUpserts.find((a) => a.where.name === 'BUSINESS');
+    expect(businessUpsert).toBeDefined();
+    expect(businessUpsert.create.maxFavoriteEntities).toBe(25);
+    expect(calls.capabilityUpserts.some((a) => a.where.name === 'USE_API')).toBe(true);
+  });
+
+  it('links BUSINESS to exactly USE_FAVORITES, VIEW_SIMILARITY_ANALYSIS, USE_ANALYTICS and USE_API', () => {
+    const linked = calls.planCapabilityUpserts
+      .filter((a) => a.create.planId === 'plan-BUSINESS')
+      .map((a) => a.create.capabilityId)
+      .sort();
+    expect(linked).toEqual(['cap-USE_ANALYTICS', 'cap-USE_API', 'cap-USE_FAVORITES', 'cap-VIEW_SIMILARITY_ANALYSIS']);
+  });
+
+  it('links USE_API to BUSINESS and ENTERPRISE only', () => {
+    expect(isLinked('BUSINESS', 'USE_API')).toBe(true);
+    expect(isLinked('ENTERPRISE', 'USE_API')).toBe(true);
+    expect(isLinked('FREE', 'USE_API')).toBe(false);
+    expect(isLinked('STARTER', 'USE_API')).toBe(false);
+    expect(isLinked('PROFESIONAL', 'USE_API')).toBe(false);
+  });
+
+  it('sets apiRequestsPerMinute to 60 for BUSINESS and 600 for ENTERPRISE, and no other plan', () => {
+    const updates = calls.planUpdates.map((a) => [a.where.name, a.data.apiRequestsPerMinute]);
+    expect(updates).toEqual([
+      ['BUSINESS', 60],
+      ['ENTERPRISE', 600],
+    ]);
+  });
+
   it('upserts exactly the three default-open feature flags', () => {
     const keys = calls.featureFlagUpserts.map((a) => a.where.key).sort();
     expect(keys).toEqual(['ANALYTICS', 'API_ACCESS', 'NOTIFICATIONS']);
