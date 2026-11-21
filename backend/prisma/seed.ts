@@ -75,6 +75,23 @@ async function main() {
   }
   console.log('Plan capabilities linked.');
 
+  // 3b. Feature flags — operational kill switches, default-open. `update: {}` never
+  // re-enables a flag an operator disabled, so re-running the seed is safe.
+  const featureFlags = [
+    { key: 'NOTIFICATIONS', description: 'Rutas /api/v1/notifications (Telegram)' },
+    { key: 'ANALYTICS', description: 'Rutas /api/v1/analytics' },
+    { key: 'API_ACCESS', description: 'Autenticación con claves de API (Authorization: Bearer ck_live_)' },
+  ];
+
+  for (const flag of featureFlags) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: {},
+      create: { key: flag.key, enabled: true, description: flag.description },
+    });
+  }
+  console.log('Feature flags seeded.');
+
   // 4. Create Territorial Data
   const territorialData = [
     { department: "Amazonas", cities: ["Leticia", "Puerto Nariño", "No Definido"] },

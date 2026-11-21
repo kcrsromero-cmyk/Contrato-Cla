@@ -66,6 +66,15 @@ describe('prisma/seed.ts', () => {
     expect(isLinked('ENTERPRISE', 'VIEW_SIMILARITY_ANALYSIS')).toBe(true);
   });
 
+  it('upserts exactly the three default-open feature flags', () => {
+    const keys = calls.featureFlagUpserts.map((a) => a.where.key).sort();
+    expect(keys).toEqual(['ANALYTICS', 'API_ACCESS', 'NOTIFICATIONS']);
+    for (const upsert of calls.featureFlagUpserts) {
+      expect(upsert.create.enabled).toBe(true);
+      expect(upsert.update).toEqual({});
+    }
+  });
+
   it('seeds territorial data, disconnects and never exits', () => {
     const names = calls.departmentUpserts.map((a) => a.where.name);
     expect(names).toContain('Amazonas');
