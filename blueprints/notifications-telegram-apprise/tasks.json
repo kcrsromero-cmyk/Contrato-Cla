@@ -194,7 +194,7 @@
       "backend/src/modules/notifications/application/NotificationService.ts",
       "backend/src/modules/notifications/__tests__/TelegramLinkCode.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T3",
