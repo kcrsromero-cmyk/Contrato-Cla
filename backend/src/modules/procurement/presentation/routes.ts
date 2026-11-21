@@ -11,6 +11,7 @@ import { CurrentUserResolver } from '../../identity/presentation/CurrentUserReso
 import { IdentityService } from '../../identity/application/IdentityService';
 import { IdentityProviderRegistry } from '../../identity/infrastructure/IdentityProviderRegistry';
 import { jwtValidator } from '../../../infrastructure/security/jwtValidator';
+import { authenticateApiKeyOrSession } from '../../identity/presentation/apiKeyAuth';
 
 const procurementRouter = Router();
 
@@ -41,6 +42,7 @@ const activeProvider = IdentityProviderRegistry.resolve();
 const identityService = new IdentityService(activeProvider);
 const authMiddleware = new AuthMiddleware(jwtValidator);
 const currentUserResolver = new CurrentUserResolver(identityService);
+const authenticate = authenticateApiKeyOrSession([authMiddleware.handle, currentUserResolver.resolve]);
 
 
 procurementRouter.get('/departments', (req, res) => procurementController.getDepartments(req, res));
@@ -52,45 +54,38 @@ procurementRouter.get('/years', (req, res) => procurementController.getContractY
 procurementRouter.get('/contracts', contractsLimiter, (req, res) => procurementController.getContracts(req, res));
 
 procurementRouter.get('/similarity',
-  authMiddleware.handle,
-  currentUserResolver.resolve,
+  authenticate,
   (req, res) => procurementController.calculateSimilarity(req, res)
 );
 
 // Protected route (E2E for capabilities)
 procurementRouter.post('/favorites',
-  authMiddleware.handle,
-  currentUserResolver.resolve,
+  authenticate,
   (req, res) => procurementController.addFavorite(req, res)
 );
 
 procurementRouter.get('/favorites',
-  authMiddleware.handle,
-  currentUserResolver.resolve,
+  authenticate,
   (req, res) => procurementController.getFavorites(req, res)
 );
 
 procurementRouter.delete('/favorites',
-  authMiddleware.handle,
-  currentUserResolver.resolve,
+  authenticate,
   (req, res) => procurementController.removeFavoriteContract(req, res)
 );
 
 procurementRouter.post('/favorite-entities',
-  authMiddleware.handle,
-  currentUserResolver.resolve,
+  authenticate,
   (req, res) => procurementController.addFavoriteEntity(req, res)
 );
 
 procurementRouter.get('/favorite-entities',
-  authMiddleware.handle,
-  currentUserResolver.resolve,
+  authenticate,
   (req, res) => procurementController.getFavoriteEntities(req, res)
 );
 
 procurementRouter.delete('/favorite-entities',
-  authMiddleware.handle,
-  currentUserResolver.resolve,
+  authenticate,
   (req, res) => procurementController.removeFavoriteEntity(req, res)
 );
 

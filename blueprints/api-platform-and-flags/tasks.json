@@ -454,7 +454,7 @@
       "backend/src/modules/procurement/presentation/routes.ts",
       "backend/src/modules/procurement/__tests__/ProcurementApiKeyRoutes.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T6",
