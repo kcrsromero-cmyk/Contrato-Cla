@@ -44,6 +44,7 @@ model User {
   plan             Plan?              @relation(fields: [planId], references: [id])
   favorites        FavoriteContract[]
   favoriteEntities FavoriteEntity[]
+  apiKeys          ApiKey[]
 
   @@map("users")
 }
@@ -53,6 +54,7 @@ model Plan {
   name                String   @unique
   description         String?
   maxFavoriteEntities Int?     @map("max_favorite_entities")
+  apiRequestsPerMinute Int?   @map("api_requests_per_minute")
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
@@ -262,4 +264,30 @@ model Entity {
   updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@map("entities")
+}
+
+model FeatureFlag {
+  key         String   @id
+  enabled     Boolean  @default(true)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("feature_flags")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  keyHash    String    @unique @map("key_hash")
+  keyPrefix  String    @map("key_prefix")
+  name       String
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastUsedAt DateTime? @map("last_used_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_keys")
 }

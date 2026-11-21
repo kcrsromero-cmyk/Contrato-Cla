@@ -36,7 +36,7 @@
       "backend/prisma/schema.prisma",
       "backend/prisma/migrations/20261121000000_add_api_keys_and_feature_flags/migration.sql"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T2",
