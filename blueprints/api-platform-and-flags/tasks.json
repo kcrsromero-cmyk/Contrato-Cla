@@ -401,7 +401,7 @@
       "backend/src/modules/identity/presentation/ApiKeyController.ts",
       "backend/src/modules/identity/__tests__/ApiKeyController.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T4",
