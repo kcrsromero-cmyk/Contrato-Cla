@@ -323,7 +323,7 @@
       "backend/src/modules/identity/presentation/ApiKeyAuthMiddleware.ts",
       "backend/src/modules/identity/__tests__/ApiKeyAuthMiddleware.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T1",
