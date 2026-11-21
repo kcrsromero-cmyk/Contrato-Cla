@@ -64,7 +64,7 @@
       "backend/src/modules/platform/presentation/requireFeatureEnabled.ts",
       "backend/src/modules/platform/__tests__/requireFeatureEnabled.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T3",
