@@ -1,0 +1,339 @@
+[
+  {
+    "id": "E1-T1",
+    "title": "Add Telegram and Apprise vars to the env schema",
+    "epic": "01-foundation",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the env-schema test loads `backend/src/infrastructure/config/env.ts` with `TELEGRAM_BOT_TOKEN=123456:TEST` and neither `APPRISE_URL` nor `TELEGRAM_BOT_USERNAME` set THE SYSTEM SHALL expose `config.TELEGRAM_BOT_TOKEN` as `123456:TEST`, `config.APPRISE_URL` as `http://apprise:8000` and `config.TELEGRAM_BOT_USERNAME` as the empty string.",
+      "WHEN the env-schema test loads the module with `TELEGRAM_BOT_TOKEN` set to the empty string THE SYSTEM SHALL call `process.exit(1)`.",
+      "WHEN the env-schema test loads the module with `APPRISE_URL=not-a-url` THE SYSTEM SHALL call `process.exit(1)`.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0.",
+      "WHEN `backend/.env.example` and the root `.env.example` are read THE SYSTEM SHALL find a line starting `TELEGRAM_BOT_TOKEN=` and a line starting `TELEGRAM_BOT_USERNAME=` in each, plus a line starting `APPRISE_URL=` in `backend/.env.example`.",
+      "WHEN `backend/src/__tests__/apiRoutes.test.ts` is read THE SYSTEM SHALL find `process.env.TELEGRAM_BOT_TOKEN = 'test';` among its env assignments."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/NotificationsEnv.test.ts)",
+      "(cd backend && npx tsc --noEmit)",
+      "grep -q '^TELEGRAM_BOT_TOKEN=' backend/.env.example",
+      "grep -q '^TELEGRAM_BOT_USERNAME=' backend/.env.example",
+      "grep -q '^APPRISE_URL=' backend/.env.example",
+      "grep -q '^TELEGRAM_BOT_TOKEN=' .env.example",
+      "grep -q '^TELEGRAM_BOT_USERNAME=' .env.example",
+      "grep -qF \"process.env.TELEGRAM_BOT_TOKEN = 'test';\" backend/src/__tests__/apiRoutes.test.ts"
+    ],
+    "checkpoint": "step-01-env-schema",
+    "files": [
+      "backend/src/infrastructure/config/env.ts",
+      "backend/.env.example",
+      ".env.example",
+      "backend/src/__tests__/apiRoutes.test.ts",
+      "backend/src/modules/notifications/__tests__/NotificationsEnv.test.ts"
+    ],
+    "status": "in_progress"
+  },
+  {
+    "id": "E1-T2",
+    "title": "Wire Telegram variables into docker-compose",
+    "epic": "01-foundation",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `docker-compose.yml` is searched for the line `- TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}` THE SYSTEM SHALL find exactly 2 occurrences, the `backend` and `worker` services being the only two that carry `APPRISE_URL`.",
+      "WHEN `docker-compose.yml` is searched for the line `- TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME:-}` THE SYSTEM SHALL find exactly 2 occurrences.",
+      "WHEN `docker-compose.yml` is searched for `- APPRISE_URL=http://apprise:8000` THE SYSTEM SHALL still find exactly 2 occurrences.",
+      "WHEN `git diff -U0 HEAD -- docker-compose.yml` runs THE SYSTEM SHALL show zero removed lines."
+    ],
+    "verify": [
+      "test \"$(grep -cF -- '- TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}' docker-compose.yml)\" -eq 2",
+      "test \"$(grep -cF -- '- TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME:-}' docker-compose.yml)\" -eq 2",
+      "test \"$(grep -cF -- '- APPRISE_URL=http://apprise:8000' docker-compose.yml)\" -eq 2",
+      "git rev-parse --verify -q HEAD >/dev/null && test -z \"$(git diff -U0 HEAD -- docker-compose.yml | grep -E '^-([^-]|$)')\""
+    ],
+    "checkpoint": "step-02-compose-env",
+    "files": [
+      "docker-compose.yml"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T3",
+    "title": "Add Telegram link columns to User",
+    "epic": "01-foundation",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `(cd backend && npx prisma generate)` runs THE SYSTEM SHALL exit 0 and `backend/node_modules/.prisma/client/index.d.ts` SHALL contain `telegramChatId:`, `telegramLinkCode:` and `telegramLinkCodeExpiresAt:`.",
+      "WHEN the migration file `backend/prisma/migrations/20261120000000_add_telegram_notification_fields/migration.sql` is read THE SYSTEM SHALL contain `ADD COLUMN IF NOT EXISTS` statements for `telegram_chat_id` (`TEXT`), `telegram_link_code` (`TEXT`) and `telegram_link_code_expires_at` (`TIMESTAMP(3)`) on `\"users\"`, and `CREATE UNIQUE INDEX IF NOT EXISTS \"users_telegram_link_code_key\"`.",
+      "WHEN that migration file is searched case-insensitively for `DROP`, `NOT NULL` or `ALTER COLUMN` THE SYSTEM SHALL find no match.",
+      "WHEN `git diff -U0 HEAD -- backend/prisma/schema.prisma` runs THE SYSTEM SHALL show zero removed lines, so `telegramUsername`, `notifyEmail`, `notifyTelegram` and `notifySms` are unchanged.",
+      "WHEN `(cd backend && npx vitest run src/modules/identity/__tests__/UpdateProfile.test.ts src/modules/identity/__tests__/CurrentUserResolver.test.ts)` runs THE SYSTEM SHALL exit 0, proving the frozen profile-update and user-resolution behaviour is unchanged.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx prisma generate)",
+      "grep -q 'telegramChatId:' backend/node_modules/.prisma/client/index.d.ts",
+      "grep -q 'telegramLinkCode:' backend/node_modules/.prisma/client/index.d.ts",
+      "grep -q 'telegramLinkCodeExpiresAt:' backend/node_modules/.prisma/client/index.d.ts",
+      "grep -qF 'ALTER TABLE \"users\" ADD COLUMN IF NOT EXISTS \"telegram_chat_id\" TEXT;' backend/prisma/migrations/20261120000000_add_telegram_notification_fields/migration.sql",
+      "grep -qF 'ALTER TABLE \"users\" ADD COLUMN IF NOT EXISTS \"telegram_link_code\" TEXT;' backend/prisma/migrations/20261120000000_add_telegram_notification_fields/migration.sql",
+      "grep -qF 'ALTER TABLE \"users\" ADD COLUMN IF NOT EXISTS \"telegram_link_code_expires_at\" TIMESTAMP(3);' backend/prisma/migrations/20261120000000_add_telegram_notification_fields/migration.sql",
+      "grep -qF 'CREATE UNIQUE INDEX IF NOT EXISTS \"users_telegram_link_code_key\" ON \"users\"(\"telegram_link_code\");' backend/prisma/migrations/20261120000000_add_telegram_notification_fields/migration.sql",
+      "status=0; grep -qiE 'DROP|NOT NULL|ALTER COLUMN' backend/prisma/migrations/20261120000000_add_telegram_notification_fields/migration.sql || status=$?; test \"$status\" -eq 1",
+      "git rev-parse --verify -q HEAD >/dev/null && test -z \"$(git diff -U0 HEAD -- backend/prisma/schema.prisma | grep -E '^-([^-]|$)')\"",
+      "(cd backend && npx vitest run src/modules/identity/__tests__/UpdateProfile.test.ts src/modules/identity/__tests__/CurrentUserResolver.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-03-telegram-columns",
+    "files": [
+      "backend/prisma/schema.prisma",
+      "backend/prisma/migrations/20261120000000_add_telegram_notification_fields/migration.sql"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T4",
+    "title": "Define Notifier port, errors and NotifierRegistry",
+    "epic": "01-foundation",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a notifier is registered as `apprise` and `NotifierRegistry.resolve()` is called with no name THE SYSTEM SHALL return that same instance.",
+      "WHEN `NotifierRegistry.resolve('email')` is called and nothing is registered under `email` THE SYSTEM SHALL throw `Notifier 'email' is not registered.`",
+      "WHEN `new NotificationChannelNotLinkedError('TELEGRAM_DISABLED')` is constructed THE SYSTEM SHALL produce an `Error` instance whose `reason` is `TELEGRAM_DISABLED` and whose `name` is `NotificationChannelNotLinkedError`.",
+      "WHEN `new NotificationDeliveryError('x', 424)` is constructed THE SYSTEM SHALL produce an `Error` instance whose `status` is 424.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/NotifierRegistry.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-04-notifier-port",
+    "files": [
+      "backend/src/modules/notifications/domain/Notifier.ts",
+      "backend/src/modules/notifications/domain/errors.ts",
+      "backend/src/modules/notifications/infrastructure/NotifierRegistry.ts",
+      "backend/src/modules/notifications/__tests__/NotifierRegistry.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T5",
+    "title": "Implement AppriseNotifier",
+    "epic": "01-foundation",
+    "dependencies": ["E1-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `send('123456789', 'hola', 'Contrata360')` runs against a stubbed `fetch` with base URL `http://apprise.test:8000/` and bot token `TEST_TOKEN` THE SYSTEM SHALL POST exactly once to `http://apprise.test:8000/notify/` with header `Content-Type: application/json` and a JSON body equal to `{ \"urls\": \"tgram://TEST_TOKEN/123456789\", \"body\": \"hola\", \"title\": \"Contrata360\" }`.",
+      "WHEN the stubbed Apprise responds with status 424 THE SYSTEM SHALL reject with a `NotificationDeliveryError` whose `status` is 424.",
+      "WHEN the stubbed `fetch` rejects with a network error THE SYSTEM SHALL reject with a `NotificationDeliveryError` whose message does not contain `TEST_TOKEN`.",
+      "WHEN `send` is called with recipient `12/34` THE SYSTEM SHALL reject with a `NotificationDeliveryError` and SHALL NOT call `fetch`.",
+      "WHEN `backend/src/modules/notifications/infrastructure/AppriseNotifier.ts` is searched for `console.` or `logger.` THE SYSTEM SHALL find no match.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/AppriseNotifier.test.ts)",
+      "status=0; grep -nE 'console\\.|logger\\.' backend/src/modules/notifications/infrastructure/AppriseNotifier.ts || status=$?; test \"$status\" -eq 1",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-05-apprise-notifier",
+    "files": [
+      "backend/src/modules/notifications/infrastructure/AppriseNotifier.ts",
+      "backend/src/modules/notifications/__tests__/AppriseNotifier.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T1",
+    "title": "Implement NotificationService.sendToUser",
+    "epic": "02-delivery-and-linking",
+    "dependencies": ["E1-T3", "E1-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `sendToUser('user-1', 'hola', 'Contrata360')` runs for a user with `notifyTelegram: true` and `telegramChatId: '123456789'` THE SYSTEM SHALL call the resolved notifier's `send` exactly once with `'123456789'`, `'hola'` and `'Contrata360'`.",
+      "WHEN the user has `telegramChatId: null` THE SYSTEM SHALL reject with `NotificationChannelNotLinkedError` whose `reason` is `TELEGRAM_NOT_LINKED` and SHALL NOT call `send`.",
+      "WHEN the user has `telegramChatId: '123456789'` and `notifyTelegram: false` THE SYSTEM SHALL reject with `NotificationChannelNotLinkedError` whose `reason` is `TELEGRAM_DISABLED` and SHALL NOT call `send`.",
+      "WHEN no user row exists for the id THE SYSTEM SHALL reject with `NotificationChannelNotLinkedError` whose `reason` is `TELEGRAM_NOT_LINKED`.",
+      "WHEN the notifier's `send` rejects with a `NotificationDeliveryError` THE SYSTEM SHALL reject with that same error instance.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/NotificationService.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-06-notification-service",
+    "files": [
+      "backend/src/modules/notifications/application/NotificationService.ts",
+      "backend/src/modules/notifications/__tests__/NotificationService.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T2",
+    "title": "Add Telegram link-code issuance",
+    "epic": "02-delivery-and-linking",
+    "dependencies": ["E2-T1"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `generateTelegramLinkCode()` is called 1000 times THE SYSTEM SHALL return only strings matching `^[A-HJ-NP-Z2-9]{8}$`.",
+      "WHEN `createTelegramLinkCode('user-1', new Date('2026-11-20T10:00:00.000Z'))` runs THE SYSTEM SHALL call `prisma.user.update` with `where: { id: 'user-1' }`, `telegramLinkCode` equal to the returned code, and `telegramLinkCodeExpiresAt` equal to `2026-11-20T10:15:00.000Z`.",
+      "WHEN the first `prisma.user.update` rejects with an error whose `code` is `P2002` THE SYSTEM SHALL retry with a new code and resolve on the second attempt.",
+      "WHEN `prisma.user.update` rejects with `P2002` on all 3 attempts THE SYSTEM SHALL reject with the message `Could not allocate a unique Telegram link code`.",
+      "WHEN `prisma.user.update` rejects with an error whose `code` is `P2025` THE SYSTEM SHALL reject with that error after exactly 1 call.",
+      "WHEN `(cd backend && npx vitest run src/modules/notifications/__tests__/NotificationService.test.ts)` and `(cd backend && npx tsc --noEmit)` run THE SYSTEM SHALL exit 0 for both."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/TelegramLinkCode.test.ts)",
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/NotificationService.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-07-telegram-link-code",
+    "files": [
+      "backend/src/modules/notifications/domain/TelegramLinkCode.ts",
+      "backend/src/modules/notifications/application/NotificationService.ts",
+      "backend/src/modules/notifications/__tests__/TelegramLinkCode.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T3",
+    "title": "Match /start codes in TelegramLinkGateway",
+    "epic": "02-delivery-and-linking",
+    "dependencies": ["E1-T3", "E2-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `handleUpdate` receives `{ update_id: 1, message: { text: '/start ABCD2345', chat: { id: 123456789 } } }` and that code belongs to user `user-1` with an expiry after now THE SYSTEM SHALL call `prisma.user.update` with `where: { id: 'user-1' }` and data `{ telegramChatId: '123456789', telegramLinkCode: null, telegramLinkCodeExpiresAt: null }` and resolve `linked`.",
+      "WHEN the matching user's `telegramLinkCodeExpiresAt` is earlier than or equal to now THE SYSTEM SHALL resolve `ignored` and SHALL NOT call `prisma.user.update`.",
+      "WHEN no user holds the code THE SYSTEM SHALL resolve `ignored` and SHALL NOT call `prisma.user.update`.",
+      "WHEN the message text is `hola` or the update has no `message` THE SYSTEM SHALL resolve `ignored` without calling `prisma.user.findUnique`.",
+      "WHEN `TelegramLinkGateway.parseStartCode('/start@ContrataBot abcd2345')` runs THE SYSTEM SHALL return `ABCD2345`, and WHEN it runs on `/start ABC` THE SYSTEM SHALL return `null`.",
+      "WHEN `(cd backend && npx tsc --noEmit)` runs THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/TelegramLinkGateway.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-08-link-gateway-matching",
+    "files": [
+      "backend/src/modules/notifications/infrastructure/TelegramLinkGateway.ts",
+      "backend/src/modules/notifications/__tests__/TelegramLinkGateway.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T4",
+    "title": "Add the getUpdates long-poll loop",
+    "epic": "02-delivery-and-linking",
+    "dependencies": ["E2-T3"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `pollOnce()` runs for the first time THE SYSTEM SHALL request path `/botTEST_TOKEN/getUpdates` on `api.telegram.org` with query parameters `offset=0`, `timeout=25` and `allowed_updates=[\"message\"]`.",
+      "WHEN that response is `{ \"ok\": true, \"result\": [...] }` holding updates with `update_id` 41 and 42 THE SYSTEM SHALL pass both to `handleUpdate` in order, and the next `pollOnce()` SHALL request `offset=43`.",
+      "WHEN `getUpdates` responds with HTTP 409 THE SYSTEM SHALL reject `pollOnce()` with an error whose message contains `409` and does not contain `TEST_TOKEN`, and SHALL NOT call `handleUpdate`.",
+      "WHEN `handleUpdate` throws for update 41 in a batch of 41 and 42 THE SYSTEM SHALL still call `handleUpdate` for 42 and the next request SHALL use `offset=43`.",
+      "WHEN `start()` is called and `stop()` is then called while a long-poll request is in flight THE SYSTEM SHALL abort that request's `AbortSignal` and `stop()` SHALL resolve.",
+      "WHEN the first poll after `start()` fails and `errorBackoffMs` is 1 THE SYSTEM SHALL issue a second `getUpdates` request after the backoff."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/TelegramLinkGatewayPolling.test.ts)",
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/TelegramLinkGateway.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-09-link-gateway-polling",
+    "files": [
+      "backend/src/modules/notifications/infrastructure/TelegramLinkGateway.ts",
+      "backend/src/modules/notifications/__tests__/TelegramLinkGatewayPolling.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T5",
+    "title": "Add notifications controller and schemas",
+    "epic": "02-delivery-and-linking",
+    "dependencies": ["E2-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `createTelegramLinkCode` runs with no `req.user` THE SYSTEM SHALL respond 401 with `{ error: 'Unauthorized' }` and SHALL NOT call the service.",
+      "WHEN `createTelegramLinkCode` runs for user `user-1`, the service returns code `ABCD2345` expiring at `2026-11-20T10:15:00.000Z`, and the bot username is `ContrataTestBot` THE SYSTEM SHALL respond 200 with `{ code: 'ABCD2345', expiresAt: '2026-11-20T10:15:00.000Z', botDeepLink: 'https://t.me/ContrataTestBot?start=ABCD2345' }`.",
+      "WHEN the bot username is the empty string THE SYSTEM SHALL respond 200 with `botDeepLink` equal to `null`.",
+      "WHEN `sendTest` runs and the service rejects with `NotificationChannelNotLinkedError('TELEGRAM_NOT_LINKED')` THE SYSTEM SHALL respond 409 with a JSON body whose `code` is `TELEGRAM_NOT_LINKED` and whose `error` is a non-empty string.",
+      "WHEN `sendTest` runs and the service rejects with a `NotificationDeliveryError` THE SYSTEM SHALL respond 502 with `code` equal to `DELIVERY_FAILED`.",
+      "WHEN `sendTest` runs and the service resolves THE SYSTEM SHALL call `sendToUser` with `user-1`, `TEST_NOTIFICATION_MESSAGE` and `TEST_NOTIFICATION_TITLE` and respond 200 with `{ delivered: true }`."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/NotificationsController.test.ts)",
+      "(cd backend && npx tsc --noEmit)"
+    ],
+    "checkpoint": "step-10-notifications-controller",
+    "files": [
+      "backend/src/modules/notifications/presentation/NotificationSchemas.ts",
+      "backend/src/modules/notifications/presentation/NotificationsController.ts",
+      "backend/src/modules/notifications/__tests__/NotificationsController.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T6",
+    "title": "Mount the notifications router",
+    "epic": "02-delivery-and-linking",
+    "dependencies": ["E1-T1", "E1-T5", "E2-T5"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `POST /api/v1/notifications/telegram/link-code` is sent with no `Authorization` header to an Express app mounting `notificationsRouter` THE SYSTEM SHALL respond 401.",
+      "WHEN `POST /api/v1/notifications/test` is sent with no `Authorization` header THE SYSTEM SHALL respond 401.",
+      "WHEN `POST /api/v1/notifications/telegram/link-code` is sent with `Authorization: Bearer test-token` for a resolvable user THE SYSTEM SHALL respond 200 with a `code` matching `^[A-HJ-NP-Z2-9]{8}$` and a `botDeepLink` equal to `https://t.me/ContrataTestBot?start=` followed by that code.",
+      "WHEN `POST /api/v1/notifications/test` is sent with `Authorization: Bearer test-token` and body `{ \"extra\": 1 }` THE SYSTEM SHALL respond 400.",
+      "WHEN `backend/src/server.ts` is searched THE SYSTEM SHALL find the notifications mount line built from `API_PREFIX` and `notificationsRouter`, the `notificationsRouter` import on a later line than the `authRouter` import, and the existing `auth`, `procurement` and `analytics` mount lines unchanged.",
+      "WHEN `(cd backend && npm run build)` runs THE SYSTEM SHALL exit 0, emit `backend/dist/modules/notifications/presentation/routes.js`, and the built `AppriseNotifier.js` SHALL load with `require` and exit 0."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/modules/notifications/__tests__/NotificationsRoutes.test.ts)",
+      "grep -qF 'app.use(`${API_PREFIX}/notifications`, notificationsRouter);' backend/src/server.ts",
+      "grep -qF 'app.use(`${API_PREFIX}/auth`, authRouter);' backend/src/server.ts",
+      "grep -qF 'app.use(`${API_PREFIX}/procurement`, procurementRouter);' backend/src/server.ts",
+      "grep -qF 'app.use(`${API_PREFIX}/analytics`, analyticsRouter);' backend/src/server.ts",
+      "test \"$(grep -n \"from './modules/notifications/presentation/routes'\" backend/src/server.ts | cut -d: -f1)\" -gt \"$(grep -n \"from './modules/identity/presentation/routes'\" backend/src/server.ts | cut -d: -f1)\"",
+      "(cd backend && npx tsc --noEmit)",
+      "(cd backend && npm run build)",
+      "test -f backend/dist/modules/notifications/presentation/routes.js",
+      "(cd backend && node -e \"require('./dist/modules/notifications/infrastructure/AppriseNotifier.js')\")"
+    ],
+    "checkpoint": "step-11-notifications-routes",
+    "files": [
+      "backend/src/modules/notifications/presentation/routes.ts",
+      "backend/src/server.ts",
+      "backend/src/modules/notifications/__tests__/NotificationsRoutes.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T7",
+    "title": "Run the link gateway in the worker",
+    "epic": "02-delivery-and-linking",
+    "dependencies": ["E1-T1", "E2-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `backend/src/worker.ts` is imported by the worker-shutdown test THE SYSTEM SHALL construct one `TelegramLinkGateway` and call its `start()` exactly once.",
+      "WHEN `gracefulShutdown('SIGTERM')` runs THE SYSTEM SHALL call `telegramLinkGateway.stop()` together with the 5 BullMQ worker `close()` calls and exit with code 0.",
+      "WHEN the existing shutdown test's single `await gracefulShutdown('SIGTERM')` call completes THE SYSTEM SHALL show, asserted inside that same test with no separate `it()` block, a `telegramLinkGateway.stop` `invocationCallOrder[0]` lower than the `prisma.$disconnect` `invocationCallOrder[0]`.",
+      "WHEN the worker-shutdown test runs THE SYSTEM SHALL still pass all 12 pre-existing call assertions in the existing shutdown test: 5 worker `close()`, 5 queue `close()`, `redisWorkerClient.quit()` and `prisma.$disconnect()`.",
+      "WHEN `(cd backend && npm run build)` runs THE SYSTEM SHALL exit 0, `backend/dist/worker.js` SHALL reference `TelegramLinkGateway`, and the built `TelegramLinkGateway.js` SHALL load with `require` and exit 0.",
+      "WHEN `(cd backend && npx vitest run src/modules/notifications)` runs THE SYSTEM SHALL exit 0 with 0 failed tests."
+    ],
+    "verify": [
+      "(cd backend && npx vitest run src/__tests__/workerShutdown.test.ts)",
+      "(cd backend && npx tsc --noEmit)",
+      "(cd backend && npm run build)",
+      "grep -q 'TelegramLinkGateway' backend/dist/worker.js",
+      "(cd backend && node -e \"require('./dist/modules/notifications/infrastructure/TelegramLinkGateway.js')\")",
+      "(cd backend && npx vitest run src/modules/notifications)"
+    ],
+    "checkpoint": "step-12-worker-gateway",
+    "files": [
+      "backend/src/worker.ts",
+      "backend/src/__tests__/workerShutdown.test.ts"
+    ],
+    "status": "pending"
+  }
+]
