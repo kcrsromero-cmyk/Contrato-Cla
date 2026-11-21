@@ -271,7 +271,7 @@
       "backend/src/modules/notifications/presentation/NotificationsController.ts",
       "backend/src/modules/notifications/__tests__/NotificationsController.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T6",
