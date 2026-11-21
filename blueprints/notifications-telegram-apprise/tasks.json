@@ -116,7 +116,7 @@
       "backend/src/modules/notifications/infrastructure/NotifierRegistry.ts",
       "backend/src/modules/notifications/__tests__/NotifierRegistry.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T5",
