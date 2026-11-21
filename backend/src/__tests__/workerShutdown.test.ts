@@ -1,5 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+const gatewayState = vi.hoisted(() => ({ constructCalls: 0, startCalls: 0 }));
+
+vi.mock('../infrastructure/config/env', () => ({
+  config: { TELEGRAM_BOT_TOKEN: 'TEST_TOKEN' },
+}));
+
+vi.mock('../modules/notifications/infrastructure/TelegramLinkGateway', () => ({
+  TelegramLinkGateway: class {
+    constructor() {
+      gatewayState.constructCalls += 1;
+    }
+    start = vi.fn(() => {
+      gatewayState.startCalls += 1;
+    });
+    stop = vi.fn().mockResolvedValue(undefined);
+  },
+}));
+
 vi.mock('../infrastructure/jobs/refreshWorker', () => ({
   datasetImportWorker: { close: vi.fn().mockResolvedValue(undefined) },
   datasetNormalizationWorker: { close: vi.fn().mockResolvedValue(undefined) },
@@ -26,7 +44,7 @@ vi.mock('../infrastructure/db/prisma', () => ({
   },
 }));
 
-import { gracefulShutdown } from '../worker';
+import { gracefulShutdown, telegramLinkGateway } from '../worker';
 import {
   datasetImportWorker,
   datasetNormalizationWorker,
@@ -74,6 +92,16 @@ describe('Worker Graceful Shutdown', () => {
     expect(redisWorkerClient.quit).toHaveBeenCalled();
     expect(prisma.$disconnect).toHaveBeenCalled();
 
+    expect(telegramLinkGateway.stop).toHaveBeenCalled();
+    expect(
+      vi.mocked(telegramLinkGateway.stop).mock.invocationCallOrder[0]
+    ).toBeLessThan(vi.mocked(prisma.$disconnect).mock.invocationCallOrder[0]);
+
     expect(processExitSpy).toHaveBeenCalledWith(0);
+  });
+
+  it('constructs one TelegramLinkGateway and starts it exactly once', () => {
+    expect(gatewayState.constructCalls).toBe(1);
+    expect(gatewayState.startCalls).toBe(1);
   });
 });

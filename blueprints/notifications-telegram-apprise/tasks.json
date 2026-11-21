@@ -334,6 +334,6 @@
       "backend/src/worker.ts",
       "backend/src/__tests__/workerShutdown.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   }
 ]

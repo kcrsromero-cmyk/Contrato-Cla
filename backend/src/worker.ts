@@ -1,4 +1,5 @@
-import './infrastructure/config/env';
+import { config } from './infrastructure/config/env';
+import { TelegramLinkGateway } from './modules/notifications/infrastructure/TelegramLinkGateway';
 
 import {
   setupRecurringJobs,
@@ -16,6 +17,11 @@ import {
 import { redisWorkerClient } from './infrastructure/redis/redisWorkerClient';
 import { prisma } from './infrastructure/db/prisma';
 import { logger } from './infrastructure/logger';
+
+export const telegramLinkGateway = new TelegramLinkGateway({
+  prisma,
+  botToken: config.TELEGRAM_BOT_TOKEN,
+});
 
 let isShuttingDown = false;
 
@@ -46,6 +52,7 @@ export const gracefulShutdown = async (signal: string) => {
       departmentsWorker.close(),
       citiesWorker.close(),
       entitiesWorker.close(),
+      telegramLinkGateway.stop(),
     ]);
     logger.info('BullMQ workers closed.');
 
@@ -85,3 +92,6 @@ setupRecurringJobs().catch((err) => {
   logger.error('Failed to setup recurring jobs', { error: err.message });
   process.exit(1);
 });
+
+telegramLinkGateway.start();
+logger.info('Telegram link gateway started (long polling)');
