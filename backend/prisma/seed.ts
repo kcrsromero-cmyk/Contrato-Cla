@@ -8,6 +8,7 @@ async function main() {
   // 1. Create Capabilities
   const capabilities = [
     { name: 'USE_FAVORITES', description: 'Permite agregar y ver contratos favoritos' },
+    { name: 'USE_ANALYTICS', description: 'Permite acceder a los tableros y consultas de analítica' },
     { name: 'VIEW_SIMILARITY_ANALYSIS', description: 'Permite ver análisis de similitud entre contratos' }
   ];
 
@@ -40,6 +41,7 @@ async function main() {
   // Fetch capabilities
   const useFavorites = await prisma.capability.findUnique({ where: { name: 'USE_FAVORITES' } });
   const viewSimilarity = await prisma.capability.findUnique({ where: { name: 'VIEW_SIMILARITY_ANALYSIS' } });
+  const useAnalytics = await prisma.capability.findUnique({ where: { name: 'USE_ANALYTICS' } });
 
   // Fetch plans
   const starter = await prisma.plan.findUnique({ where: { name: 'STARTER' } });
@@ -53,9 +55,11 @@ async function main() {
 
   if (profesional && useFavorites) planCapabilities.push({ planId: profesional.id, capabilityId: useFavorites.id });
   if (profesional && viewSimilarity) planCapabilities.push({ planId: profesional.id, capabilityId: viewSimilarity.id });
+  if (profesional && useAnalytics) planCapabilities.push({ planId: profesional.id, capabilityId: useAnalytics.id });
 
   if (enterprise && useFavorites) planCapabilities.push({ planId: enterprise.id, capabilityId: useFavorites.id });
   if (enterprise && viewSimilarity) planCapabilities.push({ planId: enterprise.id, capabilityId: viewSimilarity.id });
+  if (enterprise && useAnalytics) planCapabilities.push({ planId: enterprise.id, capabilityId: useAnalytics.id });
 
   for (const pc of planCapabilities) {
     await prisma.planCapability.upsert({

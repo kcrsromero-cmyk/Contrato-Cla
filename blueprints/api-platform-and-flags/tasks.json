@@ -90,7 +90,7 @@
       "backend/prisma/seed.ts",
       "backend/src/__tests__/seed.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T4",
