@@ -31,7 +31,7 @@
       "backend/src/__tests__/apiRoutes.test.ts",
       "backend/src/modules/notifications/__tests__/NotificationsEnv.test.ts"
     ],
-    "status": "in_progress"
+    "status": "done"
   },
   {
     "id": "E1-T2",

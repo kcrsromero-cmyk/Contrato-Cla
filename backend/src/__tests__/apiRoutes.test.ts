@@ -9,6 +9,8 @@ process.env.FRONTEND_URL = 'http://localhost:3000';
 process.env.SOCRATA_APP_TOKEN = 'test';
 process.env.SOCRATA_DATASET_URL = 'http://localhost';
 process.env.NODE_ENV = 'test';
+process.env.TELEGRAM_BOT_TOKEN = 'test';
+process.env.APPRISE_URL = 'http://localhost:8008';
 
 import request from 'supertest';
 import app from '../server';
