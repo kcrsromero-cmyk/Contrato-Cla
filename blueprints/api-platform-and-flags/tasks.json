@@ -375,7 +375,7 @@
       "backend/src/modules/identity/presentation/apiKeyAuth.ts",
       "backend/src/modules/identity/__tests__/authenticateApiKeyOrSession.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T3",
