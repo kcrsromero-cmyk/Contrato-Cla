@@ -428,7 +428,7 @@
       "backend/src/modules/identity/presentation/routes.ts",
       "backend/src/modules/identity/__tests__/ApiKeyRoutes.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T5",

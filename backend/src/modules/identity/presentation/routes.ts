@@ -13,6 +13,9 @@ import { FallbackRedisStore } from '../../../infrastructure/security/rateLimitSt
 import { redisAppClient } from '../../../infrastructure/redis/redisAppClient';
 import { validateRequest } from './ValidationMiddleware';
 import { RegisterSchema, LoginSchema, RefreshSchema, ResetPasswordSchema } from './AuthSchemas';
+import { ApiKeyController } from './ApiKeyController';
+import { createApiKeysRouter } from './apiKeyRoutes';
+import { apiKeyService } from './apiKeyAuth';
 
 // Initialize router
 const authRouter = Router();
@@ -67,5 +70,21 @@ authRouter.patch('/profile',
   currentUserResolver.resolve,
   (req, res) => authController.updateProfile(req, res)
 );
+
+// API key management — session JWT only; an API key can never mint, list or revoke keys.
+const apiKeysLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new FallbackRedisStore(redisAppClient, 'rl:api-keys:'),
+  message: { error: 'Demasiadas solicitudes de administración de claves de API. Intenta de nuevo en un minuto.' },
+});
+
+authRouter.use('/api-keys', createApiKeysRouter({
+  sessionHandlers: [authMiddleware.handle, currentUserResolver.resolve],
+  limiter: apiKeysLimiter,
+  controller: new ApiKeyController(apiKeyService),
+}));
 
 export { authRouter };
