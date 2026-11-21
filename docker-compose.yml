@@ -63,6 +63,7 @@ services:
       - PORT=4000
       - SOCRATA_APP_TOKEN=${SOCRATA_APP_TOKEN}
       - SOCRATA_DATASET_URL=${SOCRATA_DATASET_URL}
+      - APPRISE_URL=http://apprise:8000
     depends_on:
       db:
         condition: service_healthy
@@ -70,6 +71,8 @@ services:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
+      apprise:
+        condition: service_started
     restart: unless-stopped
 
   worker:
@@ -84,6 +87,7 @@ services:
       - LOG_LEVEL=info
       - SOCRATA_APP_TOKEN=${SOCRATA_APP_TOKEN}
       - SOCRATA_DATASET_URL=${SOCRATA_DATASET_URL}
+      - APPRISE_URL=http://apprise:8000
     depends_on:
       db:
         condition: service_healthy
@@ -91,6 +95,8 @@ services:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
+      apprise:
+        condition: service_started
     restart: unless-stopped
 
   frontend:
@@ -106,6 +112,50 @@ services:
       - "3000:3000"
     restart: unless-stopped
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: contrata360_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "127.0.0.1:5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: contrata360_redisinsight
+    ports:
+      - "127.0.0.1:5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  apprise:
+    image: caronc/apprise:latest
+    container_name: contrata360_apprise
+    environment:
+      APPRISE_CONFIG_DIR: /config
+    ports:
+      - "127.0.0.1:8008:8000"
+    volumes:
+      - apprise_data:/config
+      - apprise_attachments:/attach
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
+  pgadmin_data:
+  redisinsight_data:
+  apprise_data:
+  apprise_attachments:
