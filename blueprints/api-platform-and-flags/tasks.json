@@ -273,7 +273,7 @@
       "backend/src/modules/identity/application/ApiKeyService.ts",
       "backend/src/modules/identity/__tests__/ApiKeyService.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T5",
