@@ -248,7 +248,7 @@
       "backend/src/modules/identity/application/ApiKeyUserMapper.ts",
       "backend/src/modules/identity/__tests__/ApiKeyUserMapper.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T4",
