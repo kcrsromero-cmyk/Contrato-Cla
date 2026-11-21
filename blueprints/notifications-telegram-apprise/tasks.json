@@ -142,7 +142,7 @@
       "backend/src/modules/notifications/infrastructure/AppriseNotifier.ts",
       "backend/src/modules/notifications/__tests__/AppriseNotifier.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T1",
