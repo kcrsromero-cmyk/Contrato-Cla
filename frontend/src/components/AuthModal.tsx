@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, UserPlus, LogIn, Mail, Lock, User } from 'lucide-react';
-import { loginUser, registerUser } from '../services/api';
+import { X, UserPlus, LogIn, Mail, Lock, User, KeyRound, ArrowLeft } from 'lucide-react';
+import { loginUser, registerUser, resetPassword } from '../services/api';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [isLoginTab, setIsLoginTab] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,6 +26,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setSuccessMessage(null);
 
     try {
+      if (isForgotPassword) {
+        const data = await resetPassword({ email });
+        setSuccessMessage(data.message || 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.');
+        return;
+      }
+
       let data;
       if (isLoginTab) {
         data = await loginUser({ email, password });
@@ -50,6 +57,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
+  const backToLogin = () => {
+    setIsForgotPassword(false);
+    setError(null);
+    setSuccessMessage(null);
+  };
+
   return (
     <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md animate-fade-in">
       <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-scale-up">
@@ -63,44 +76,48 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
         <div className="p-8 pb-6 flex flex-col items-center border-b border-slate-100 dark:border-slate-800">
           <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 shadow-sm border border-indigo-100 dark:border-indigo-800/50">
-            <UserPlus className="w-7 h-7" />
+            {isForgotPassword ? <KeyRound className="w-7 h-7" /> : <UserPlus className="w-7 h-7" />}
           </div>
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-1">
-            Registro Ciudadano
+            {isForgotPassword ? 'Recuperar Contraseña' : 'Registro Ciudadano'}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 text-center max-w-xs">
-            Crea una cuenta para guardar tus consultas y auditorías
+            {isForgotPassword
+              ? 'Te enviaremos un enlace a tu correo para restablecerla'
+              : 'Crea una cuenta para guardar tus consultas y auditorías'}
           </p>
         </div>
 
-        <div className="flex border-b border-slate-100 dark:border-slate-800">
-          <button
-            className={`flex-1 py-3 text-sm font-bold transition-colors ${
-              isLoginTab
-                ? 'text-indigo-600 border-b-2 border-indigo-600'
-                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-            }`}
-            onClick={() => {
-              setIsLoginTab(true);
-              setError(null);
-            }}
-          >
-            Iniciar Sesión
-          </button>
-          <button
-            className={`flex-1 py-3 text-sm font-bold transition-colors ${
-              !isLoginTab
-                ? 'text-indigo-600 border-b-2 border-indigo-600'
-                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-            }`}
-            onClick={() => {
-              setIsLoginTab(false);
-              setError(null);
-            }}
-          >
-            Crear Cuenta
-          </button>
-        </div>
+        {!isForgotPassword && (
+          <div className="flex border-b border-slate-100 dark:border-slate-800">
+            <button
+              className={`flex-1 py-3 text-sm font-bold transition-colors ${
+                isLoginTab
+                  ? 'text-indigo-600 border-b-2 border-indigo-600'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+              onClick={() => {
+                setIsLoginTab(true);
+                setError(null);
+              }}
+            >
+              Iniciar Sesión
+            </button>
+            <button
+              className={`flex-1 py-3 text-sm font-bold transition-colors ${
+                !isLoginTab
+                  ? 'text-indigo-600 border-b-2 border-indigo-600'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+              onClick={() => {
+                setIsLoginTab(false);
+                setError(null);
+              }}
+            >
+              Crear Cuenta
+            </button>
+          </div>
+        )}
 
         <div className="p-8 space-y-5">
           {error && (
@@ -115,7 +132,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLoginTab && (
+            {!isForgotPassword && !isLoginTab && (
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
                   Nombre Completo
@@ -155,24 +172,42 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
-                Contraseña
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="w-4 h-4 text-slate-400" />
+            {!isForgotPassword && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white placeholder-slate-400"
+                  />
                 </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white placeholder-slate-400"
-                />
               </div>
-            </div>
+            )}
+
+            {isLoginTab && !isForgotPassword && (
+              <div className="flex justify-end -mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(true);
+                    setError(null);
+                    setSuccessMessage(null);
+                  }}
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -181,6 +216,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             >
               {loading ? (
                 'Procesando...'
+              ) : isForgotPassword ? (
+                <>Enviar enlace <KeyRound className="w-4 h-4" /></>
               ) : isLoginTab ? (
                 <>Iniciar Sesión <LogIn className="w-4 h-4" /></>
               ) : (
@@ -189,13 +226,23 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </button>
           </form>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-semibold text-sm transition-all border border-slate-200 dark:border-slate-700 mt-3"
-          >
-            Continuar sin iniciar sesión
-          </button>
+          {isForgotPassword ? (
+            <button
+              type="button"
+              onClick={backToLogin}
+              className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-semibold text-sm transition-all border border-slate-200 dark:border-slate-700 mt-3 flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" /> Volver a iniciar sesión
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-semibold text-sm transition-all border border-slate-200 dark:border-slate-700 mt-3"
+            >
+              Continuar sin iniciar sesión
+            </button>
+          )}
         </div>
 
         <div className="bg-slate-50 dark:bg-slate-900/50 py-3 text-center border-t border-slate-100 dark:border-slate-800">

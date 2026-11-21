@@ -1,4 +1,8 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// Relative by default: the frontend's own nginx proxies /api/ to the backend
+// over the internal Docker network, so the same build works regardless of
+// which host/IP the client used to reach it. Set VITE_API_URL only when the
+// backend is reachable at a different, absolute origin.
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 // Append /api/v1 to ensure all requests hit the correctly prefixed API routes
 const API_URL = BASE_URL.endsWith('/api/v1') ? BASE_URL : `${BASE_URL}/api/v1`;
 
@@ -42,6 +46,22 @@ export const loginUser = async (data: { email: string; password: string }) => {
       if (messages.length > 0) throw new Error(messages.join(' | '));
     }
     throw new Error(errorData.error || 'Failed to login');
+  }
+  return res.json();
+};
+
+export const resetPassword = async (data: { email: string }) => {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    if (res.status === 429) {
+      throw new Error('Too many requests, please try again later');
+    }
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to request password reset');
   }
   return res.json();
 };
