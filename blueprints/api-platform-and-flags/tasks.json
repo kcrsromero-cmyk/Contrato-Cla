@@ -347,7 +347,7 @@
       "backend/src/modules/identity/presentation/apiKeyRateLimiter.ts",
       "backend/src/modules/identity/__tests__/apiKeyRateLimiter.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T2",
