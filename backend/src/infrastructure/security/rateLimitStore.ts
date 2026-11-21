@@ -1,4 +1,4 @@
-import { RedisStore } from 'rate-limit-redis';
+import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import { MemoryStore, Store } from 'express-rate-limit';
 import { logger } from '../logger';
 import Redis from 'ioredis';
@@ -31,9 +31,9 @@ export class FallbackRedisStore implements Store {
     this.redisClient = client;
     this.memoryStore = new MemoryStore();
     this.redisStore = new RedisStore({
-      sendCommand: async (...args: string[]) => {
-          return await client.call(args[0], ...args.slice(1));
-      },
+    sendCommand: async (...args: string[]): Promise<RedisReply> => {
+        return (await client.call(args[0], ...args.slice(1))) as RedisReply;
+    },
       prefix: prefix
     });
   }
