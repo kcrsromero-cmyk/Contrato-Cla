@@ -222,7 +222,7 @@
       "backend/src/modules/identity/domain/errors.ts",
       "backend/src/modules/identity/__tests__/ApiKey.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T3",
