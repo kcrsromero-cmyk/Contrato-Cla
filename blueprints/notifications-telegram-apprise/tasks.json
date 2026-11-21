@@ -90,7 +90,7 @@
       "backend/prisma/schema.prisma",
       "backend/prisma/migrations/20261120000000_add_telegram_notification_fields/migration.sql"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T4",

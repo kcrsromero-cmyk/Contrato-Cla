@@ -27,6 +27,9 @@ model User {
   name             String?
   phone            String?
   telegramUsername String?  @map("telegram_username")
+  telegramChatId            String?   @map("telegram_chat_id")
+  telegramLinkCode          String?   @unique @map("telegram_link_code")
+  telegramLinkCodeExpiresAt DateTime? @map("telegram_link_code_expires_at")
   organizationId   String?  @map("organization_id") @db.Uuid
   roles            String[] @default(["USER"]) // PostgreSQL supports arrays
   notifyEmail      Boolean  @default(false) @map("notify_email")
