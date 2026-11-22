@@ -18,6 +18,18 @@ export interface ApiKeyRequestContext {
   apiRequestsPerMinute: number | null;
 }
 
+/**
+ * Set by `identifyApiKey` on `(req as any).apiKeyAuthStatus` so a route's own auth middleware
+ * never re-authenticates a key it (or the global pre-check) already resolved:
+ * - 'valid': `req.apiKey`/`req.user` are already populated.
+ * - 'invalid': the key doesn't exist, is revoked, or a repeat offender IP was fast-failed
+ *   without even querying Postgres this time.
+ * - 'forbidden': a real key, but the owner's plan lacks USE_API.
+ * - 'unavailable' (or unset): identifyApiKey couldn't determine an outcome (infra failure, the
+ *   feature flag was off, or it never ran) — the route's own middleware must check for itself.
+ */
+export type ApiKeyAuthStatus = 'valid' | 'invalid' | 'forbidden' | 'unavailable';
+
 /** One-way SHA-256 (lowercase hex). A 256-bit random key needs no slow password hash. */
 export function hashApiKey(plaintext: string): string {
   return createHash('sha256').update(plaintext, 'utf8').digest('hex');

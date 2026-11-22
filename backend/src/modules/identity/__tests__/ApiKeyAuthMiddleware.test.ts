@@ -35,6 +35,47 @@ describe('ApiKeyAuthMiddleware', () => {
     expect(apiKeys.authenticate).not.toHaveBeenCalled();
   });
 
+  it('responds 401 from apiKeyAuthStatus "invalid" without calling authenticate again', async () => {
+    req.apiKeyAuthStatus = 'invalid';
+    const middleware = new ApiKeyAuthMiddleware(apiKeys, isFeatureEnabled);
+
+    await middleware.handle(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'La clave de API es inválida o fue revocada.',
+      code: 'INVALID_API_KEY',
+    });
+    expect(isFeatureEnabled).not.toHaveBeenCalled();
+    expect(apiKeys.authenticate).not.toHaveBeenCalled();
+  });
+
+  it('responds 403 from apiKeyAuthStatus "forbidden" without calling authenticate again', async () => {
+    req.apiKeyAuthStatus = 'forbidden';
+    const middleware = new ApiKeyAuthMiddleware(apiKeys, isFeatureEnabled);
+
+    await middleware.handle(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Tu plan actual no incluye acceso por API.',
+      code: 'API_ACCESS_NOT_IN_PLAN',
+    });
+    expect(apiKeys.authenticate).not.toHaveBeenCalled();
+  });
+
+  it('falls through to a full check when apiKeyAuthStatus is "unavailable"', async () => {
+    req.apiKeyAuthStatus = 'unavailable';
+    apiKeys.authenticate.mockRejectedValue(new ApiKeyAuthenticationError());
+    const middleware = new ApiKeyAuthMiddleware(apiKeys, isFeatureEnabled);
+
+    await middleware.handle(req, res, next);
+
+    expect(isFeatureEnabled).toHaveBeenCalled();
+    expect(apiKeys.authenticate).toHaveBeenCalledWith(KEY);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
   it('responds 503 and does not authenticate when API_ACCESS is disabled', async () => {
     isFeatureEnabled.mockResolvedValue(false);
     const middleware = new ApiKeyAuthMiddleware(apiKeys, isFeatureEnabled);

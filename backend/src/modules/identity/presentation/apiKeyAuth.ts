@@ -3,6 +3,7 @@ import { logger } from '../../../infrastructure/logger';
 import { prisma } from '../../../infrastructure/db/prisma';
 import { redisAppClient } from '../../../infrastructure/redis/redisAppClient';
 import { FallbackRedisStore } from '../../../infrastructure/security/rateLimitStore';
+import { RedisCacheAdapter } from '../../../infrastructure/redis/RedisCacheAdapter';
 import { checkFeatureEnabled } from '../../platform/presentation/requireFeatureEnabled';
 import { FEATURE_FLAGS } from '../../platform/domain/featureFlags';
 import { ApiKeyService } from '../application/ApiKeyService';
@@ -16,22 +17,39 @@ export const apiKeyService = new ApiKeyService(prisma);
 
 const apiKeyAuthMiddleware = new ApiKeyAuthMiddleware(apiKeyService, checkFeatureEnabled);
 const apiKeyRateLimiter = createApiKeyRateLimiter(new FallbackRedisStore(redisAppClient, 'rl:apikey:'));
+const authFailureCache = new RedisCacheAdapter();
+
+const AUTH_FAILURE_WINDOW_SECONDS = 60;
+// Past this many invalid-key attempts from one IP inside the window, stop querying Postgres
+// for that IP entirely until the window rolls over. Never incremented by a successful or
+// plan-ineligible authentication, so a legitimate customer's own volume can never trip it.
+const MAX_AUTH_FAILURES_PER_IP = 20;
 
 /**
  * Mounted once, globally, before the global rate limiter and before any router. Authenticates
- * an `Authorization: Bearer ctr360_…` request exactly once per request — every downstream
- * middleware (the global limiter's `skip`, `ApiKeyAuthMiddleware.handle`, the per-route
- * identity-aware limiters) reads `req.apiKey`/`req.user` instead of re-querying Postgres.
+ * an `Authorization: Bearer ctr360_…` request exactly once per request, setting
+ * `req.apiKeyAuthStatus` ('valid' | 'invalid' | 'forbidden' | 'unavailable') alongside
+ * `req.apiKey`/`req.user` on success — every downstream middleware (the global limiter's
+ * `skip`, `ApiKeyAuthMiddleware.handle`, the per-route identity-aware limiters) reads that
+ * instead of re-querying Postgres, even for an invalid key.
  * Never rejects and never throws: the whole body is one try/catch, because an uncaught
  * rejection in an async Express 4 middleware never reaches the error handler — it just hangs
- * the request. A missing or invalid key, OR an infrastructure failure (Postgres/Redis down),
- * leaves `req.apiKey` unset and falls through to `next()`; a route that requires a key rejects
- * it itself, and the global limiter falls back to the IP bucket instead of granting a free pass.
+ * the request. A missing, invalid or unresolved key leaves `req.apiKey` unset and falls
+ * through to `next()`; a route that requires a key rejects it itself, and the global limiter
+ * falls back to the IP bucket instead of granting a free pass.
  */
 export const identifyApiKey: RequestHandler = async (req, _res, next) => {
   try {
     if (!isApiKeyAuthorization(req.headers.authorization)) return next();
     if (!(await checkFeatureEnabled(FEATURE_FLAGS.API_ACCESS))) return next();
+
+    const failuresKey = `apikey:auth-failures:${req.ip ?? 'unknown'}`;
+    const recentFailures = Number((await authFailureCache.get(failuresKey)) ?? 0);
+    if (recentFailures >= MAX_AUTH_FAILURES_PER_IP) {
+      // This IP has already shown a pattern of invalid keys — deny without touching Postgres.
+      (req as any).apiKeyAuthStatus = 'invalid';
+      return next();
+    }
 
     const token = extractBearerToken(req.headers.authorization) as string;
     const result = await apiKeyService.authenticate(token);
@@ -39,6 +57,7 @@ export const identifyApiKey: RequestHandler = async (req, _res, next) => {
 
     (req as any).user = result.user;
     (req as any).apiKey = apiKey;
+    (req as any).apiKeyAuthStatus = 'valid';
 
     apiKeyService.recordUsage(result.apiKeyId).catch((error: unknown) => {
       logger.warn('API key usage timestamp update failed', {
@@ -47,7 +66,15 @@ export const identifyApiKey: RequestHandler = async (req, _res, next) => {
       });
     });
   } catch (error) {
-    if (!(error instanceof ApiKeyAuthenticationError) && !(error instanceof ApiAccessNotAllowedError)) {
+    if (error instanceof ApiKeyAuthenticationError) {
+      (req as any).apiKeyAuthStatus = 'invalid';
+      const failuresKey = `apikey:auth-failures:${req.ip ?? 'unknown'}`;
+      authFailureCache.increment(failuresKey, AUTH_FAILURE_WINDOW_SECONDS).catch(() => undefined);
+    } else if (error instanceof ApiAccessNotAllowedError) {
+      // A real key, just not on a plan with USE_API — never counted as a failed attempt.
+      (req as any).apiKeyAuthStatus = 'forbidden';
+    } else {
+      (req as any).apiKeyAuthStatus = 'unavailable';
       logger.error('identifyApiKey failed unexpectedly; continuing without an identity', {
         error: error instanceof Error ? error.message : String(error),
       });

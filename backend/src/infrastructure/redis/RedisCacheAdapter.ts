@@ -30,6 +30,15 @@ export class RedisCacheAdapter {
     await this.redis.del(key);
   }
 
+  /** Atomic `INCR`, setting the TTL only on the first hit so the counter window stays fixed. */
+  async increment(key: string, ttlSeconds: number): Promise<number> {
+    const count = await this.redis.incr(key);
+    if (count === 1) {
+      await this.redis.expire(key, ttlSeconds);
+    }
+    return count;
+  }
+
   async ping(): Promise<string> {
     return this.redis.ping();
   }

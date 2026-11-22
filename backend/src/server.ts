@@ -39,16 +39,17 @@ const API_PREFIX = '/api/v1';
 app.get('/health/live', healthCheckHandler);
 app.get('/health/ready', healthCheckHandler);
 
-// Limita, por IP, cuántos intentos de autenticación de API key puede haber por minuto —
-// ANTES de que identifyApiKey consulte Postgres. Sin esto, alguien puede enviar un torrente de
-// tokens `ctr360_...` fabricados y el límite global (más adelante, y que de todos modos exime
-// a las claves válidas) nunca alcanza a frenar la carga sobre la autenticación. Solo cuenta
-// solicitudes con forma de clave de API — una sesión normal nunca pasa por aquí. El tope es
-// generoso a propósito: protege contra un diluvio, no contra el tráfico legítimo de una
-// oficina o NAT compartido con varias claves reales detrás.
+// Freno de último recurso, por IP, contra un diluvio de solicitudes con forma de clave de API
+// — ANTES de que identifyApiKey consulte Postgres. No distingue válidas de inválidas (eso ya
+// lo hace identifyApiKey, que además deja de consultar Postgres por sí solo para una IP con
+// muchos intentos inválidos recientes — ver AUTH_FAILURE_WINDOW_SECONDS en apiKeyAuth.ts), así
+// que el techo tiene que quedar muy por encima de cualquier plan real (ENTERPRISE llega a
+// 600/min) para no bloquear jamás a un cliente legítimo que paga por más consumo — ese es
+// exactamente el error que cometimos la primera vez con esto. Una sesión normal nunca pasa por
+// aquí (el `skip` solo cuenta tokens con forma de clave de API).
 const apiKeyAuthAttemptLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 200,
+  max: 3000,
   standardHeaders: true,
   legacyHeaders: false,
   store: new FallbackRedisStore(redisAppClient, 'rl:apikey-auth-attempt:'),
@@ -96,12 +97,18 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Observability: same as morgan's 'combined' format, but logging the path without its query
-// string — the stock :url token is req.originalUrl, which can carry personal documents or
-// other sensitive identifiers (e.g. ?codigoEntidad=...).
-morgan.token('safe-url', (req) => (req as express.Request).path);
+// Observability: a trimmed-down 'combined' format. :safe-url logs the matched route's
+// TEMPLATE ("/persons/:documentNumber"), not req.path or req.originalUrl — either of those
+// would still bake a resolved path param (a real document number) or a query string (personal
+// documents, search terms) straight into the logs. Falls back to req.path only for an
+// unmatched (404) request. :referrer is dropped entirely: it's the caller's own Referer
+// header, verbatim and unsanitized, and this API has no use for it.
+morgan.token('safe-url', (req) => {
+  const r = req as any;
+  return r.route ? `${r.baseUrl}${r.route.path}` : r.path;
+});
 app.use(morgan(
-  ':remote-addr - :remote-user [:date[clf]] ":method :safe-url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"',
+  ':remote-addr - :remote-user [:date[clf]] ":method :safe-url HTTP/:http-version" :status :res[content-length] ":user-agent"',
   {
     stream: {
       write: (message: string) => {
