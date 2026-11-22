@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { PersonActivity } from '../domain/types';
+import { normalizeDocumentNumber } from '../../../utils/documentNormalizer';
 
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -12,10 +13,11 @@ export class AnalyticsService {
     });
   }
 
-  // 2.
+  // 2. Accepts the document with or without dots/hyphens — persisted rows are keyed by the
+  // normalized form, so a caller pasting "17.651.267" still finds "17651267".
   async getPersonActivity(documentNumber: string): Promise<PersonActivity | null> {
     const person = await this.prisma.person.findFirst({
-      where: { documentNumber },
+      where: { documentNumber: normalizeDocumentNumber(documentNumber) },
       include: {
         contractsAsSupplier: true,
         contractsAsSupervisor: true,
@@ -42,9 +44,9 @@ export class AnalyticsService {
     const entities = new Set(uniqueContracts.map(c => c.entityCode)).size;
     const departments = new Set(uniqueContracts.map(c => c.department).filter(Boolean)).size;
 
-    const maskedDoc = documentNumber.length > 4
-      ? '*'.repeat(documentNumber.length - 4) + documentNumber.slice(-4)
-      : documentNumber;
+    const maskedDoc = person.documentNumber.length > 4
+      ? '*'.repeat(person.documentNumber.length - 4) + person.documentNumber.slice(-4)
+      : person.documentNumber;
 
     return {
       documentType: person.documentType,

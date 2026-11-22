@@ -16,6 +16,16 @@ export function normalizeDocumentType(raw: string | null | undefined): DocumentT
   return 'UNKNOWN';
 }
 
+/**
+ * Strips formatting (dots, hyphens, spaces) so the same real document never fragments the
+ * `Person` row by punctuation alone — SECOP sends the same NIT/CC both as "900540947-1" and
+ * "9005409471", or "17.651.267" and "17651267", across different contract records. Keeps
+ * letters too (not just digits): PA/CE documents can be alphanumeric.
+ */
+export function normalizeDocumentNumber(raw: string): string {
+  return raw.replace(/[^a-zA-Z0-9]/g, '');
+}
+
 export function isNaturalPerson(documentType: DocumentType): boolean {
   return documentType !== 'NIT';
 }

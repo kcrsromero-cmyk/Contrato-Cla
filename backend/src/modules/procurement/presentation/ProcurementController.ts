@@ -17,10 +17,17 @@ const dateString = (field: string) =>
     .regex(/^\d{4}-\d{2}-\d{2}$/, `${field} debe tener el formato AAAA-MM-DD`)
     .refine(isRealCalendarDate, `${field} no es una fecha calendario válida`);
 
+const MAX_PAGE_SIZE = 500;
+
 const filterSchema = z.object({
   codigoEntidad: z.string().min(1).max(50),
   fechaDesde: dateString('fechaDesde'),
   fechaHasta: dateString('fechaHasta'),
+  // Opcionales y sin valor por defecto a propósito: si el caller no los manda (el caso de
+  // nuestro propio frontend hoy), la respuesta sigue siendo el arreglo completo, sin cambios.
+  // Solo un caller externo (Power BI, un futuro MCP) que sí los mande recibe una página.
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
 }).refine((data) => data.fechaDesde <= data.fechaHasta, {
   message: 'fechaDesde debe ser anterior o igual a fechaHasta',
   path: ['fechaHasta'],
@@ -97,9 +104,16 @@ export class ProcurementController {
 
   async getContracts(req: Request, res: Response) {
     try {
-      const filters = filterSchema.parse(req.query);
+      const { limit, offset, ...filters } = filterSchema.parse(req.query);
       const contracts = await this.procurementService.getContracts(filters);
-      res.json(contracts);
+
+      if (limit === undefined) {
+        return res.json(contracts);
+      }
+
+      const start = offset ?? 0;
+      res.set('X-Total-Count', String(contracts.length));
+      res.json(contracts.slice(start, start + limit));
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.format() });

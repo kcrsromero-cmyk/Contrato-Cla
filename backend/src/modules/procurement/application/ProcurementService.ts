@@ -4,7 +4,7 @@ import { SimilarityDomainService, SimilarObjectGroup } from '../domain/Similarit
 import { RedisCacheAdapter } from '../../../infrastructure/redis/RedisCacheAdapter';
 import { prisma } from '../../../infrastructure/db/prisma';
 import { logger } from '../../../infrastructure/logger';
-import { normalizeDocumentType, maskDocument } from '../../../utils/documentNormalizer';
+import { normalizeDocumentType, normalizeDocumentNumber, maskDocument } from '../../../utils/documentNormalizer';
 
 const TTL_MONTHLY = 60 * 60 * 24 * 30;    // 30 days - departments, cities (monthly-departments cron)
 const TTL_WEEKLY = 60 * 60 * 24 * 7;      // 7 days - entities (weekly-entities cron) and contract years (no cron)
@@ -329,25 +329,25 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
     const [supplierPerson, supervisorPerson, legalRepPerson] = await Promise.all([
       contractData.supplierDocument && contractData.supplierDocumentType
         ? prisma.person.upsert({
-            where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: contractData.supplierDocument.trim() } },
+            where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: normalizeDocumentNumber(contractData.supplierDocument) } },
             update: { name: contractData.supplierName ?? undefined },
-            create: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: contractData.supplierDocument.trim(), name: contractData.supplierName ?? undefined }
+            create: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: normalizeDocumentNumber(contractData.supplierDocument), name: contractData.supplierName ?? undefined }
           })
         : Promise.resolve(null),
 
       contractData.supervisorDocument && contractData.supervisorDocumentType
         ? prisma.person.upsert({
-            where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: contractData.supervisorDocument.trim() } },
+            where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: normalizeDocumentNumber(contractData.supervisorDocument) } },
             update: { name: contractData.supervisorName ?? undefined },
-            create: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: contractData.supervisorDocument.trim(), name: contractData.supervisorName ?? undefined }
+            create: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: normalizeDocumentNumber(contractData.supervisorDocument), name: contractData.supervisorName ?? undefined }
           })
         : Promise.resolve(null),
 
       contractData.legalRepDocument && contractData.legalRepDocumentType
         ? prisma.person.upsert({
-            where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: contractData.legalRepDocument.trim() } },
+            where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: normalizeDocumentNumber(contractData.legalRepDocument) } },
             update: { name: contractData.legalRepName ?? undefined },
-            create: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: contractData.legalRepDocument.trim(), name: contractData.legalRepName ?? undefined }
+            create: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: normalizeDocumentNumber(contractData.legalRepDocument), name: contractData.legalRepName ?? undefined }
           })
         : Promise.resolve(null),
     ]);

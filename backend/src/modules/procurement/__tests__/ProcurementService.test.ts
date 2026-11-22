@@ -100,4 +100,24 @@ describe('ProcurementService.getContracts', () => {
     expect(result.supplierDocumentDisplay).toBe('12345****');
     expect(result.supervisorDocumentDisplay).toBe('98765****');
   });
+
+  it('persists the person with the document stripped of dots/hyphens, so formatting alone never splits one contractist into two rows', async () => {
+    const { prisma } = await import('../../../infrastructure/db/prisma');
+    const rawContract = {
+      id: 'c1',
+      contractId: 'CO-1',
+      entityCode: 'E1',
+      supplierDocument: '900.540.947-1',
+      supplierDocumentType: 'NIT',
+    };
+    const service = new ProcurementService(buildProvider([rawContract]));
+
+    await service.getContracts({ codigoEntidad: 'E1', fechaDesde: '2026-01-01', fechaHasta: '2026-01-31' });
+
+    expect(prisma.person.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { documentType_documentNumber: { documentType: 'NIT', documentNumber: '9005409471' } },
+      }),
+    );
+  });
 });
