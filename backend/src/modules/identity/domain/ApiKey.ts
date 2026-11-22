@@ -1,9 +1,9 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-export const API_KEY_PREFIX = 'ck_live_';
+export const API_KEY_PREFIX = 'ctr360_';
 export const API_KEY_RANDOM_BYTES = 32;
 export const API_KEY_DISPLAY_PREFIX_LENGTH = 12;
-export const API_KEY_PATTERN = /^ck_live_[A-Za-z0-9_-]{43}$/;
+export const API_KEY_PATTERN = /^ctr360_[A-Za-z0-9_-]{43}$/;
 
 export interface GeneratedApiKey {
   plaintext: string;

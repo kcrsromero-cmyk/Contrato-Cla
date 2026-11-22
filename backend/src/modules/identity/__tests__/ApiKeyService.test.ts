@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { ApiKeyService } from '../application/ApiKeyService';
 import { ApiAccessNotAllowedError, ApiKeyAuthenticationError } from '../domain/errors';
 
-const KEY = 'ck_live_' + 'A'.repeat(43);
+const KEY = 'ctr360_' + 'A'.repeat(43);
 const OWNER_ID = '00000000-0000-0000-0000-0000000000aa';
 const NOW = new Date('2026-12-01T00:00:00.000Z');
 
@@ -38,7 +38,7 @@ describe('ApiKeyService.authenticate', () => {
     const client = buildClient();
     const service = new ApiKeyService(client as any, () => NOW);
 
-    await expect(service.authenticate('ck_live_short')).rejects.toBeInstanceOf(ApiKeyAuthenticationError);
+    await expect(service.authenticate('ctr360_short')).rejects.toBeInstanceOf(ApiKeyAuthenticationError);
     expect(client.apiKey.findUnique).not.toHaveBeenCalled();
   });
 

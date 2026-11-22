@@ -13,8 +13,8 @@ describe('generateApiKey', () => {
     const { plaintext, keyPrefix, keyHash } = generateApiKey();
 
     expect(plaintext).toMatch(API_KEY_PATTERN);
-    expect(plaintext.startsWith('ck_live_')).toBe(true);
-    expect(plaintext).toHaveLength(51);
+    expect(plaintext.startsWith('ctr360_')).toBe(true);
+    expect(plaintext).toHaveLength(50);
     expect(keyPrefix).toBe(plaintext.slice(0, 12));
     expect(keyHash).toBe(createHash('sha256').update(plaintext).digest('hex'));
     expect(keyHash).toMatch(/^[0-9a-f]{64}$/);
@@ -31,14 +31,14 @@ describe('generateApiKey', () => {
 
 describe('isApiKeyAuthorization', () => {
   it('returns true for a well-formed Bearer api key', () => {
-    expect(isApiKeyAuthorization('Bearer ck_live_abc')).toBe(true);
+    expect(isApiKeyAuthorization('Bearer ctr360_abc')).toBe(true);
   });
 
   it.each([
     ['a JWT', 'Bearer eyJhbGciOiJIUzI1NiJ9.e30.sig'],
     ['a missing header', undefined],
-    ['a token without the Bearer prefix', 'ck_live_abc'],
-    ['a lowercase bearer prefix', 'bearer ck_live_abc'],
+    ['a token without the Bearer prefix', 'ctr360_abc'],
+    ['a lowercase bearer prefix', 'bearer ctr360_abc'],
     ['a Basic header', 'Basic Y2tfbGl2ZV8='],
   ])('returns false for %s', (_label, authorization) => {
     expect(isApiKeyAuthorization(authorization)).toBe(false);

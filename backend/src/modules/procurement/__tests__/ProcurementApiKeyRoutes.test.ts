@@ -136,7 +136,7 @@ describe('procurementRouter API key acceptance', () => {
 
     const res = await (request(app) as any)[method](`/api/v1/procurement${path}`).set(
       'Authorization',
-      'Bearer ' + 'ck_live_' + 'A'.repeat(43),
+      'Bearer ' + 'ctr360_' + 'A'.repeat(43),
     );
 
     expect(res.status).toBe(200);
@@ -162,7 +162,7 @@ describe('procurementRouter API key acceptance', () => {
 
     const res = await request(app)
       .get('/api/v1/procurement/favorites')
-      .set('Authorization', 'Bearer ' + 'ck_live_' + 'A'.repeat(43));
+      .set('Authorization', 'Bearer ' + 'ctr360_' + 'A'.repeat(43));
 
     expect(res.status).toBe(401);
     expect(res.body.code).toBe('INVALID_API_KEY');
@@ -175,7 +175,7 @@ describe('procurementRouter API key acceptance', () => {
 
     const keyRes = await request(app)
       .get('/api/v1/procurement/favorites')
-      .set('Authorization', 'Bearer ' + 'ck_live_' + 'A'.repeat(43));
+      .set('Authorization', 'Bearer ' + 'ctr360_' + 'A'.repeat(43));
     expect(keyRes.status).toBe(503);
     expect(keyRes.body.code).toBe('FEATURE_DISABLED');
 

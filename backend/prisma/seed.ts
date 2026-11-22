@@ -105,7 +105,7 @@ async function main() {
   const featureFlags = [
     { key: 'NOTIFICATIONS', description: 'Rutas /api/v1/notifications (Telegram)' },
     { key: 'ANALYTICS', description: 'Rutas /api/v1/analytics' },
-    { key: 'API_ACCESS', description: 'Autenticación con claves de API (Authorization: Bearer ck_live_)' },
+    { key: 'API_ACCESS', description: 'Autenticación con claves de API (Authorization: Bearer ctr360_)' },
   ];
 
   for (const flag of featureFlags) {

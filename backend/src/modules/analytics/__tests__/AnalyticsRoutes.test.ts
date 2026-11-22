@@ -187,7 +187,7 @@ describe('analyticsRouter', () => {
 
     const res = await request(app)
       .get(`/api/v1/analytics${route}`)
-      .set('Authorization', 'Bearer ' + 'ck_live_' + 'A'.repeat(43));
+      .set('Authorization', 'Bearer ' + 'ctr360_' + 'A'.repeat(43));
 
     expect(res.status).toBe(200);
     expect(res.body.userId).toBe('00000000-0000-0000-0000-0000000000aa');
@@ -199,7 +199,7 @@ describe('analyticsRouter', () => {
 
     const res = await request(app)
       .get('/api/v1/analytics/contracts/trends')
-      .set('Authorization', 'Bearer ' + 'ck_live_' + 'A'.repeat(43));
+      .set('Authorization', 'Bearer ' + 'ctr360_' + 'A'.repeat(43));
 
     expect(res.status).toBe(403);
     expect(res.body).toEqual({ error: 'Forbidden: Requires USE_ANALYTICS capability' });
@@ -211,7 +211,7 @@ describe('analyticsRouter', () => {
 
     const res = await request(app)
       .get('/api/v1/analytics/contracts/trends')
-      .set('Authorization', 'Bearer ' + 'ck_live_' + 'A'.repeat(43));
+      .set('Authorization', 'Bearer ' + 'ctr360_' + 'A'.repeat(43));
 
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('API_ACCESS_NOT_IN_PLAN');
@@ -224,7 +224,7 @@ describe('analyticsRouter', () => {
 
     const res = await request(app)
       .get('/api/v1/analytics/contracts/trends')
-      .set('Authorization', 'Bearer ' + 'ck_live_' + 'A'.repeat(43));
+      .set('Authorization', 'Bearer ' + 'ctr360_' + 'A'.repeat(43));
 
     expect(res.status).toBe(503);
     expect(res.body.code).toBe('FEATURE_DISABLED');
@@ -237,7 +237,7 @@ describe('analyticsRouter', () => {
 
     const keyRes = await request(app)
       .get('/api/v1/analytics/contracts/trends')
-      .set('Authorization', 'Bearer ' + 'ck_live_' + 'A'.repeat(43));
+      .set('Authorization', 'Bearer ' + 'ctr360_' + 'A'.repeat(43));
     expect(keyRes.status).toBe(503);
     expect(keyRes.body.code).toBe('FEATURE_DISABLED');
 

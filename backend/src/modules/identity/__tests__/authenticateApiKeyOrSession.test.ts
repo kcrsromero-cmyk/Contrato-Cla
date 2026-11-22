@@ -8,7 +8,7 @@ import {
   SESSION_REQUIRED_RESPONSE,
 } from '../presentation/authenticateApiKeyOrSession';
 
-const KEY = 'ck_live_' + 'A'.repeat(43);
+const KEY = 'ctr360_' + 'A'.repeat(43);
 
 vi.mock('../../../infrastructure/db/prisma', () => ({
   prisma: {
@@ -49,7 +49,7 @@ describe('runHandlers via createAuthenticateApiKeyOrSession', () => {
     };
   }
 
-  it('runs the API-key handlers in order for an Authorization: Bearer ck_live_… request', async () => {
+  it('runs the API-key handlers in order for an Authorization: Bearer ctr360_… request', async () => {
     const handler = createAuthenticateApiKeyOrSession({
       apiKeyHandlers: [spy('api-1'), spy('api-2')],
       sessionHandlers: [spy('session-1'), spy('session-2')],

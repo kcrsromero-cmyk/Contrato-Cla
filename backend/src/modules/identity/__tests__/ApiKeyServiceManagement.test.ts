@@ -69,7 +69,7 @@ describe('ApiKeyService.revoke', () => {
 
   it('revokes an active key, setting revokedAt to the clock time', async () => {
     const client = buildClient();
-    const existing = { id: 'key-1', name: 'CI', keyPrefix: 'ck_live_AAAA', createdAt: NOW, lastUsedAt: null, revokedAt: null };
+    const existing = { id: 'key-1', name: 'CI', keyPrefix: 'ctr360_AAAA', createdAt: NOW, lastUsedAt: null, revokedAt: null };
     const updated = { ...existing, revokedAt: NOW };
     client.apiKey.findFirst.mockResolvedValue(existing);
     client.apiKey.update.mockResolvedValue(updated);
@@ -90,7 +90,7 @@ describe('ApiKeyService.revoke', () => {
     const existing = {
       id: 'key-1',
       name: 'CI',
-      keyPrefix: 'ck_live_AAAA',
+      keyPrefix: 'ctr360_AAAA',
       createdAt: NOW,
       lastUsedAt: null,
       revokedAt: new Date('2026-11-30T00:00:00.000Z'),

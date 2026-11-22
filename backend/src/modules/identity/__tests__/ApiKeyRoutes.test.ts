@@ -56,7 +56,7 @@ vi.mock('../../../infrastructure/db/prisma', () => ({
         {
           id: '3f1c2a8e-5b7d-4c9e-9a1b-2d3e4f5a6b7c',
           name: 'ERP',
-          keyPrefix: 'ck_live_AbCd',
+          keyPrefix: 'ctr360_AbCd',
           createdAt: new Date('2026-12-01T00:00:00.000Z'),
           lastUsedAt: null,
           revokedAt: null,
@@ -81,7 +81,7 @@ import { prisma } from '../../../infrastructure/db/prisma';
 import { jwtValidator } from '../../../infrastructure/security/jwtValidator';
 
 const SESSION = 'Bearer test-token';
-const KEY = 'ck_live_' + 'A'.repeat(43);
+const KEY = 'ctr360_' + 'A'.repeat(43);
 
 describe('authRouter /api-keys', () => {
   beforeEach(() => {

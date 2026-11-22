@@ -6,7 +6,7 @@ vi.mock('../../../infrastructure/logger', () => ({ logger: { warn: vi.fn(), erro
 
 import { logger } from '../../../infrastructure/logger';
 
-const KEY = 'ck_live_' + 'A'.repeat(43);
+const KEY = 'ctr360_' + 'A'.repeat(43);
 
 describe('ApiKeyAuthMiddleware', () => {
   let apiKeys: any;

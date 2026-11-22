@@ -17,7 +17,7 @@ export class ApiKeyAuthMiddleware {
   ) {}
 
   /**
-   * Express middleware for `Authorization: Bearer ck_live_…` requests. Attaches the same
+   * Express middleware for `Authorization: Bearer ctr360_…` requests. Attaches the same
    * AuthenticatedUser shape CurrentUserResolver builds, plus `req.apiKey` for the per-key limiter.
    */
   handle = async (req: Request, res: Response, next: NextFunction) => {

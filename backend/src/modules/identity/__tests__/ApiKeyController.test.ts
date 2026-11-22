@@ -21,7 +21,7 @@ describe('ApiKeyController', () => {
   describe('create', () => {
     it('trims the name and responds 201 with the issued key', async () => {
       const controller = new ApiKeyController(manager);
-      const issued = { id: KEY_ID, name: 'ERP', keyPrefix: 'ck_live_AbCd', createdAt: new Date(), key: 'ck_live_x' };
+      const issued = { id: KEY_ID, name: 'ERP', keyPrefix: 'ctr360_AbCd', createdAt: new Date(), key: 'ctr360_x' };
       manager.issue.mockResolvedValue(issued);
       const req: any = { user: { id: 'user-1' }, body: { name: '  ERP  ' } };
 
@@ -47,7 +47,7 @@ describe('ApiKeyController', () => {
   describe('list', () => {
     it('responds 200 with the service summaries', async () => {
       const controller = new ApiKeyController(manager);
-      const summaries = [{ id: KEY_ID, name: 'ERP', keyPrefix: 'ck_live_AbCd', createdAt: new Date(), lastUsedAt: null, revokedAt: null }];
+      const summaries = [{ id: KEY_ID, name: 'ERP', keyPrefix: 'ctr360_AbCd', createdAt: new Date(), lastUsedAt: null, revokedAt: null }];
       manager.listForUser.mockResolvedValue(summaries);
       const req: any = { user: { id: 'user-1' } };
 

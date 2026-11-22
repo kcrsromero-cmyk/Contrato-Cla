@@ -35,7 +35,7 @@ export interface AuthenticateApiKeyOrSessionDeps {
 }
 
 /**
- * `Authorization: Bearer ck_live_…` → the API-key handlers; anything else → the session
+ * `Authorization: Bearer ctr360_…` → the API-key handlers; anything else → the session
  * handlers, unchanged (they keep answering exactly as before for a missing or invalid header).
  */
 export const createAuthenticateApiKeyOrSession = ({ apiKeyHandlers, sessionHandlers }: AuthenticateApiKeyOrSessionDeps): RequestHandler =>
