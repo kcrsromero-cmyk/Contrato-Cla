@@ -32,5 +32,10 @@ CMD ["node", "dist/worker.js"]
 FROM base AS migrator
 CMD ["sh", "scripts/migrate.sh"]
 
+# Built on `builder` (not `base`): the seed script is TypeScript run via tsx, a devDependency
+# the slim `base` stage never installs. One-shot, same as `migrator` — not meant to stay running.
+FROM builder AS seed
+CMD ["npx", "tsx", "prisma/seed.ts"]
+
 FROM base AS server
 CMD ["node", "dist/server.js"]
