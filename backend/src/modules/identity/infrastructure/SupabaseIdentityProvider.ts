@@ -61,14 +61,16 @@ export class SupabaseIdentityProvider implements IdentityProvider {
   }
 
   /**
-   * Revokes the session tied to this specific token via Supabase's REST API.
-   * Never uses `this.client.auth.signOut()`: that call acts on whatever session
-   * happens to be stored on the shared singleton client, which login/refresh
-   * calls from other concurrent requests keep overwriting — it can silently
-   * no-op or revoke an unrelated user's session.
+   * Revokes only the session tied to this specific token (`scope=local`) via Supabase's
+   * REST API. Never uses `this.client.auth.signOut()`: that call acts on whatever session
+   * happens to be stored on the shared singleton client, which login/refresh calls from
+   * other concurrent requests keep overwriting — it can silently no-op or revoke an
+   * unrelated user's session. `scope=global` would also be correct here, but it revokes
+   * every session the user has on every device, which this single "cerrar sesión" endpoint
+   * doesn't promise.
    */
   async logout(token: string): Promise<void> {
-    const response = await fetch(`${config.SUPABASE_URL}/auth/v1/logout?scope=global`, {
+    const response = await fetch(`${config.SUPABASE_URL}/auth/v1/logout?scope=local`, {
       method: 'POST',
       headers: {
         apikey: config.SUPABASE_PUBLISHABLE_KEY,

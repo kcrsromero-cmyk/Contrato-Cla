@@ -4,13 +4,23 @@ import { ApiKeyService } from '../application/ApiKeyService';
 import { API_KEY_PATTERN } from '../domain/ApiKey';
 import { ApiKeyLimitExceededError, ApiKeyNotFoundError } from '../domain/errors';
 
+vi.mock('../../../infrastructure/redis/RedisCacheAdapter', () => ({
+  RedisCacheAdapter: class {
+    async get() { return null; }
+    async set() {}
+  },
+}));
+
 const NOW = new Date('2026-12-01T00:00:00.000Z');
 
 function buildClient() {
-  return {
+  const client: any = {
     apiKey: { create: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn(), count: vi.fn() },
     plan: { findUnique: vi.fn() },
+    $executeRaw: vi.fn(),
   };
+  client.$transaction = vi.fn((callback: any) => callback(client));
+  return client;
 }
 
 describe('ApiKeyService.issue', () => {

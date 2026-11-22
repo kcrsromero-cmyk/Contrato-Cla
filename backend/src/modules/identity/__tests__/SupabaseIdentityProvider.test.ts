@@ -27,7 +27,7 @@ describe('SupabaseIdentityProvider', () => {
       await provider.logout('specific-user-token');
 
       const [url, init] = vi.mocked(fetch).mock.calls[0];
-      expect(String(url)).toBe('https://example.supabase.co/auth/v1/logout?scope=global');
+      expect(String(url)).toBe('https://example.supabase.co/auth/v1/logout?scope=local');
       expect(init?.headers).toMatchObject({
         apikey: 'TEST_ANON_KEY',
         Authorization: 'Bearer specific-user-token',

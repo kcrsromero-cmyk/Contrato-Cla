@@ -1,7 +1,16 @@
 import { createHash } from 'node:crypto';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ApiKeyService } from '../application/ApiKeyService';
 import { ApiAccessNotAllowedError, ApiKeyAuthenticationError } from '../domain/errors';
+
+const redisStore = vi.hoisted(() => ({ map: new Map<string, string>() }));
+
+vi.mock('../../../infrastructure/redis/RedisCacheAdapter', () => ({
+  RedisCacheAdapter: class {
+    async get(key: string) { return redisStore.map.get(key) ?? null; }
+    async set(key: string, value: string) { redisStore.map.set(key, value); }
+  },
+}));
 
 const KEY = 'ctr360_' + 'A'.repeat(43);
 const OWNER_ID = '00000000-0000-0000-0000-0000000000aa';
@@ -128,6 +137,10 @@ describe('ApiKeyService.authenticate', () => {
 });
 
 describe('ApiKeyService.recordUsage', () => {
+  beforeEach(() => {
+    redisStore.map.clear();
+  });
+
   it("updates the key's lastUsedAt to the injected clock's time", async () => {
     const client = buildClient();
     const service = new ApiKeyService(client as any, () => NOW);
@@ -135,5 +148,26 @@ describe('ApiKeyService.recordUsage', () => {
     await service.recordUsage('key-1');
 
     expect(client.apiKey.update).toHaveBeenCalledWith({ where: { id: 'key-1' }, data: { lastUsedAt: NOW } });
+  });
+
+  it('skips the write when called again within the throttle window', async () => {
+    const client = buildClient();
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await service.recordUsage('key-1');
+    client.apiKey.update.mockClear();
+    await service.recordUsage('key-1');
+
+    expect(client.apiKey.update).not.toHaveBeenCalled();
+  });
+
+  it('writes again for a different key id', async () => {
+    const client = buildClient();
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await service.recordUsage('key-1');
+    await service.recordUsage('key-2');
+
+    expect(client.apiKey.update).toHaveBeenCalledTimes(2);
   });
 });

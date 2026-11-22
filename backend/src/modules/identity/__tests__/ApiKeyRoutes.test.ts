@@ -21,8 +21,15 @@ vi.mock('../infrastructure/SupabaseIdentityProvider', () => ({
   },
 }));
 
-vi.mock('../../../infrastructure/db/prisma', () => ({
-  prisma: {
+vi.mock('../../../infrastructure/redis/RedisCacheAdapter', () => ({
+  RedisCacheAdapter: class {
+    async get() { return null; }
+    async set() {}
+  },
+}));
+
+vi.mock('../../../infrastructure/db/prisma', () => {
+  const prisma: any = {
     user: {
       upsert: vi.fn(async () => ({
         id: '00000000-0000-0000-0000-000000000001',
@@ -68,8 +75,11 @@ vi.mock('../../../infrastructure/db/prisma', () => ({
       findUnique: vi.fn(),
     },
     auditLog: { create: vi.fn(async () => ({})) },
-  },
-}));
+  };
+  prisma.$executeRaw = vi.fn();
+  prisma.$transaction = vi.fn((callback: any) => callback(prisma));
+  return { prisma };
+});
 
 vi.mock('../../../infrastructure/redis/redisAppClient', () => ({ redisAppClient: {} }));
 vi.mock('../../../infrastructure/security/rateLimitStore', () => ({ FallbackRedisStore: class {} }));

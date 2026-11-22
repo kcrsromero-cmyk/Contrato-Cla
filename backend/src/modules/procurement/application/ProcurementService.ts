@@ -282,9 +282,24 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
       await Promise.all(batch.map(contractData => this.persistContract(contractData)));
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(contracts), TTL_CONTRACTS);
+    const publicContracts = contracts.map(c => this.toPublicContract(c));
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(publicContracts), TTL_CONTRACTS);
 
-    return contracts;
+    return publicContracts;
+  }
+
+  /** Strips raw person documents before this contract reaches Redis or the HTTP response. */
+  private toPublicContract(c: Contract): Contract {
+    const { supplierDocument, supplierDocumentType, supervisorDocument, supervisorDocumentType, legalRepDocument, legalRepDocumentType, ...rest } = c;
+    return {
+      ...rest,
+      supplierDocumentDisplay: supplierDocument && supplierDocumentType
+        ? maskDocument(supplierDocument, normalizeDocumentType(supplierDocumentType))
+        : undefined,
+      supervisorDocumentDisplay: supervisorDocument && supervisorDocumentType
+        ? maskDocument(supervisorDocument, normalizeDocumentType(supervisorDocumentType))
+        : undefined,
+    };
   }
 
   private async persistContract(contractData: Contract): Promise<void> {
