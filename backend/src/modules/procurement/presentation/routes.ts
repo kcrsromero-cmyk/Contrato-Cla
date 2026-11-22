@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { ProcurementController } from './ProcurementController';
 import { ProcurementService } from '../application/ProcurementService';
 import { SocrataContractProvider } from '../infrastructure/SocrataContractProvider';
-import rateLimit from 'express-rate-limit';
 import { FallbackRedisStore } from '../../../infrastructure/security/rateLimitStore';
 import { redisAppClient } from '../../../infrastructure/redis/redisAppClient';
 // Import auth middlewares to protect routes
@@ -11,40 +10,14 @@ import { CurrentUserResolver } from '../../identity/presentation/CurrentUserReso
 import { IdentityService } from '../../identity/application/IdentityService';
 import { IdentityProviderRegistry } from '../../identity/infrastructure/IdentityProviderRegistry';
 import { jwtValidator } from '../../../infrastructure/security/jwtValidator';
-import { authenticateApiKeyOrSession } from '../../identity/presentation/apiKeyAuth';
+import { authenticateApiKeyOrSession, authenticateOptionally } from '../../identity/presentation/apiKeyAuth';
+import { createIdentityAwareLimiter } from '../../identity/presentation/identityAwareRateLimiter';
 
 const procurementRouter = Router();
 
 const socrataProvider = new SocrataContractProvider();
 const procurementService = new ProcurementService(socrataProvider);
 const procurementController = new ProcurementController(procurementService);
-
-const contractsLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: new FallbackRedisStore(redisAppClient, 'rl:contracts:'),
-  message: { error: 'Too many contract queries, please try again in a minute.' }
-});
-
-const searchEntitiesLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: new FallbackRedisStore(redisAppClient, 'rl:search:'),
-  message: { error: 'Too many search requests, please try again in a minute.' }
-});
-
-const yearsLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: new FallbackRedisStore(redisAppClient, 'rl:years:'),
-  message: { error: 'Too many requests, please try again in a minute.' }
-});
 
 // Setting up auth dependencies (simplified for route setup)
 const activeProvider = IdentityProviderRegistry.resolve();
@@ -53,14 +26,41 @@ const authMiddleware = new AuthMiddleware(jwtValidator);
 const currentUserResolver = new CurrentUserResolver(identityService);
 const authenticate = authenticateApiKeyOrSession([authMiddleware.handle, currentUserResolver.resolve]);
 
+// These stay public (no login required — it's open government data), but a caller who
+// identifies itself (API key or session) gets limited by that identity instead of its IP, so
+// one NAT'd or office-shared IP doesn't make every caller behind it share one bucket. An API
+// key is limited by its own plan rate (see identityAwareRateLimiter); the numbers below are the
+// session and anonymous tiers.
+const optionalAuth = authenticateOptionally([authMiddleware.handle, currentUserResolver.resolve]);
+
+const contractsLimiter = createIdentityAwareLimiter({
+  store: new FallbackRedisStore(redisAppClient, 'rl:contracts:'),
+  anonymousLimit: 30,
+  authenticatedLimit: 60,
+  message: 'Too many contract queries, please try again in a minute.',
+});
+
+const searchEntitiesLimiter = createIdentityAwareLimiter({
+  store: new FallbackRedisStore(redisAppClient, 'rl:search:'),
+  anonymousLimit: 60,
+  authenticatedLimit: 120,
+  message: 'Too many search requests, please try again in a minute.',
+});
+
+const yearsLimiter = createIdentityAwareLimiter({
+  store: new FallbackRedisStore(redisAppClient, 'rl:years:'),
+  anonymousLimit: 60,
+  authenticatedLimit: 120,
+  message: 'Too many requests, please try again in a minute.',
+});
 
 procurementRouter.get('/departments', (req, res) => procurementController.getDepartments(req, res));
 procurementRouter.get('/cities', (req, res) => procurementController.getCities(req, res));
 procurementRouter.get('/entities', (req, res) => procurementController.getEntities(req, res));
-procurementRouter.get('/entities/search', searchEntitiesLimiter, (req, res) => procurementController.searchEntities(req, res));
-procurementRouter.get('/years', yearsLimiter, (req, res) => procurementController.getContractYears(req, res));
+procurementRouter.get('/entities/search', optionalAuth, searchEntitiesLimiter, (req, res) => procurementController.searchEntities(req, res));
+procurementRouter.get('/years', optionalAuth, yearsLimiter, (req, res) => procurementController.getContractYears(req, res));
 
-procurementRouter.get('/contracts', contractsLimiter, (req, res) => procurementController.getContracts(req, res));
+procurementRouter.get('/contracts', optionalAuth, contractsLimiter, (req, res) => procurementController.getContracts(req, res));
 
 procurementRouter.get('/similarity',
   authenticate,

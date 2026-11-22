@@ -42,6 +42,20 @@ export const createAuthenticateApiKeyOrSession = ({ apiKeyHandlers, sessionHandl
   (req, res, next) =>
     runHandlers(isApiKeyAuthorization(req.headers.authorization) ? apiKeyHandlers : sessionHandlers, req, res, next);
 
+/**
+ * Same routing as `createAuthenticateApiKeyOrSession`, but a request with no `Authorization`
+ * header at all passes through anonymously instead of being rejected. A header that IS present
+ * still has to be valid — this never downgrades a bad credential to anonymous.
+ */
+export const createAuthenticateOptionally = ({ apiKeyHandlers, sessionHandlers }: AuthenticateApiKeyOrSessionDeps): RequestHandler =>
+  (req, res, next) => {
+    if (!req.headers.authorization) {
+      next();
+      return;
+    }
+    runHandlers(isApiKeyAuthorization(req.headers.authorization) ? apiKeyHandlers : sessionHandlers, req, res, next);
+  };
+
 /** First handler on key-management routes: an API key can never mint, list or revoke keys. */
 export const requireSessionAuth: RequestHandler = (req, res, next) => {
   if (isApiKeyAuthorization(req.headers.authorization)) {

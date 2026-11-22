@@ -6,7 +6,7 @@ import { checkFeatureEnabled } from '../../platform/presentation/requireFeatureE
 import { ApiKeyService } from '../application/ApiKeyService';
 import { ApiKeyAuthMiddleware } from './ApiKeyAuthMiddleware';
 import { createApiKeyRateLimiter } from './apiKeyRateLimiter';
-import { createAuthenticateApiKeyOrSession } from './authenticateApiKeyOrSession';
+import { createAuthenticateApiKeyOrSession, createAuthenticateOptionally } from './authenticateApiKeyOrSession';
 
 export const apiKeyService = new ApiKeyService(prisma);
 
@@ -20,5 +20,18 @@ const apiKeyRateLimiter = createApiKeyRateLimiter(new FallbackRedisStore(redisAp
 export const authenticateApiKeyOrSession = (sessionHandlers: RequestHandler[]): RequestHandler =>
   createAuthenticateApiKeyOrSession({
     apiKeyHandlers: [apiKeyAuthMiddleware.handle, apiKeyRateLimiter],
+    sessionHandlers,
+  });
+
+/**
+ * For public read routes machine clients also hit: no `Authorization` header still works
+ * (anonymous), but a key or session, if present, must be valid and populates `req.apiKey`/
+ * `req.user` so a downstream identity-aware rate limiter can key on it instead of the IP.
+ * Never attaches `apiKeyRateLimiter` here — the route's own limiter already reads
+ * `req.apiKey.apiRequestsPerMinute` and would otherwise double-limit the same request.
+ */
+export const authenticateOptionally = (sessionHandlers: RequestHandler[]): RequestHandler =>
+  createAuthenticateOptionally({
+    apiKeyHandlers: [apiKeyAuthMiddleware.handle],
     sessionHandlers,
   });

@@ -200,34 +200,38 @@ auditLogCleanupWorker.on('failed', (job, err) => {
 
 // ─── Crons y warmup ──────────────────────────────────────────────────────────
 
+// Todos los crons corren de madrugada hora Colombia (baja demanda de usuarios), escalonados
+// entre sí para no competir por la misma base de datos.
+const BOGOTA_TZ = 'America/Bogota';
+
 export const setupRecurringJobs = async () => {
   logger.info('Setting up recurring dataset import jobs (every 24h)');
 
-  // Dataset import — sin cambios
+  // Dataset import — 3:00 a.m.
   await datasetImportQueue.upsertJobScheduler(
     'daily-import',
-    { pattern: '0 0 * * *' },
+    { pattern: '0 3 * * *', tz: BOGOTA_TZ },
     { name: 'daily-import', data: {} }
   );
 
-  // Departamentos y ciudades: primer día de cada mes (casi nunca cambian)
+  // Departamentos y ciudades: primer día de cada mes, 3:00 a.m. (casi nunca cambian)
   await departmentsQueue.upsertJobScheduler(
     'monthly-departments',
-    { pattern: '0 0 1 * *' },
+    { pattern: '0 3 1 * *', tz: BOGOTA_TZ },
     { name: 'monthly-departments', data: {} }
   );
 
-  // Entidades: todos los domingos (pueden aparecer nuevas alcaldías o entidades)
+  // Entidades: todos los domingos, 3:00 a.m. (pueden aparecer nuevas alcaldías o entidades)
   await entitiesQueue.upsertJobScheduler(
     'weekly-entities',
-    { pattern: '0 0 * * 0' },
+    { pattern: '0 3 * * 0', tz: BOGOTA_TZ },
     { name: 'weekly-entities', data: {} }
   );
 
-  // Audit log cleanup — todos los días, purga filas de más de 90 días
+  // Audit log cleanup — todos los días 4:00 a.m., después de que el import nocturno termine
   await auditLogCleanupQueue.upsertJobScheduler(
     'daily-audit-log-cleanup',
-    { pattern: '0 1 * * *' },
+    { pattern: '0 4 * * *', tz: BOGOTA_TZ },
     { name: 'daily-audit-log-cleanup', data: {} }
   );
 

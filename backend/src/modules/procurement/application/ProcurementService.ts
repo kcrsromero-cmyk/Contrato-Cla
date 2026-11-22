@@ -6,8 +6,9 @@ import { prisma } from '../../../infrastructure/db/prisma';
 import { logger } from '../../../infrastructure/logger';
 import { normalizeDocumentType, maskDocument } from '../../../utils/documentNormalizer';
 
-const TTL_TERRITORIAL = 60 * 60 * 24 * 7; // 7 days - departments, cities, entities
-const TTL_CONTRACTS = 60 * 60 * 24;       // 24 hours - contracts and similarity
+const TTL_MONTHLY = 60 * 60 * 24 * 30;    // 30 days - departments, cities (monthly-departments cron)
+const TTL_WEEKLY = 60 * 60 * 24 * 7;      // 7 days - entities (weekly-entities cron) and contract years (no cron)
+const TTL_CONTRACTS = 60 * 60 * 24;       // 24 hours - contracts and similarity (daily-import cron)
 const CONTRACT_PERSIST_BATCH_SIZE = 20;   // upserts in parallel, not one contract at a time
 
 export class ProcurementService {
@@ -41,7 +42,7 @@ export class ProcurementService {
 
     if (dbDepartments.length > 0) {
       const names = dbDepartments.map(d => d.name);
-      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), TTL_TERRITORIAL);
+      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), TTL_MONTHLY);
       return names;
     }
 
@@ -56,7 +57,7 @@ export class ProcurementService {
       });
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(departments), TTL_TERRITORIAL);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(departments), TTL_MONTHLY);
     return departments;
   }
 
@@ -75,7 +76,7 @@ export class ProcurementService {
 
     if (dbCities.length > 0) {
       const names = dbCities.map(c => c.name);
-      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), TTL_TERRITORIAL);
+      await this.cacheAdapter.set(cacheKey, JSON.stringify(names), TTL_MONTHLY);
       return names;
     }
 
@@ -93,7 +94,7 @@ export class ProcurementService {
       }
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(cities), TTL_TERRITORIAL);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(cities), TTL_MONTHLY);
     return cities;
   }
 
@@ -117,7 +118,7 @@ export class ProcurementService {
         nit_entidad: e.nit,
         orden: e.order
       }));
-      await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), TTL_TERRITORIAL);
+      await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), TTL_WEEKLY);
       return entities;
     }
 
@@ -150,7 +151,7 @@ export class ProcurementService {
       }
     }
 
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), TTL_TERRITORIAL);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(entities), TTL_WEEKLY);
     return entities;
   }
 async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]> {
@@ -165,7 +166,7 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
     }
 
     const years = await this.provider.getContractYears(entityCode);
-    await this.cacheAdapter.set(cacheKey, JSON.stringify(years), TTL_TERRITORIAL);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(years), TTL_WEEKLY);
     return years;
   }
 
