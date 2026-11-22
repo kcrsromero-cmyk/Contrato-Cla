@@ -24,9 +24,17 @@ FROM nginx:alpine
 # Copy built assets to Nginx html folder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Custom config: serves the SPA and proxies /api/ to the backend service over
-# the internal Docker network, so the browser never needs a host-specific API URL.
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Custom config: serves the SPA and proxies /api/ to the backend over the internal Docker
+# network, so the browser never needs a host-specific API URL. Templated (not copied straight
+# to conf.d) so nginx's own entrypoint runs envsubst on it at container start, filling in
+# BACKEND_HOST/BACKEND_PORT — docker-compose's service name "backend" by default, but a
+# different value (e.g. another container's own address) wherever the services aren't on one
+# docker-compose network. NGINX_ENVSUBST_FILTER restricts substitution to just those two names,
+# so nginx's own runtime variables ($host, $remote_addr, etc.) are never touched.
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+ENV BACKEND_HOST=backend
+ENV BACKEND_PORT=4000
+ENV NGINX_ENVSUBST_FILTER=^BACKEND_
 
 EXPOSE 3000
 
