@@ -3,10 +3,33 @@ import { ProcurementService } from '../application/ProcurementService';
 import { z } from 'zod';
 import { prisma } from '../../../infrastructure/db/prisma';
 
+const MAX_DATE_RANGE_DAYS = 366; // un año de contratación — igual al rango que usa el propio import diario
+
+/** `Date` ya normaliza "2026-02-30" a marzo; esto rechaza esa fecha en vez de corregirla en silencio. */
+const isRealCalendarDate = (value: string): boolean => {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+};
+
+const dateString = (field: string) =>
+  z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, `${field} debe tener el formato AAAA-MM-DD`)
+    .refine(isRealCalendarDate, `${field} no es una fecha calendario válida`);
+
 const filterSchema = z.object({
   codigoEntidad: z.string().min(1).max(50),
-  fechaDesde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'fechaDesde must be YYYY-MM-DD'),
-  fechaHasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'fechaHasta must be YYYY-MM-DD'),
+  fechaDesde: dateString('fechaDesde'),
+  fechaHasta: dateString('fechaHasta'),
+}).refine((data) => data.fechaDesde <= data.fechaHasta, {
+  message: 'fechaDesde debe ser anterior o igual a fechaHasta',
+  path: ['fechaHasta'],
+}).refine((data) => {
+  const days = (new Date(`${data.fechaHasta}T00:00:00.000Z`).getTime() - new Date(`${data.fechaDesde}T00:00:00.000Z`).getTime()) / 86_400_000;
+  return days <= MAX_DATE_RANGE_DAYS;
+}, {
+  message: `El rango entre fechaDesde y fechaHasta no puede superar ${MAX_DATE_RANGE_DAYS} días`,
+  path: ['fechaHasta'],
 });
 
 const SIMILARITY_PREVIEW_PERCENTAGE = 0.10;

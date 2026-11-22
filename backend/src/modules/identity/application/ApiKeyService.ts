@@ -85,13 +85,23 @@ export class ApiKeyService {
     return { apiKeyId: apiKey.id, user, apiRequestsPerMinute };
   }
 
-  /** Writes `lastUsedAt` at most once per `USAGE_THROTTLE_SECONDS` per key, via a Redis gate. */
+  /**
+   * Writes `lastUsedAt` at most once per `USAGE_THROTTLE_SECONDS` per key. The Redis gate is
+   * acquired atomically (`SET NX EX`), so concurrent requests for the same key never both pass
+   * it; if the Postgres write then fails, the gate is released so the next request can retry
+   * instead of silently skipping writes for the rest of the window.
+   */
   async recordUsage(apiKeyId: string): Promise<void> {
     const throttleKey = `apikey:usage-throttle:${apiKeyId}`;
-    if (await this.cache.get(throttleKey)) return;
+    const acquired = await this.cache.setIfNotExists(throttleKey, '1', USAGE_THROTTLE_SECONDS);
+    if (!acquired) return;
 
-    await this.cache.set(throttleKey, '1', USAGE_THROTTLE_SECONDS);
-    await this.prisma.apiKey.update({ where: { id: apiKeyId }, data: { lastUsedAt: this.now() } });
+    try {
+      await this.prisma.apiKey.update({ where: { id: apiKeyId }, data: { lastUsedAt: this.now() } });
+    } catch (error) {
+      await this.cache.del(throttleKey);
+      throw error;
+    }
   }
 
   /**

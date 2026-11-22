@@ -9,6 +9,12 @@ vi.mock('../../../infrastructure/redis/RedisCacheAdapter', () => ({
   RedisCacheAdapter: class {
     async get(key: string) { return redisStore.map.get(key) ?? null; }
     async set(key: string, value: string) { redisStore.map.set(key, value); }
+    async setIfNotExists(key: string, value: string) {
+      if (redisStore.map.has(key)) return false;
+      redisStore.map.set(key, value);
+      return true;
+    }
+    async del(key: string) { redisStore.map.delete(key); }
   },
 }));
 
@@ -167,6 +173,27 @@ describe('ApiKeyService.recordUsage', () => {
 
     await service.recordUsage('key-1');
     await service.recordUsage('key-2');
+
+    expect(client.apiKey.update).toHaveBeenCalledTimes(2);
+  });
+
+  it('writes exactly once for two concurrent calls on the same key (atomic gate)', async () => {
+    const client = buildClient();
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await Promise.all([service.recordUsage('key-1'), service.recordUsage('key-1')]);
+
+    expect(client.apiKey.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('releases the throttle gate when the Postgres write fails, so the next call retries', async () => {
+    const client = buildClient();
+    client.apiKey.update.mockRejectedValueOnce(new Error('db down'));
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await expect(service.recordUsage('key-1')).rejects.toThrow('db down');
+    client.apiKey.update.mockResolvedValue({});
+    await service.recordUsage('key-1');
 
     expect(client.apiKey.update).toHaveBeenCalledTimes(2);
   });

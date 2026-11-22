@@ -226,6 +226,7 @@ model AuditLog {
   ipAddress String?  @map("ip_address")
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([createdAt])
   @@map("audit_logs")
 }
 

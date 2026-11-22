@@ -20,6 +20,12 @@ export class RedisCacheAdapter {
     }
   }
 
+  /** Atomic `SET key value NX EX ttlSeconds` — true only for the caller that actually set it. */
+  async setIfNotExists(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+    const result = await this.redis.set(key, value, 'EX', ttlSeconds, 'NX');
+    return result === 'OK';
+  }
+
   async del(key: string): Promise<void> {
     await this.redis.del(key);
   }

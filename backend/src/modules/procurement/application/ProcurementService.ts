@@ -9,6 +9,10 @@ import { normalizeDocumentType, maskDocument } from '../../../utils/documentNorm
 const TTL_MONTHLY = 60 * 60 * 24 * 30;    // 30 days - departments, cities (monthly-departments cron)
 const TTL_WEEKLY = 60 * 60 * 24 * 7;      // 7 days - entities (weekly-entities cron) and contract years (no cron)
 const TTL_CONTRACTS = 60 * 60 * 24;       // 24 hours - contracts and similarity (daily-import cron)
+// Bumped once: pre-mask deploys may have cached raw person documents under the unversioned
+// key. A new prefix makes those unreachable (they just expire, unread) instead of requiring a
+// manual Redis flush at deploy time.
+const CONTRACTS_CACHE_VERSION = 'v2';
 const CONTRACT_PERSIST_BATCH_SIZE = 20;   // upserts in parallel, not one contract at a time
 
 export class ProcurementService {
@@ -172,12 +176,12 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
 
   async getContracts(filters: FilterParams): Promise<Contract[]> {
     const { codigoEntidad, fechaDesde, fechaHasta } = filters;
-    const cacheKey = `contracts:${codigoEntidad}:${fechaDesde}:${fechaHasta}`;
+    const cacheKey = `contracts:${CONTRACTS_CACHE_VERSION}:${codigoEntidad}:${fechaDesde}:${fechaHasta}`;
 
     // 1. Check Redis Cache
     const cachedData = await this.cacheAdapter.get(cacheKey);
     if (cachedData) {
-      return JSON.parse(cachedData).map((c: any) => ({
+      return JSON.parse(cachedData).map((c: any) => this.toPublicContract({
         ...c,
         signatureDate: c.signatureDate ? new Date(c.signatureDate) : undefined,
         startDate: c.startDate ? new Date(c.startDate) : undefined,
@@ -289,17 +293,21 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
     return publicContracts;
   }
 
-  /** Strips raw person documents before this contract reaches Redis or the HTTP response. */
+  /**
+   * Strips raw person documents before this contract reaches Redis or the HTTP response.
+   * Idempotent: applied again on data that's already public (no raw fields left), it leaves
+   * the existing *Display values alone instead of blanking them.
+   */
   private toPublicContract(c: Contract): Contract {
     const { supplierDocument, supplierDocumentType, supervisorDocument, supervisorDocumentType, legalRepDocument, legalRepDocumentType, ...rest } = c;
     return {
       ...rest,
       supplierDocumentDisplay: supplierDocument && supplierDocumentType
         ? maskDocument(supplierDocument, normalizeDocumentType(supplierDocumentType))
-        : undefined,
+        : rest.supplierDocumentDisplay,
       supervisorDocumentDisplay: supervisorDocument && supervisorDocumentType
         ? maskDocument(supervisorDocument, normalizeDocumentType(supervisorDocumentType))
-        : undefined,
+        : rest.supervisorDocumentDisplay,
     };
   }
 

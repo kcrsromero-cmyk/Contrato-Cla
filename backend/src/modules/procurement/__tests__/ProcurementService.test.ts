@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../../infrastructure/db/prisma', () => ({
   prisma: {
@@ -11,10 +11,12 @@ vi.mock('../../../infrastructure/db/prisma', () => ({
   },
 }));
 
+const redisState = vi.hoisted(() => ({ cached: null as string | null, lastSetKey: '' }));
+
 vi.mock('../../../infrastructure/redis/RedisCacheAdapter', () => ({
   RedisCacheAdapter: class {
-    async get() { return null; }
-    async set() {}
+    async get() { return redisState.cached; }
+    async set(key: string) { redisState.lastSetKey = key; }
   },
 }));
 
@@ -28,6 +30,50 @@ function buildProvider(contracts: any[]): ContractProvider {
 }
 
 describe('ProcurementService.getContracts', () => {
+  beforeEach(() => {
+    redisState.cached = null;
+    redisState.lastSetKey = '';
+  });
+
+  it('writes the Redis cache key under the versioned contracts:v2: prefix', async () => {
+    const service = new ProcurementService(buildProvider([
+      { id: 'c1', contractId: 'CO-1', entityCode: 'E1' },
+    ]));
+
+    await service.getContracts({ codigoEntidad: 'E1', fechaDesde: '2026-01-01', fechaHasta: '2026-01-31' });
+
+    expect(redisState.lastSetKey).toBe('contracts:v2:E1:2026-01-01:2026-01-31');
+  });
+
+  it('re-sanitizes a contract read back from Redis, in case an old unmasked entry is ever hit', async () => {
+    redisState.cached = JSON.stringify([
+      {
+        id: 'c1',
+        contractId: 'CO-1',
+        entityCode: 'E1',
+        supplierDocument: '123456789',
+        supplierDocumentType: 'Cédula de Ciudadanía',
+      },
+    ]);
+    const service = new ProcurementService(buildProvider([]));
+
+    const [result] = await service.getContracts({ codigoEntidad: 'E1', fechaDesde: '2026-01-01', fechaHasta: '2026-01-31' });
+
+    expect(result).not.toHaveProperty('supplierDocument');
+    expect(result.supplierDocumentDisplay).toBe('12345****');
+  });
+
+  it('leaves an already-public cached contract untouched (idempotent re-sanitization)', async () => {
+    redisState.cached = JSON.stringify([
+      { id: 'c1', contractId: 'CO-1', entityCode: 'E1', supplierDocumentDisplay: '12345****' },
+    ]);
+    const service = new ProcurementService(buildProvider([]));
+
+    const [result] = await service.getContracts({ codigoEntidad: 'E1', fechaDesde: '2026-01-01', fechaHasta: '2026-01-31' });
+
+    expect(result.supplierDocumentDisplay).toBe('12345****');
+  });
+
   it('strips raw personal documents and masks them before caching/returning a freshly-fetched contract', async () => {
     const rawContract = {
       id: 'c1',

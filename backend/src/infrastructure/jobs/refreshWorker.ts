@@ -214,24 +214,24 @@ export const setupRecurringJobs = async () => {
     { name: 'daily-import', data: {} }
   );
 
-  // Departamentos y ciudades: primer día de cada mes, 3:00 a.m. (casi nunca cambian)
-  await departmentsQueue.upsertJobScheduler(
-    'monthly-departments',
-    { pattern: '0 3 1 * *', tz: BOGOTA_TZ },
-    { name: 'monthly-departments', data: {} }
-  );
-
-  // Entidades: todos los domingos, 3:00 a.m. (pueden aparecer nuevas alcaldías o entidades)
+  // Entidades: todos los domingos, 3:30 a.m. (pueden aparecer nuevas alcaldías o entidades)
   await entitiesQueue.upsertJobScheduler(
     'weekly-entities',
-    { pattern: '0 3 * * 0', tz: BOGOTA_TZ },
+    { pattern: '30 3 * * 0', tz: BOGOTA_TZ },
     { name: 'weekly-entities', data: {} }
   );
 
-  // Audit log cleanup — todos los días 4:00 a.m., después de que el import nocturno termine
+  // Departamentos y ciudades: primer día de cada mes, 4:00 a.m. (casi nunca cambian)
+  await departmentsQueue.upsertJobScheduler(
+    'monthly-departments',
+    { pattern: '0 4 1 * *', tz: BOGOTA_TZ },
+    { name: 'monthly-departments', data: {} }
+  );
+
+  // Audit log cleanup — todos los días 4:30 a.m., después de que el import nocturno termine
   await auditLogCleanupQueue.upsertJobScheduler(
     'daily-audit-log-cleanup',
-    { pattern: '0 4 * * *', tz: BOGOTA_TZ },
+    { pattern: '30 4 * * *', tz: BOGOTA_TZ },
     { name: 'daily-audit-log-cleanup', data: {} }
   );
 

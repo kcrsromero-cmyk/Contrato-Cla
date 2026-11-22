@@ -25,6 +25,8 @@ vi.mock('../../../infrastructure/redis/RedisCacheAdapter', () => ({
   RedisCacheAdapter: class {
     async get() { return null; }
     async set() {}
+    async setIfNotExists() { return true; }
+    async del() {}
   },
 }));
 
