@@ -8,6 +8,7 @@ import { normalizeDocumentType, maskDocument } from '../../../utils/documentNorm
 
 const TTL_TERRITORIAL = 60 * 60 * 24 * 7; // 7 days - departments, cities, entities
 const TTL_CONTRACTS = 60 * 60 * 24;       // 24 hours - contracts and similarity
+const CONTRACT_PERSIST_BATCH_SIZE = 20;   // upserts in parallel, not one contract at a time
 
 export class ProcurementService {
   private similarityService: SimilarityDomainService;
@@ -157,7 +158,15 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
   }
 
   async getContractYears(entityCode: string): Promise<string[]> {
-    return this.provider.getContractYears(entityCode);
+    const cacheKey = `years:${entityCode}`;
+    const cachedData = await this.cacheAdapter.get(cacheKey);
+    if (cachedData) {
+      return JSON.parse(cachedData);
+    }
+
+    const years = await this.provider.getContractYears(entityCode);
+    await this.cacheAdapter.set(cacheKey, JSON.stringify(years), TTL_TERRITORIAL);
+    return years;
   }
 
   async getContracts(filters: FilterParams): Promise<Contract[]> {
@@ -261,128 +270,131 @@ async searchEntities(query: string, type: 'global' | 'advanced'): Promise<any[]>
     logger.info(`Fetching from Socrata provider for cache key: ${cacheKey}`);
     const contracts = await this.provider.fetchContracts(filters);
 
-    // Persist contracts to Postgres
-    for (const contractData of contracts) {
-      // Contratos sin entityCode son inválidos en SECOP II — descartar
-      if (!contractData.entityCode?.trim()) {
-        logger.warn('Skipping contract with missing entityCode', {
-          contractId: contractData.contractId,
-        });
-        continue;
-      }
+    // Persist contracts to Postgres — in parallel batches, not one contract at a time
+    const persistable = contracts.filter(c => {
+      if (c.entityCode?.trim()) return true;
+      logger.warn('Skipping contract with missing entityCode', { contractId: c.contractId });
+      return false;
+    });
 
-      let procurementProcessUUID: string | undefined;
-
-      if (contractData.procurementProcessId) {
-        const proc = await prisma.procurementProcess.upsert({
-          where: { processId: contractData.procurementProcessId },
-          update: { url: contractData.urlproceso ?? undefined },
-          create: {
-            processId: contractData.procurementProcessId,
-            url: contractData.urlproceso ?? undefined,
-          }
-        });
-        procurementProcessUUID = proc.id;
-      }
-
-      const [supplierPerson, supervisorPerson, legalRepPerson] = await Promise.all([
-        contractData.supplierDocument && contractData.supplierDocumentType
-          ? prisma.person.upsert({
-              where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: contractData.supplierDocument.trim() } },
-              update: { name: contractData.supplierName ?? undefined },
-              create: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: contractData.supplierDocument.trim(), name: contractData.supplierName ?? undefined }
-            })
-          : Promise.resolve(null),
-
-        contractData.supervisorDocument && contractData.supervisorDocumentType
-          ? prisma.person.upsert({
-              where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: contractData.supervisorDocument.trim() } },
-              update: { name: contractData.supervisorName ?? undefined },
-              create: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: contractData.supervisorDocument.trim(), name: contractData.supervisorName ?? undefined }
-            })
-          : Promise.resolve(null),
-
-        contractData.legalRepDocument && contractData.legalRepDocumentType
-          ? prisma.person.upsert({
-              where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: contractData.legalRepDocument.trim() } },
-              update: { name: contractData.legalRepName ?? undefined },
-              create: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: contractData.legalRepDocument.trim(), name: contractData.legalRepName ?? undefined }
-            })
-          : Promise.resolve(null),
-      ]);
-
-      const supplierUUID = supplierPerson?.id;
-      const supervisorUUID = supervisorPerson?.id;
-      const legalRepUUID = legalRepPerson?.id;
-
-      await prisma.contract.upsert({
-        where: { contractId: contractData.contractId },
-        update: {
-          status: contractData.status,
-          paidValue: contractData.paidValue,
-          pendingPaymentValue: contractData.pendingPaymentValue,
-          pendingExecutionValue: contractData.pendingExecutionValue,
-          supplierName: contractData.supplierName,
-          supplierId: supplierUUID,
-          supervisorId: supervisorUUID,
-          legalRepId: legalRepUUID,
-          syncedAt: new Date(),
-        },
-        create: {
-          contractId: contractData.contractId,
-          reference: contractData.reference,
-          status: contractData.status,
-          contractType: contractData.contractType,
-          modality: contractData.modality,
-          justification: contractData.justification,
-          object: contractData.object ?? null,
-          deliveryConditions: contractData.deliveryConditions,
-
-          signatureDate: contractData.signatureDate,
-          startDate: contractData.startDate,
-          endDate: contractData.endDate,
-          lastUpdate: contractData.lastUpdate,
-
-          contractValue: contractData.contractValue,
-          advancePaymentValue: contractData.advancePaymentValue,
-          invoicedValue: contractData.invoicedValue,
-          paidValue: contractData.paidValue,
-          pendingPaymentValue: contractData.pendingPaymentValue,
-          pendingExecutionValue: contractData.pendingExecutionValue,
-          cdpBalance: contractData.cdpBalance,
-
-          duration: contractData.duration,
-          addedDays: contractData.addedDays,
-          isExtendable: contractData.isExtendable,
-
-          location: contractData.location,
-          centralizedEntity: contractData.centralizedEntity,
-          order: contractData.order,
-          sector: contractData.sector,
-          branch: contractData.branch,
-
-          supervisorName: contractData.supervisorName,
-          spenderName: contractData.spenderName,
-
-          department: contractData.department,
-          city: contractData.city,
-          entityName: contractData.entityName ?? null,
-          entityCode: contractData.entityCode,
-          entityNit: contractData.entityNit,
-          procurementProcessId: procurementProcessUUID,
-
-          supplierName: contractData.supplierName,
-          supplierId: supplierUUID,
-          supervisorId: supervisorUUID,
-          legalRepId: legalRepUUID,
-          syncedAt: new Date(),
-        }
-      });
+    for (let i = 0; i < persistable.length; i += CONTRACT_PERSIST_BATCH_SIZE) {
+      const batch = persistable.slice(i, i + CONTRACT_PERSIST_BATCH_SIZE);
+      await Promise.all(batch.map(contractData => this.persistContract(contractData)));
     }
 
     await this.cacheAdapter.set(cacheKey, JSON.stringify(contracts), TTL_CONTRACTS);
 
     return contracts;
+  }
+
+  private async persistContract(contractData: Contract): Promise<void> {
+    let procurementProcessUUID: string | undefined;
+
+    if (contractData.procurementProcessId) {
+      const proc = await prisma.procurementProcess.upsert({
+        where: { processId: contractData.procurementProcessId },
+        update: { url: contractData.urlproceso ?? undefined },
+        create: {
+          processId: contractData.procurementProcessId,
+          url: contractData.urlproceso ?? undefined,
+        }
+      });
+      procurementProcessUUID = proc.id;
+    }
+
+    const [supplierPerson, supervisorPerson, legalRepPerson] = await Promise.all([
+      contractData.supplierDocument && contractData.supplierDocumentType
+        ? prisma.person.upsert({
+            where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: contractData.supplierDocument.trim() } },
+            update: { name: contractData.supplierName ?? undefined },
+            create: { documentType: normalizeDocumentType(contractData.supplierDocumentType), documentNumber: contractData.supplierDocument.trim(), name: contractData.supplierName ?? undefined }
+          })
+        : Promise.resolve(null),
+
+      contractData.supervisorDocument && contractData.supervisorDocumentType
+        ? prisma.person.upsert({
+            where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: contractData.supervisorDocument.trim() } },
+            update: { name: contractData.supervisorName ?? undefined },
+            create: { documentType: normalizeDocumentType(contractData.supervisorDocumentType), documentNumber: contractData.supervisorDocument.trim(), name: contractData.supervisorName ?? undefined }
+          })
+        : Promise.resolve(null),
+
+      contractData.legalRepDocument && contractData.legalRepDocumentType
+        ? prisma.person.upsert({
+            where: { documentType_documentNumber: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: contractData.legalRepDocument.trim() } },
+            update: { name: contractData.legalRepName ?? undefined },
+            create: { documentType: normalizeDocumentType(contractData.legalRepDocumentType), documentNumber: contractData.legalRepDocument.trim(), name: contractData.legalRepName ?? undefined }
+          })
+        : Promise.resolve(null),
+    ]);
+
+    const supplierUUID = supplierPerson?.id;
+    const supervisorUUID = supervisorPerson?.id;
+    const legalRepUUID = legalRepPerson?.id;
+
+    await prisma.contract.upsert({
+      where: { contractId: contractData.contractId },
+      update: {
+        status: contractData.status,
+        paidValue: contractData.paidValue,
+        pendingPaymentValue: contractData.pendingPaymentValue,
+        pendingExecutionValue: contractData.pendingExecutionValue,
+        supplierName: contractData.supplierName,
+        supplierId: supplierUUID,
+        supervisorId: supervisorUUID,
+        legalRepId: legalRepUUID,
+        syncedAt: new Date(),
+      },
+      create: {
+        contractId: contractData.contractId,
+        reference: contractData.reference,
+        status: contractData.status,
+        contractType: contractData.contractType,
+        modality: contractData.modality,
+        justification: contractData.justification,
+        object: contractData.object ?? null,
+        deliveryConditions: contractData.deliveryConditions,
+
+        signatureDate: contractData.signatureDate,
+        startDate: contractData.startDate,
+        endDate: contractData.endDate,
+        lastUpdate: contractData.lastUpdate,
+
+        contractValue: contractData.contractValue,
+        advancePaymentValue: contractData.advancePaymentValue,
+        invoicedValue: contractData.invoicedValue,
+        paidValue: contractData.paidValue,
+        pendingPaymentValue: contractData.pendingPaymentValue,
+        pendingExecutionValue: contractData.pendingExecutionValue,
+        cdpBalance: contractData.cdpBalance,
+
+        duration: contractData.duration,
+        addedDays: contractData.addedDays,
+        isExtendable: contractData.isExtendable,
+
+        location: contractData.location,
+        centralizedEntity: contractData.centralizedEntity,
+        order: contractData.order,
+        sector: contractData.sector,
+        branch: contractData.branch,
+
+        supervisorName: contractData.supervisorName,
+        spenderName: contractData.spenderName,
+
+        department: contractData.department,
+        city: contractData.city,
+        entityName: contractData.entityName ?? null,
+        entityCode: contractData.entityCode,
+        entityNit: contractData.entityNit,
+        procurementProcessId: procurementProcessUUID,
+
+        supplierName: contractData.supplierName,
+        supplierId: supplierUUID,
+        supervisorId: supervisorUUID,
+        legalRepId: legalRepUUID,
+        syncedAt: new Date(),
+      }
+    });
   }
 
   /**

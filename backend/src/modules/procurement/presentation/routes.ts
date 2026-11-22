@@ -37,6 +37,15 @@ const searchEntitiesLimiter = rateLimit({
   message: { error: 'Too many search requests, please try again in a minute.' }
 });
 
+const yearsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new FallbackRedisStore(redisAppClient, 'rl:years:'),
+  message: { error: 'Too many requests, please try again in a minute.' }
+});
+
 // Setting up auth dependencies (simplified for route setup)
 const activeProvider = IdentityProviderRegistry.resolve();
 const identityService = new IdentityService(activeProvider);
@@ -49,7 +58,7 @@ procurementRouter.get('/departments', (req, res) => procurementController.getDep
 procurementRouter.get('/cities', (req, res) => procurementController.getCities(req, res));
 procurementRouter.get('/entities', (req, res) => procurementController.getEntities(req, res));
 procurementRouter.get('/entities/search', searchEntitiesLimiter, (req, res) => procurementController.searchEntities(req, res));
-procurementRouter.get('/years', (req, res) => procurementController.getContractYears(req, res));
+procurementRouter.get('/years', yearsLimiter, (req, res) => procurementController.getContractYears(req, res));
 
 procurementRouter.get('/contracts', contractsLimiter, (req, res) => procurementController.getContracts(req, res));
 
