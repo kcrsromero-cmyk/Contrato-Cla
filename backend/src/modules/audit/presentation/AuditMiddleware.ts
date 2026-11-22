@@ -28,13 +28,19 @@ export class AuditMiddleware {
       // Try to get user id if available
       const userId = (req as any).user?.id || (req as any).tokenPayload?.sub;
 
+      // By 'finish' time routing already happened, so req.route is the matched layer and its
+      // .path is the route TEMPLATE ("/persons/:documentNumber"), never the resolved value —
+      // req.path alone would bake a real document number (or other identifier) from a path
+      // param straight into audit_logs. Falls back to req.path only for an unmatched route
+      // (404), which by definition isn't any business route's identifier pattern.
+      const resource = (req as any).route
+        ? `${req.baseUrl}${(req as any).route.path}`
+        : req.path;
+
       this.auditService.logAction({
         action: 'API_CONSUMPTION',
         userId: userId,
-        // req.path, never req.originalUrl — the query string can carry personal documents or
-        // other sensitive identifiers (e.g. ?codigoEntidad=..., search terms), which have no
-        // business being persisted in audit_logs.
-        resource: req.path,
+        resource,
         details: {
           method: req.method,
           statusCode: res.statusCode,

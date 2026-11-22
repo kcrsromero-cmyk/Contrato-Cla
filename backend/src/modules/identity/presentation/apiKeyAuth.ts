@@ -10,6 +10,7 @@ import { ApiKeyAuthMiddleware } from './ApiKeyAuthMiddleware';
 import { createApiKeyRateLimiter } from './apiKeyRateLimiter';
 import { createAuthenticateApiKeyOrSession, createAuthenticateOptionally } from './authenticateApiKeyOrSession';
 import { ApiKeyRequestContext, extractBearerToken, isApiKeyAuthorization } from '../domain/ApiKey';
+import { ApiAccessNotAllowedError, ApiKeyAuthenticationError } from '../domain/errors';
 
 export const apiKeyService = new ApiKeyService(prisma);
 
@@ -21,15 +22,17 @@ const apiKeyRateLimiter = createApiKeyRateLimiter(new FallbackRedisStore(redisAp
  * an `Authorization: Bearer ctr360_…` request exactly once per request — every downstream
  * middleware (the global limiter's `skip`, `ApiKeyAuthMiddleware.handle`, the per-route
  * identity-aware limiters) reads `req.apiKey`/`req.user` instead of re-querying Postgres.
- * Never rejects: a missing or invalid key just leaves `req.apiKey` unset, so public routes stay
- * public and the global limiter falls back to the IP bucket instead of granting a free pass to
- * a fabricated key.
+ * Never rejects and never throws: the whole body is one try/catch, because an uncaught
+ * rejection in an async Express 4 middleware never reaches the error handler — it just hangs
+ * the request. A missing or invalid key, OR an infrastructure failure (Postgres/Redis down),
+ * leaves `req.apiKey` unset and falls through to `next()`; a route that requires a key rejects
+ * it itself, and the global limiter falls back to the IP bucket instead of granting a free pass.
  */
 export const identifyApiKey: RequestHandler = async (req, _res, next) => {
-  if (!isApiKeyAuthorization(req.headers.authorization)) return next();
-  if (!(await checkFeatureEnabled(FEATURE_FLAGS.API_ACCESS))) return next();
-
   try {
+    if (!isApiKeyAuthorization(req.headers.authorization)) return next();
+    if (!(await checkFeatureEnabled(FEATURE_FLAGS.API_ACCESS))) return next();
+
     const token = extractBearerToken(req.headers.authorization) as string;
     const result = await apiKeyService.authenticate(token);
     const apiKey: ApiKeyRequestContext = { id: result.apiKeyId, apiRequestsPerMinute: result.apiRequestsPerMinute };
@@ -43,8 +46,12 @@ export const identifyApiKey: RequestHandler = async (req, _res, next) => {
         error: error instanceof Error ? error.message : String(error),
       });
     });
-  } catch {
-    // Invalid, revoked or plan-ineligible key — a route that requires one rejects it itself.
+  } catch (error) {
+    if (!(error instanceof ApiKeyAuthenticationError) && !(error instanceof ApiAccessNotAllowedError)) {
+      logger.error('identifyApiKey failed unexpectedly; continuing without an identity', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
   next();
 };

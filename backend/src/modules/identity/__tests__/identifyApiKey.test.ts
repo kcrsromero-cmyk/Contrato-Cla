@@ -114,4 +114,28 @@ describe('identifyApiKey', () => {
     expect(prisma.apiKey.findUnique).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledTimes(1);
   });
+
+  it('calls next() instead of hanging or throwing when checkFeatureEnabled rejects', async () => {
+    const { checkFeatureEnabled } = await import('../../platform/presentation/requireFeatureEnabled');
+    vi.mocked(checkFeatureEnabled).mockRejectedValueOnce(new Error('db down'));
+    const req: any = { headers: { authorization: 'Bearer ' + KEY } };
+    const next = vi.fn();
+
+    await identifyApiKey(req, {} as any, next);
+
+    expect(req.apiKey).toBeUndefined();
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls next() instead of hanging or throwing when authenticate rejects with an unexpected error', async () => {
+    const { prisma } = await import('../../../infrastructure/db/prisma');
+    vi.mocked(prisma.apiKey.findUnique).mockRejectedValueOnce(new Error('connection reset'));
+    const req: any = { headers: { authorization: 'Bearer ' + KEY } };
+    const next = vi.fn();
+
+    await identifyApiKey(req, {} as any, next);
+
+    expect(req.apiKey).toBeUndefined();
+    expect(next).toHaveBeenCalledTimes(1);
+  });
 });

@@ -34,4 +34,35 @@ describe('AuditMiddleware.logApiConsumption', () => {
       expect.objectContaining({ resource: '/api/v1/procurement/contracts' }),
     );
   });
+
+  it('logs the matched route template, never the resolved path param (e.g. a document number)', async () => {
+    const auditService = { logAction: vi.fn(async () => undefined) } as any;
+    const middleware = new AuditMiddleware(auditService);
+    const { req, res, finish } = buildReqRes(
+      '/api/v1/analytics/persons/123456789',
+      '/api/v1/analytics/persons/123456789',
+    );
+    req.baseUrl = '/api/v1/analytics';
+    req.route = { path: '/persons/:documentNumber' };
+
+    middleware.logApiConsumption(req, res, vi.fn());
+    finish();
+
+    expect(auditService.logAction).toHaveBeenCalledWith(
+      expect.objectContaining({ resource: '/api/v1/analytics/persons/:documentNumber' }),
+    );
+  });
+
+  it('falls back to req.path when no route matched (404)', async () => {
+    const auditService = { logAction: vi.fn(async () => undefined) } as any;
+    const middleware = new AuditMiddleware(auditService);
+    const { req, res, finish } = buildReqRes('/api/v1/does-not-exist', '/api/v1/does-not-exist');
+
+    middleware.logApiConsumption(req, res, vi.fn());
+    finish();
+
+    expect(auditService.logAction).toHaveBeenCalledWith(
+      expect.objectContaining({ resource: '/api/v1/does-not-exist' }),
+    );
+  });
 });

@@ -14,6 +14,7 @@ import { AuditMiddleware } from './modules/audit/presentation/AuditMiddleware';
 import { blockedPathsMiddleware } from './infrastructure/security/blockedPathsMiddleware';
 import { healthCheckHandler } from './modules/health/presentation/healthController';
 import { identifyApiKey } from './modules/identity/presentation/apiKeyAuth';
+import { isApiKeyAuthorization } from './modules/identity/domain/ApiKey';
 
 const app = express();
 
@@ -37,6 +38,25 @@ const API_PREFIX = '/api/v1';
 // Real Health Check Routes (ANTES del rate limiter global)
 app.get('/health/live', healthCheckHandler);
 app.get('/health/ready', healthCheckHandler);
+
+// Limita, por IP, cuántos intentos de autenticación de API key puede haber por minuto —
+// ANTES de que identifyApiKey consulte Postgres. Sin esto, alguien puede enviar un torrente de
+// tokens `ctr360_...` fabricados y el límite global (más adelante, y que de todos modos exime
+// a las claves válidas) nunca alcanza a frenar la carga sobre la autenticación. Solo cuenta
+// solicitudes con forma de clave de API — una sesión normal nunca pasa por aquí. El tope es
+// generoso a propósito: protege contra un diluvio, no contra el tráfico legítimo de una
+// oficina o NAT compartido con varias claves reales detrás.
+const apiKeyAuthAttemptLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new FallbackRedisStore(redisAppClient, 'rl:apikey-auth-attempt:'),
+  skip: (req) => !isApiKeyAuthorization(req.headers.authorization),
+  message: { error: 'Demasiados intentos de autenticación con clave de API desde esta IP.' },
+});
+
+app.use(apiKeyAuthAttemptLimiter);
 
 // Autentica una API key una sola vez por solicitud, antes de que exista una ruta — el `skip`
 // del limitador global, ApiKeyAuthMiddleware y los limitadores por ruta reutilizan el
@@ -76,14 +96,20 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Observability: HTTP Request Logging using Morgan and Winston Stream
-app.use(morgan('combined', {
-  stream: {
-    write: (message: string) => {
-      logger.info(message.trim());
+// Observability: same as morgan's 'combined' format, but logging the path without its query
+// string — the stock :url token is req.originalUrl, which can carry personal documents or
+// other sensitive identifiers (e.g. ?codigoEntidad=...).
+morgan.token('safe-url', (req) => (req as express.Request).path);
+app.use(morgan(
+  ':remote-addr - :remote-user [:date[clf]] ":method :safe-url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"',
+  {
+    stream: {
+      write: (message: string) => {
+        logger.info(message.trim());
+      }
     }
   }
-}));
+));
 
 // Global Audit Middleware for API Consumption
 app.use(auditMiddleware.logApiConsumption);
