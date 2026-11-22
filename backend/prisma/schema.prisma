@@ -55,6 +55,7 @@ model Plan {
   description         String?
   maxFavoriteEntities Int?     @map("max_favorite_entities")
   apiRequestsPerMinute Int?   @map("api_requests_per_minute")
+  maxApiKeys          Int?     @map("max_api_keys")
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 

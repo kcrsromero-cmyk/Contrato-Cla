@@ -49,6 +49,7 @@ vi.mock('../../../infrastructure/db/prisma', () => {
           capabilities: state.capabilities.map((name) => ({ capability: { name } })),
         },
       })),
+      findUnique: vi.fn(async () => ({ plan: { maxApiKeys: 10 } })),
     },
     plan: { findUnique: vi.fn(async () => null) },
     featureFlag: { findUnique: vi.fn(async () => null) },

@@ -11,10 +11,11 @@ import { buildAuthenticatedUserFromDbUser } from './ApiKeyUserMapper';
 import { RedisCacheAdapter } from '../../../infrastructure/redis/RedisCacheAdapter';
 
 export const USE_API_CAPABILITY = 'USE_API';
-export const MAX_ACTIVE_API_KEYS_PER_USER = 10;
+/** Used only when a user somehow has no plan row; every USE_API plan sets its own `maxApiKeys`. */
+const DEFAULT_MAX_ACTIVE_API_KEYS_PER_USER = 10;
 const USAGE_THROTTLE_SECONDS = 5 * 60;
 
-export type ApiKeyClient = Pick<PrismaClient, 'apiKey' | 'plan' | '$transaction'>;
+export type ApiKeyClient = Pick<PrismaClient, 'apiKey' | 'plan' | 'user' | '$transaction'>;
 
 export interface ApiKeyAuthentication {
   apiKeyId: string;
@@ -97,13 +98,20 @@ export class ApiKeyService {
    * Returns the plaintext exactly once; only its hash and 12-char prefix are stored.
    * The count-then-create is serialized per user with a transaction-scoped advisory lock,
    * so concurrent requests from the same user can't both pass the count check at 9.
+   * `null` on the plan's `maxApiKeys` means unlimited, matching `maxFavoriteEntities`.
    */
   async issue(userId: string, name: string): Promise<IssuedApiKey> {
     const generated = generateApiKey();
     const created = await this.prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
-      const activeCount = await tx.apiKey.count({ where: { userId, revokedAt: null } });
-      if (activeCount >= MAX_ACTIVE_API_KEYS_PER_USER) throw new ApiKeyLimitExceededError();
+
+      const dbUser = await tx.user.findUnique({ where: { id: userId }, select: { plan: { select: { maxApiKeys: true } } } });
+      const limit = dbUser?.plan ? dbUser.plan.maxApiKeys : DEFAULT_MAX_ACTIVE_API_KEYS_PER_USER;
+
+      if (limit !== null) {
+        const activeCount = await tx.apiKey.count({ where: { userId, revokedAt: null } });
+        if (activeCount >= limit) throw new ApiKeyLimitExceededError();
+      }
 
       return tx.apiKey.create({
         data: { userId, name, keyHash: generated.keyHash, keyPrefix: generated.keyPrefix },

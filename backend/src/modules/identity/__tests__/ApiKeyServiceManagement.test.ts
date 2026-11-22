@@ -17,6 +17,7 @@ function buildClient() {
   const client: any = {
     apiKey: { create: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn(), count: vi.fn() },
     plan: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn(async () => ({ plan: { maxApiKeys: 10 } })) },
     $executeRaw: vi.fn(),
   };
   client.$transaction = vi.fn((callback: any) => callback(client));
@@ -60,7 +61,7 @@ describe('ApiKeyService.issue', () => {
     expect(client.apiKey.count).toHaveBeenCalledWith({ where: { userId: 'user-1', revokedAt: null } });
   });
 
-  it('throws ApiKeyLimitExceededError at exactly 10 active keys, without calling create', async () => {
+  it("throws ApiKeyLimitExceededError at exactly the user's plan cap, without calling create", async () => {
     const client = buildClient();
     client.apiKey.count.mockResolvedValue(10);
     const service = new ApiKeyService(client as any, () => NOW);
@@ -69,7 +70,7 @@ describe('ApiKeyService.issue', () => {
     expect(client.apiKey.create).not.toHaveBeenCalled();
   });
 
-  it('still allows issuing at 9 active keys', async () => {
+  it('still allows issuing one below the plan cap', async () => {
     const client = buildClient();
     client.apiKey.count.mockResolvedValue(9);
     client.apiKey.create.mockImplementation(async ({ data }: any) => ({
@@ -78,6 +79,36 @@ describe('ApiKeyService.issue', () => {
     const service = new ApiKeyService(client as any, () => NOW);
 
     await expect(service.issue('user-1', 'CI')).resolves.toBeDefined();
+  });
+
+  it("enforces the user's own plan cap, not a fixed number", async () => {
+    const client = buildClient();
+    client.user.findUnique.mockResolvedValue({ plan: { maxApiKeys: 2 } });
+    client.apiKey.count.mockResolvedValue(2);
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await expect(service.issue('user-1', 'CI')).rejects.toBeInstanceOf(ApiKeyLimitExceededError);
+  });
+
+  it('never counts or caps when the plan has maxApiKeys set to null (unlimited)', async () => {
+    const client = buildClient();
+    client.user.findUnique.mockResolvedValue({ plan: { maxApiKeys: null } });
+    client.apiKey.create.mockImplementation(async ({ data }: any) => ({
+      id: 'key-1', name: 'CI', keyPrefix: data.keyPrefix, createdAt: NOW,
+    }));
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await expect(service.issue('user-1', 'CI')).resolves.toBeDefined();
+    expect(client.apiKey.count).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the default cap when the user has no plan row', async () => {
+    const client = buildClient();
+    client.user.findUnique.mockResolvedValue({ plan: null });
+    client.apiKey.count.mockResolvedValue(10);
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await expect(service.issue('user-1', 'CI')).rejects.toBeInstanceOf(ApiKeyLimitExceededError);
   });
 });
 

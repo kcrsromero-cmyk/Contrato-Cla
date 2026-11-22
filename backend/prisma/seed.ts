@@ -55,6 +55,21 @@ async function main() {
   }
   console.log('API rate limits seeded.');
 
+  // 2c. Max active API keys per plan. Same values the code previously hardcoded for every
+  // USE_API plan — now adjustable per plan without a deploy.
+  const apiKeyCaps = [
+    { name: 'BUSINESS', maxApiKeys: 10 },
+    { name: 'ENTERPRISE', maxApiKeys: 10 },
+  ];
+
+  for (const cap of apiKeyCaps) {
+    await prisma.plan.update({
+      where: { name: cap.name },
+      data: { maxApiKeys: cap.maxApiKeys },
+    });
+  }
+  console.log('API key caps seeded.');
+
   // Fetch capabilities
   const useFavorites = await prisma.capability.findUnique({ where: { name: 'USE_FAVORITES' } });
   const viewSimilarity = await prisma.capability.findUnique({ where: { name: 'VIEW_SIMILARITY_ANALYSIS' } });

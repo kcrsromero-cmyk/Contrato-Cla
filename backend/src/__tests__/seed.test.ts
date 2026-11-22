@@ -90,10 +90,22 @@ describe('prisma/seed.ts', () => {
   });
 
   it('sets apiRequestsPerMinute to 60 for BUSINESS and 600 for ENTERPRISE, and no other plan', () => {
-    const updates = calls.planUpdates.map((a) => [a.where.name, a.data.apiRequestsPerMinute]);
+    const updates = calls.planUpdates
+      .filter((a) => 'apiRequestsPerMinute' in a.data)
+      .map((a) => [a.where.name, a.data.apiRequestsPerMinute]);
     expect(updates).toEqual([
       ['BUSINESS', 60],
       ['ENTERPRISE', 600],
+    ]);
+  });
+
+  it('sets maxApiKeys to 10 for BUSINESS and ENTERPRISE, and no other plan', () => {
+    const updates = calls.planUpdates
+      .filter((a) => 'maxApiKeys' in a.data)
+      .map((a) => [a.where.name, a.data.maxApiKeys]);
+    expect(updates).toEqual([
+      ['BUSINESS', 10],
+      ['ENTERPRISE', 10],
     ]);
   });
 
