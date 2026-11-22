@@ -233,3 +233,56 @@ export const removeFavoriteContract = async (contractId: string) => {
   if (!res.ok) throw new Error('Error al eliminar contrato favorito');
   return;
 };
+
+export interface ApiKeySummary {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+}
+
+export interface IssuedApiKey extends ApiKeySummary {
+  key: string;
+}
+
+export const listApiKeys = async (): Promise<ApiKeySummary[]> => {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/auth/api-keys`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Error al obtener las claves de API');
+  }
+  const data = await res.json();
+  return data.apiKeys;
+};
+
+export const createApiKey = async (name: string): Promise<IssuedApiKey> => {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/auth/api-keys`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Error al crear la clave de API');
+  }
+  return res.json();
+};
+
+export const revokeApiKey = async (id: string): Promise<ApiKeySummary> => {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/auth/api-keys/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Error al revocar la clave de API');
+  }
+  return res.json();
+};
