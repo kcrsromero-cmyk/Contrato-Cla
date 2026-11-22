@@ -182,6 +182,22 @@ entitiesWorker.on('failed', (job, err) => {
   logger.error(`Entities job ${job?.id} failed: ${err.message}`);
 });
 
+// ─── Audit log cleanup — audit_logs crece con cada request, nada más lo depura ──
+
+const AUDIT_LOG_RETENTION_MS = 90 * 24 * 60 * 60 * 1000; // 90 días
+
+export const auditLogCleanupQueue = new Queue('audit-log-cleanup', { connection });
+
+export const auditLogCleanupWorker = new Worker('audit-log-cleanup', async (job: Job) => {
+  const cutoff = new Date(Date.now() - AUDIT_LOG_RETENTION_MS);
+  const { count } = await prisma.auditLog.deleteMany({ where: { createdAt: { lt: cutoff } } });
+  logger.info(`Audit log cleanup: deleted ${count} rows older than ${cutoff.toISOString()}`);
+}, { connection });
+
+auditLogCleanupWorker.on('failed', (job, err) => {
+  logger.error(`Audit log cleanup job ${job?.id} failed: ${err.message}`);
+});
+
 // ─── Crons y warmup ──────────────────────────────────────────────────────────
 
 export const setupRecurringJobs = async () => {
@@ -206,6 +222,13 @@ export const setupRecurringJobs = async () => {
     'weekly-entities',
     { pattern: '0 0 * * 0' },
     { name: 'weekly-entities', data: {} }
+  );
+
+  // Audit log cleanup — todos los días, purga filas de más de 90 días
+  await auditLogCleanupQueue.upsertJobScheduler(
+    'daily-audit-log-cleanup',
+    { pattern: '0 1 * * *' },
+    { name: 'daily-audit-log-cleanup', data: {} }
   );
 
   // Warmup: si las tablas están vacías al arrancar, disparar cascada completa

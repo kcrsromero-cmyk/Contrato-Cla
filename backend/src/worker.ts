@@ -8,11 +8,13 @@ import {
   departmentsWorker,
   citiesWorker,
   entitiesWorker,
+  auditLogCleanupWorker,
   datasetImportQueue,
   datasetNormalizationQueue,
   departmentsQueue,
   citiesQueue,
-  entitiesQueue
+  entitiesQueue,
+  auditLogCleanupQueue
 } from './infrastructure/jobs/refreshWorker';
 import { redisWorkerClient } from './infrastructure/redis/redisWorkerClient';
 import { prisma } from './infrastructure/db/prisma';
@@ -52,6 +54,7 @@ export const gracefulShutdown = async (signal: string) => {
       departmentsWorker.close(),
       citiesWorker.close(),
       entitiesWorker.close(),
+      auditLogCleanupWorker.close(),
       telegramLinkGateway.stop(),
     ]);
     logger.info('BullMQ workers closed.');
@@ -63,6 +66,7 @@ export const gracefulShutdown = async (signal: string) => {
       departmentsQueue.close(),
       citiesQueue.close(),
       entitiesQueue.close(),
+      auditLogCleanupQueue.close(),
     ]);
     logger.info('BullMQ queues closed.');
 

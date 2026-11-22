@@ -24,11 +24,13 @@ vi.mock('../infrastructure/jobs/refreshWorker', () => ({
   departmentsWorker: { close: vi.fn().mockResolvedValue(undefined) },
   citiesWorker: { close: vi.fn().mockResolvedValue(undefined) },
   entitiesWorker: { close: vi.fn().mockResolvedValue(undefined) },
+  auditLogCleanupWorker: { close: vi.fn().mockResolvedValue(undefined) },
   datasetImportQueue: { close: vi.fn().mockResolvedValue(undefined) },
   datasetNormalizationQueue: { close: vi.fn().mockResolvedValue(undefined) },
   departmentsQueue: { close: vi.fn().mockResolvedValue(undefined) },
   citiesQueue: { close: vi.fn().mockResolvedValue(undefined) },
   entitiesQueue: { close: vi.fn().mockResolvedValue(undefined) },
+  auditLogCleanupQueue: { close: vi.fn().mockResolvedValue(undefined) },
   setupRecurringJobs: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -51,11 +53,13 @@ import {
   departmentsWorker,
   citiesWorker,
   entitiesWorker,
+  auditLogCleanupWorker,
   datasetImportQueue,
   datasetNormalizationQueue,
   departmentsQueue,
   citiesQueue,
-  entitiesQueue
+  entitiesQueue,
+  auditLogCleanupQueue
 } from '../infrastructure/jobs/refreshWorker';
 import { redisWorkerClient } from '../infrastructure/redis/redisWorkerClient';
 import { prisma } from '../infrastructure/db/prisma';
@@ -82,12 +86,14 @@ describe('Worker Graceful Shutdown', () => {
     expect(departmentsWorker.close).toHaveBeenCalled();
     expect(citiesWorker.close).toHaveBeenCalled();
     expect(entitiesWorker.close).toHaveBeenCalled();
+    expect(auditLogCleanupWorker.close).toHaveBeenCalled();
 
     expect(datasetImportQueue.close).toHaveBeenCalled();
     expect(datasetNormalizationQueue.close).toHaveBeenCalled();
     expect(departmentsQueue.close).toHaveBeenCalled();
     expect(citiesQueue.close).toHaveBeenCalled();
     expect(entitiesQueue.close).toHaveBeenCalled();
+    expect(auditLogCleanupQueue.close).toHaveBeenCalled();
 
     expect(redisWorkerClient.quit).toHaveBeenCalled();
     expect(prisma.$disconnect).toHaveBeenCalled();

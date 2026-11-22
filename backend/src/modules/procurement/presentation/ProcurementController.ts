@@ -207,11 +207,10 @@ export class ProcurementController {
          return res.status(404).json({ error: 'Contract not found in database. Must be fetched by the system first.' });
       }
 
-      await prisma.favoriteContract.create({
-        data: {
-          userId: user.id,
-          contractId: dbContract.id
-        }
+      await prisma.favoriteContract.upsert({
+        where: { userId_contractId: { userId: user.id, contractId: dbContract.id } },
+        update: {},
+        create: { userId: user.id, contractId: dbContract.id }
       });
 
       res.status(201).json({ message: 'Favorite added' });
