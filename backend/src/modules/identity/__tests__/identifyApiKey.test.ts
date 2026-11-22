@@ -117,24 +117,55 @@ describe('identifyApiKey', () => {
     expect(state.redis.get('apikey:auth-failures:1.2.3.4')).toBeUndefined();
   });
 
-  it('fast-fails without querying Postgres once an IP has too many recent invalid attempts', async () => {
+  it('still queries Postgres for every attempt from an IP with many recent failures — never auto-denies by IP', async () => {
     state.apiKeyRow = null;
     const req = () => ({ headers: { authorization: 'Bearer ' + KEY }, ip: '9.9.9.9' } as any);
     const { prisma } = await import('../../../infrastructure/db/prisma');
 
+    for (let i = 0; i < 25; i++) {
+      await identifyApiKey(req(), {} as any, vi.fn());
+    }
+
+    expect(prisma.apiKey.findUnique).toHaveBeenCalledTimes(25);
+  });
+
+  it('a valid key still succeeds from an IP that has many recent invalid attempts (no collateral lockout)', async () => {
+    const badReq = () => ({ headers: { authorization: 'Bearer ' + KEY }, ip: '9.9.9.9' } as any);
+    state.apiKeyRow = null;
+    for (let i = 0; i < 25; i++) {
+      await identifyApiKey(badReq(), {} as any, vi.fn());
+    }
+
+    state.apiKeyRow = ownerRow();
+    const goodReq: any = { headers: { authorization: 'Bearer ' + KEY }, ip: '9.9.9.9' };
+    const next = vi.fn();
+    await identifyApiKey(goodReq, {} as any, next);
+
+    expect(goodReq.apiKeyAuthStatus).toBe('valid');
+    expect(goodReq.apiKey).toEqual({ id: 'key-1', apiRequestsPerMinute: 60 });
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs a warning exactly once, when the failure count first crosses the alert threshold', async () => {
+    const { logger } = await import('../../../infrastructure/logger');
+    state.apiKeyRow = null;
+    const req = () => ({ headers: { authorization: 'Bearer ' + KEY }, ip: '7.7.7.7' } as any);
+
     for (let i = 0; i < 20; i++) {
       await identifyApiKey(req(), {} as any, vi.fn());
     }
-    expect(prisma.apiKey.findUnique).toHaveBeenCalledTimes(20);
+    await vi.waitFor(() => expect(logger.warn).toHaveBeenCalledWith(
+      'API key authentication failures crossed the alert threshold for one IP',
+      expect.objectContaining({ ip: '7.7.7.7', failuresInWindow: 20 }),
+    ));
 
-    vi.mocked(prisma.apiKey.findUnique).mockClear();
-    const lastReq: any = req();
-    const next = vi.fn();
-    await identifyApiKey(lastReq, {} as any, next);
-
-    expect(prisma.apiKey.findUnique).not.toHaveBeenCalled();
-    expect(lastReq.apiKeyAuthStatus).toBe('invalid');
-    expect(next).toHaveBeenCalledTimes(1);
+    vi.mocked(logger.warn).mockClear();
+    await identifyApiKey(req(), {} as any, vi.fn());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(logger.warn).not.toHaveBeenCalledWith(
+      'API key authentication failures crossed the alert threshold for one IP',
+      expect.anything(),
+    );
   });
 
   it('never trips the failure counter for a different, well-behaved IP', async () => {

@@ -20,10 +20,16 @@ const apiKeyRateLimiter = createApiKeyRateLimiter(new FallbackRedisStore(redisAp
 const authFailureCache = new RedisCacheAdapter();
 
 const AUTH_FAILURE_WINDOW_SECONDS = 60;
-// Past this many invalid-key attempts from one IP inside the window, stop querying Postgres
-// for that IP entirely until the window rolls over. Never incremented by a successful or
-// plan-ineligible authentication, so a legitimate customer's own volume can never trip it.
-const MAX_AUTH_FAILURES_PER_IP = 20;
+/**
+ * Purely an observability signal — crossing this logs one warning so ops can decide, from
+ * outside this process, whether to block a genuinely malicious IP at the infrastructure layer
+ * (Traefik/WAF/fail2ban). NEVER used to deny a request here: the counter is keyed by IP, and
+ * several real customers commonly share one office/NAT IP — denying by IP would let one bad
+ * actor get every *other* legitimate key holder behind it rejected too. The actual backstop
+ * against a flood is apiKeyAuthAttemptLimiter in server.ts (keyed the same way, but a blunt
+ * volume cap that never looks at whether a given attempt succeeded).
+ */
+const AUTH_FAILURE_ALERT_THRESHOLD = 20;
 
 /**
  * Mounted once, globally, before the global rate limiter and before any router. Authenticates
@@ -43,14 +49,6 @@ export const identifyApiKey: RequestHandler = async (req, _res, next) => {
     if (!isApiKeyAuthorization(req.headers.authorization)) return next();
     if (!(await checkFeatureEnabled(FEATURE_FLAGS.API_ACCESS))) return next();
 
-    const failuresKey = `apikey:auth-failures:${req.ip ?? 'unknown'}`;
-    const recentFailures = Number((await authFailureCache.get(failuresKey)) ?? 0);
-    if (recentFailures >= MAX_AUTH_FAILURES_PER_IP) {
-      // This IP has already shown a pattern of invalid keys — deny without touching Postgres.
-      (req as any).apiKeyAuthStatus = 'invalid';
-      return next();
-    }
-
     const token = extractBearerToken(req.headers.authorization) as string;
     const result = await apiKeyService.authenticate(token);
     const apiKey: ApiKeyRequestContext = { id: result.apiKeyId, apiRequestsPerMinute: result.apiRequestsPerMinute };
@@ -68,8 +66,7 @@ export const identifyApiKey: RequestHandler = async (req, _res, next) => {
   } catch (error) {
     if (error instanceof ApiKeyAuthenticationError) {
       (req as any).apiKeyAuthStatus = 'invalid';
-      const failuresKey = `apikey:auth-failures:${req.ip ?? 'unknown'}`;
-      authFailureCache.increment(failuresKey, AUTH_FAILURE_WINDOW_SECONDS).catch(() => undefined);
+      recordAuthFailure(req.ip);
     } else if (error instanceof ApiAccessNotAllowedError) {
       // A real key, just not on a plan with USE_API — never counted as a failed attempt.
       (req as any).apiKeyAuthStatus = 'forbidden';
@@ -82,6 +79,28 @@ export const identifyApiKey: RequestHandler = async (req, _res, next) => {
   }
   next();
 };
+
+/**
+ * Fire-and-forget. If Redis is unavailable, this alert signal is lost but authentication
+ * itself is entirely unaffected — that's an explicit, accepted degradation, not a silent one.
+ */
+function recordAuthFailure(ip: string | undefined): void {
+  const key = `apikey:auth-failures:${ip ?? 'unknown'}`;
+  authFailureCache.increment(key, AUTH_FAILURE_WINDOW_SECONDS)
+    .then((count) => {
+      if (count === AUTH_FAILURE_ALERT_THRESHOLD) {
+        logger.warn('API key authentication failures crossed the alert threshold for one IP', {
+          ip,
+          failuresInWindow: count,
+        });
+      }
+    })
+    .catch((error: unknown) => {
+      logger.warn('Could not record an API key auth failure — Redis may be unavailable; the brute-force alert signal is degraded, but authentication is unaffected', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+}
 
 /**
  * Drop-in replacement for `authMiddleware.handle, currentUserResolver.resolve` on routes that

@@ -40,13 +40,15 @@ app.get('/health/live', healthCheckHandler);
 app.get('/health/ready', healthCheckHandler);
 
 // Freno de último recurso, por IP, contra un diluvio de solicitudes con forma de clave de API
-// — ANTES de que identifyApiKey consulte Postgres. No distingue válidas de inválidas (eso ya
-// lo hace identifyApiKey, que además deja de consultar Postgres por sí solo para una IP con
-// muchos intentos inválidos recientes — ver AUTH_FAILURE_WINDOW_SECONDS en apiKeyAuth.ts), así
-// que el techo tiene que quedar muy por encima de cualquier plan real (ENTERPRISE llega a
-// 600/min) para no bloquear jamás a un cliente legítimo que paga por más consumo — ese es
-// exactamente el error que cometimos la primera vez con esto. Una sesión normal nunca pasa por
-// aquí (el `skip` solo cuenta tokens con forma de clave de API).
+// — ANTES de que identifyApiKey consulte Postgres. No distingue válidas de inválidas a
+// propósito: es puramente volumétrico, nunca decide nada por identidad (eso lo hace
+// identifyApiKey, que solo registra un aviso de observabilidad ante muchos fallos de una
+// misma IP, sin bloquear nada — ver recordAuthFailure en apiKeyAuth.ts; bloquear por IP
+// perjudicaría a otros clientes reales detrás de la misma oficina/NAT). El techo tiene que
+// quedar muy por encima de cualquier plan real (ENTERPRISE llega a 600/min) para no bloquear
+// jamás a un cliente legítimo que paga por más consumo — ese es exactamente el error que
+// cometimos la primera vez con esto. Una sesión normal nunca pasa por aquí (el `skip` solo
+// cuenta tokens con forma de clave de API).
 const apiKeyAuthAttemptLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 3000,
@@ -100,12 +102,13 @@ app.use(express.urlencoded({ extended: true }));
 // Observability: a trimmed-down 'combined' format. :safe-url logs the matched route's
 // TEMPLATE ("/persons/:documentNumber"), not req.path or req.originalUrl — either of those
 // would still bake a resolved path param (a real document number) or a query string (personal
-// documents, search terms) straight into the logs. Falls back to req.path only for an
-// unmatched (404) request. :referrer is dropped entirely: it's the caller's own Referer
-// header, verbatim and unsanitized, and this API has no use for it.
+// documents, search terms) straight into the logs. An unmatched (404) request logs a fixed
+// placeholder instead of req.path — the path itself could just as well carry a probed
+// identifier, and :status/:method already say a 404 happened. :referrer is dropped entirely:
+// it's the caller's own Referer header, verbatim and unsanitized, and this API has no use for it.
 morgan.token('safe-url', (req) => {
   const r = req as any;
-  return r.route ? `${r.baseUrl}${r.route.path}` : r.path;
+  return r.route ? `${r.baseUrl}${r.route.path}` : '(sin ruta coincidente)';
 });
 app.use(morgan(
   ':remote-addr - :remote-user [:date[clf]] ":method :safe-url HTTP/:http-version" :status :res[content-length] ":user-agent"',

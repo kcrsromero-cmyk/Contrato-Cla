@@ -31,11 +31,12 @@ export class AuditMiddleware {
       // By 'finish' time routing already happened, so req.route is the matched layer and its
       // .path is the route TEMPLATE ("/persons/:documentNumber"), never the resolved value —
       // req.path alone would bake a real document number (or other identifier) from a path
-      // param straight into audit_logs. Falls back to req.path only for an unmatched route
-      // (404), which by definition isn't any business route's identifier pattern.
+      // param straight into audit_logs. An unmatched route (404) logs a fixed placeholder
+      // instead of req.path — that path could just as well be a probed identifier itself, and
+      // `details.statusCode` already says it was a 404.
       const resource = (req as any).route
         ? `${req.baseUrl}${(req as any).route.path}`
-        : req.path;
+        : '(sin ruta coincidente)';
 
       this.auditService.logAction({
         action: 'API_CONSUMPTION',

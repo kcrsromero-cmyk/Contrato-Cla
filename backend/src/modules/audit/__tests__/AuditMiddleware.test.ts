@@ -19,13 +19,15 @@ function buildReqRes(path: string, originalUrl: string) {
 }
 
 describe('AuditMiddleware.logApiConsumption', () => {
-  it('logs req.path, never req.originalUrl — the query string can carry sensitive identifiers', async () => {
+  it('logs the route template, never req.originalUrl — the query string can carry sensitive identifiers', async () => {
     const auditService = { logAction: vi.fn(async () => undefined) } as any;
     const middleware = new AuditMiddleware(auditService);
     const { req, res, finish } = buildReqRes(
       '/api/v1/procurement/contracts',
       '/api/v1/procurement/contracts?codigoEntidad=123&documento=987654321',
     );
+    req.baseUrl = '/api/v1/procurement';
+    req.route = { path: '/contracts' };
 
     middleware.logApiConsumption(req, res, vi.fn());
     finish();
@@ -53,16 +55,17 @@ describe('AuditMiddleware.logApiConsumption', () => {
     );
   });
 
-  it('falls back to req.path when no route matched (404)', async () => {
+  it('logs a fixed placeholder, never req.path, when no route matched (404) — the path itself could be a probed identifier', async () => {
     const auditService = { logAction: vi.fn(async () => undefined) } as any;
     const middleware = new AuditMiddleware(auditService);
-    const { req, res, finish } = buildReqRes('/api/v1/does-not-exist', '/api/v1/does-not-exist');
+    const { req, res, finish } = buildReqRes('/api/v1/persons/123456789', '/api/v1/persons/123456789');
+    res.statusCode = 404;
 
     middleware.logApiConsumption(req, res, vi.fn());
     finish();
 
     expect(auditService.logAction).toHaveBeenCalledWith(
-      expect.objectContaining({ resource: '/api/v1/does-not-exist' }),
+      expect.objectContaining({ resource: '(sin ruta coincidente)' }),
     );
   });
 });

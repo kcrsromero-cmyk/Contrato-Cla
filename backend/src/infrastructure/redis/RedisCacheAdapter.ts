@@ -30,13 +30,17 @@ export class RedisCacheAdapter {
     await this.redis.del(key);
   }
 
-  /** Atomic `INCR`, setting the TTL only on the first hit so the counter window stays fixed. */
+  /**
+   * `INCR` + `EXPIRE` sent together in one `MULTI`/`EXEC` round trip, so a dropped connection
+   * can never leave the counter incremented with no TTL (the separate-calls version could lose
+   * the `EXPIRE` and leak a key that never expires). The window slides on every call rather
+   * than being fixed from the first hit — fine for a counter this is meant to feed into an
+   * alert, not to gate a decision.
+   */
   async increment(key: string, ttlSeconds: number): Promise<number> {
-    const count = await this.redis.incr(key);
-    if (count === 1) {
-      await this.redis.expire(key, ttlSeconds);
-    }
-    return count;
+    const results = await this.redis.multi().incr(key).expire(key, ttlSeconds).exec();
+    const count = results?.[0]?.[1];
+    return typeof count === 'number' ? count : 0;
   }
 
   async ping(): Promise<string> {
