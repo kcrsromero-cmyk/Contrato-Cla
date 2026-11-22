@@ -16,6 +16,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
   const [favoriteEntitiesCount, setFavoriteEntitiesCount] = useState(0);
 
   const [activeTab, setActiveTab] = useState<'plan' | 'perfil' | 'notificaciones' | 'api'>('plan');
+  const [apiKeyPendingReveal, setApiKeyPendingReveal] = useState(false);
 
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,6 +48,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
       setMessage(null);
       setProfileMessage(null);
       setNewPassword('');
+      setApiKeyPendingReveal(false);
     }
   }, [isOpen, user]);
 
@@ -59,6 +61,30 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
   }, [activeTab, isOpen, capabilities]);
 
   if (!isOpen) return null;
+
+  /** Guards closing the modal while a freshly-created API key is still waiting to be copied. */
+  const requestClose = () => {
+    if (apiKeyPendingReveal) {
+      const confirmed = window.confirm(
+        'Tienes una clave de API nueva sin copiar. Si cierras ahora, no podrás volver a verla. ¿Cerrar de todas formas?'
+      );
+      if (!confirmed) return;
+      setApiKeyPendingReveal(false);
+    }
+    onClose();
+  };
+
+  /** Guards switching away from the API tab while a freshly-created key is still waiting to be copied. */
+  const requestTabChange = (tab: 'plan' | 'perfil' | 'notificaciones' | 'api') => {
+    if (activeTab === 'api' && tab !== 'api' && apiKeyPendingReveal) {
+      const confirmed = window.confirm(
+        'Tienes una clave de API nueva sin copiar. Si cambias de pestaña ahora, no podrás volver a verla. ¿Continuar de todas formas?'
+      );
+      if (!confirmed) return;
+      setApiKeyPendingReveal(false);
+    }
+    setActiveTab(tab);
+  };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,10 +181,10 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity" onClick={requestClose} />
       <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 animate-scale-up flex flex-col max-h-[90vh]">
         <button
-          onClick={onClose}
+          onClick={requestClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors z-10"
         >
           <X className="w-5 h-5" />
@@ -179,7 +205,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
         {/* Tabs */}
         <div className="flex px-4 pt-2 gap-2 border-b border-slate-100 dark:border-slate-800">
           <button
-            onClick={() => setActiveTab('plan')}
+            onClick={() => requestTabChange('plan')}
             className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
               activeTab === 'plan'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
@@ -189,7 +215,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
             Mi Plan
           </button>
           <button
-            onClick={() => setActiveTab('perfil')}
+            onClick={() => requestTabChange('perfil')}
             className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
               activeTab === 'perfil'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
@@ -199,7 +225,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
             Mi Perfil
           </button>
           <button
-            onClick={() => setActiveTab('notificaciones')}
+            onClick={() => requestTabChange('notificaciones')}
             className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'notificaciones'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
@@ -209,7 +235,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
             Notificaciones
           </button>
           <button
-            onClick={() => setActiveTab('api')}
+            onClick={() => requestTabChange('api')}
             className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
               activeTab === 'api'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
@@ -515,7 +541,9 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
             </div>
           )}
 
-          {activeTab === 'api' && <ApiKeysTab capabilities={capabilities} />}
+          {activeTab === 'api' && (
+            <ApiKeysTab capabilities={capabilities} onRevealedChange={setApiKeyPendingReveal} />
+          )}
 
         </div>
 

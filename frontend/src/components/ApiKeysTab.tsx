@@ -4,6 +4,8 @@ import { listApiKeys, createApiKey, revokeApiKey, ApiKeySummary, IssuedApiKey } 
 
 interface ApiKeysTabProps {
   capabilities: string[];
+  /** Called with `true` while a freshly-created key is waiting to be copied, `false` once dismissed. */
+  onRevealedChange?: (hasRevealed: boolean) => void;
 }
 
 const formatDate = (value: string | null) => {
@@ -16,7 +18,7 @@ const formatDate = (value: string | null) => {
   });
 };
 
-export default function ApiKeysTab({ capabilities }: ApiKeysTabProps) {
+export default function ApiKeysTab({ capabilities, onRevealedChange }: ApiKeysTabProps) {
   const hasApiAccess = capabilities.includes('USE_API');
 
   const [keys, setKeys] = useState<ApiKeySummary[]>([]);
@@ -52,6 +54,13 @@ export default function ApiKeysTab({ capabilities }: ApiKeysTabProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasApiAccess]);
+
+  useEffect(() => {
+    onRevealedChange?.(!!revealedKey);
+    // Also clears the parent's guard if this component unmounts while a key is still revealed.
+    return () => onRevealedChange?.(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealedKey]);
 
   if (!hasApiAccess) {
     return (
