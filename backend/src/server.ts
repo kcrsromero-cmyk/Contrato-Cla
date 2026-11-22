@@ -13,6 +13,7 @@ import { AuditService } from './modules/audit/application/AuditService';
 import { AuditMiddleware } from './modules/audit/presentation/AuditMiddleware';
 import { blockedPathsMiddleware } from './infrastructure/security/blockedPathsMiddleware';
 import { healthCheckHandler } from './modules/health/presentation/healthController';
+import { API_KEY_PATTERN, extractBearerToken } from './modules/identity/domain/ApiKey';
 
 const app = express();
 
@@ -37,14 +38,22 @@ const API_PREFIX = '/api/v1';
 app.get('/health/live', healthCheckHandler);
 app.get('/health/ready', healthCheckHandler);
 
-// Rate limit global — 500 requests por IP cada 15 minutos
+// Rate limit global — 500 requests por IP cada 15 minutos.
+// Las solicitudes con una API key con formato válido quedan exentas: su propio límite
+// por plan (ApiKeyAuthMiddleware + apiKeyRateLimiter, hasta 600/min en ENTERPRISE) ya
+// las protege, y este límite por IP (~33/min) sería un cuello de botella más estricto
+// que ese límite antes de que la clave siquiera llegue a validarse.
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   store: new FallbackRedisStore(redisAppClient, 'rl:global:'),
-  skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1',
+  skip: (req) => {
+    if (req.ip === '127.0.0.1' || req.ip === '::1') return true;
+    const token = extractBearerToken(req.headers.authorization);
+    return token !== null && API_KEY_PATTERN.test(token);
+  },
   message: { error: 'Too many requests, please try again later.' }
 });
 
