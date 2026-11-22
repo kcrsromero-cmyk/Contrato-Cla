@@ -60,23 +60,49 @@ export class SupabaseIdentityProvider implements IdentityProvider {
     };
   }
 
-  async logout(_token: string): Promise<void> {
-    const { error: signOutError } = await this.client.auth.signOut();
-    if (signOutError) throw new Error(signOutError.message);
+  /**
+   * Revokes the session tied to this specific token via Supabase's REST API.
+   * Never uses `this.client.auth.signOut()`: that call acts on whatever session
+   * happens to be stored on the shared singleton client, which login/refresh
+   * calls from other concurrent requests keep overwriting — it can silently
+   * no-op or revoke an unrelated user's session.
+   */
+  async logout(token: string): Promise<void> {
+    const response = await fetch(`${config.SUPABASE_URL}/auth/v1/logout?scope=global`, {
+      method: 'POST',
+      headers: {
+        apikey: config.SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    // An already-expired/invalid token has nothing left to revoke — logout stays idempotent.
+    if (!response.ok && response.status !== 401 && response.status !== 403) {
+      throw new Error(`Supabase logout failed with status ${response.status}`);
+    }
   }
 
+  /** Stateless token exchange — never reads or writes the shared client's session. */
   async refresh(refreshToken: string): Promise<AuthResult> {
-    const { data, error } = await this.client.auth.refreshSession({ refresh_token: refreshToken });
+    const response = await fetch(`${config.SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: {
+        apikey: config.SUPABASE_PUBLISHABLE_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
 
-    if (error) throw new Error(error.message);
-    if (!data.session || !data.user) throw new Error('Refresh failed to return session data');
+    const data: any = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error_description || data.msg || 'Refresh failed');
+    if (!data.access_token || !data.user) throw new Error('Refresh failed to return session data');
 
     const authUser = SupabaseIdentityMapper.fromProviderPayload(data.user);
 
     return {
-      accessToken: data.session.access_token,
-      refreshToken: data.session.refresh_token,
-      expiresIn: data.session.expires_in,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresIn: data.expires_in,
       user: IdentityMapper.toUserProfile(authUser),
     };
   }
