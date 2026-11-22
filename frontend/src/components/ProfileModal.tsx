@@ -3,6 +3,7 @@ import { X, User, Lock, Mail, Star, Shield, Edit3, MessageSquare, Phone, Bell } 
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../utils/supabase';
 import { updateProfile, getFavoriteEntities } from '../services/api';
+import ApiKeysTab from './ApiKeysTab';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -14,7 +15,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
   const { user, plan, planExpiresAt, capabilities, maxFavoriteEntities } = useAuth();
   const [favoriteEntitiesCount, setFavoriteEntitiesCount] = useState(0);
 
-  const [activeTab, setActiveTab] = useState<'plan' | 'perfil' | 'notificaciones'>('plan');
+  const [activeTab, setActiveTab] = useState<'plan' | 'perfil' | 'notificaciones' | 'api'>('plan');
 
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -133,7 +134,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
     },
   ];
 
-  const planTiers = ['FREE', 'STARTER', 'PROFESIONAL', 'ENTERPRISE'];
+  const planTiers = ['FREE', 'STARTER', 'PROFESIONAL', 'BUSINESS', 'ENTERPRISE'];
   const userPlanIndex = planTiers.indexOf((plan || 'FREE').toUpperCase());
 
   const getAvatarColor = (name: string) => {
@@ -206,6 +207,16 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
             }`}
           >
             Notificaciones
+          </button>
+          <button
+            onClick={() => setActiveTab('api')}
+            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+              activeTab === 'api'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
+            API
           </button>
         </div>
 
@@ -503,6 +514,8 @@ export default function ProfileModal({ isOpen, onClose, onLogout }: ProfileModal
               </div>
             </div>
           )}
+
+          {activeTab === 'api' && <ApiKeysTab capabilities={capabilities} />}
 
         </div>
 
