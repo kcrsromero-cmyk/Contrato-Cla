@@ -3,7 +3,8 @@ import { createHash, randomBytes } from 'node:crypto';
 export const API_KEY_PREFIX = 'ctr360_';
 export const API_KEY_RANDOM_BYTES = 32;
 export const API_KEY_DISPLAY_PREFIX_LENGTH = 12;
-export const API_KEY_PATTERN = /^ctr360_[A-Za-z0-9_-]{43}$/;
+const escapedPrefix = API_KEY_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export const API_KEY_PATTERN = new RegExp(`^${escapedPrefix}[A-Za-z0-9_-]{43}$`);
 
 export interface GeneratedApiKey {
   plaintext: string;

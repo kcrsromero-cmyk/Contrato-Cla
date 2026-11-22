@@ -191,8 +191,10 @@ export default function ApiKeysTab({ capabilities, onRevealedChange }: ApiKeysTa
         <Key className="w-4 h-4" /> Claves de API
       </h3>
 
-      <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
+      <div role="tablist" className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
         <button
+          role="tab"
+          aria-selected={view === 'activas'}
           onClick={() => setView('activas')}
           className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
             view === 'activas'
@@ -203,6 +205,8 @@ export default function ApiKeysTab({ capabilities, onRevealedChange }: ApiKeysTa
           Activas
         </button>
         <button
+          role="tab"
+          aria-selected={view === 'historial'}
           onClick={() => setView('historial')}
           className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
             view === 'historial'
