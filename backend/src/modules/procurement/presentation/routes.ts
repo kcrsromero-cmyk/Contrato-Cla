@@ -54,9 +54,20 @@ const yearsLimiter = createIdentityAwareLimiter({
   message: 'Too many requests, please try again in a minute.',
 });
 
-procurementRouter.get('/departments', (req, res) => procurementController.getDepartments(req, res));
-procurementRouter.get('/cities', (req, res) => procurementController.getCities(req, res));
-procurementRouter.get('/entities', (req, res) => procurementController.getEntities(req, res));
+// Previously had no per-route limiter at all, which an authenticated caller could reach for
+// free once the global limiter started exempting known identities — every route the global
+// limiter can exempt must have its own consumption control. Cheap, heavily Redis-cached
+// (30-day TTL) reads, so the ceilings are generous.
+const territorialLimiter = createIdentityAwareLimiter({
+  store: new FallbackRedisStore(redisAppClient, 'rl:territorial:'),
+  anonymousLimit: 60,
+  authenticatedLimit: 120,
+  message: 'Too many requests, please try again in a minute.',
+});
+
+procurementRouter.get('/departments', optionalAuth, territorialLimiter, (req, res) => procurementController.getDepartments(req, res));
+procurementRouter.get('/cities', optionalAuth, territorialLimiter, (req, res) => procurementController.getCities(req, res));
+procurementRouter.get('/entities', optionalAuth, territorialLimiter, (req, res) => procurementController.getEntities(req, res));
 procurementRouter.get('/entities/search', optionalAuth, searchEntitiesLimiter, (req, res) => procurementController.searchEntities(req, res));
 procurementRouter.get('/years', optionalAuth, yearsLimiter, (req, res) => procurementController.getContractYears(req, res));
 

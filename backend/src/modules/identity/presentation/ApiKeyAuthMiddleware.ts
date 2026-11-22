@@ -19,8 +19,12 @@ export class ApiKeyAuthMiddleware {
   /**
    * Express middleware for `Authorization: Bearer ctr360_…` requests. Attaches the same
    * AuthenticatedUser shape CurrentUserResolver builds, plus `req.apiKey` for the per-key limiter.
+   * Skips straight to `next()` when `identifyApiKey` (mounted globally, before routing) already
+   * authenticated this exact request — avoids hitting Postgres a second time for the same key.
    */
   handle = async (req: Request, res: Response, next: NextFunction) => {
+    if ((req as any).apiKey) return next();
+
     try {
       if (!(await this.isFeatureEnabled(FEATURE_FLAGS.API_ACCESS))) {
         return res.status(503).json({ ...FEATURE_DISABLED_RESPONSE });

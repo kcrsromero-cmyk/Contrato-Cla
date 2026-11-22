@@ -31,7 +31,10 @@ export class AuditMiddleware {
       this.auditService.logAction({
         action: 'API_CONSUMPTION',
         userId: userId,
-        resource: req.originalUrl,
+        // req.path, never req.originalUrl — the query string can carry personal documents or
+        // other sensitive identifiers (e.g. ?codigoEntidad=..., search terms), which have no
+        // business being persisted in audit_logs.
+        resource: req.path,
         details: {
           method: req.method,
           statusCode: res.statusCode,

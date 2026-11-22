@@ -24,6 +24,17 @@ describe('ApiKeyAuthMiddleware', () => {
     next = vi.fn();
   });
 
+  it('skips straight to next() when req.apiKey is already populated (identifyApiKey ran first)', async () => {
+    req.apiKey = { id: 'key-1', apiRequestsPerMinute: 60 };
+    const middleware = new ApiKeyAuthMiddleware(apiKeys, isFeatureEnabled);
+
+    await middleware.handle(req, res, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(isFeatureEnabled).not.toHaveBeenCalled();
+    expect(apiKeys.authenticate).not.toHaveBeenCalled();
+  });
+
   it('responds 503 and does not authenticate when API_ACCESS is disabled', async () => {
     isFeatureEnabled.mockResolvedValue(false);
     const middleware = new ApiKeyAuthMiddleware(apiKeys, isFeatureEnabled);

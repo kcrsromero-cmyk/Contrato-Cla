@@ -112,10 +112,10 @@ const PROTECTED: ['get' | 'post' | 'delete', string][] = [
   ['delete', '/favorite-entities'],
 ];
 
+// All public (no login required), but each runs optionalAuth behind its own identity-aware
+// rate limiter: anonymous stays anonymous, a valid key or session gets keyed by identity
+// instead of IP, and an invalid one is rejected rather than silently downgraded.
 const PUBLIC = ['/departments', '/cities', '/entities', '/entities/search', '/years', '/contracts'];
-// These three also run optionalAuth (behind their own identity-aware rate limiter) — the other
-// three public routes have no Authorization handling at all, by design (see routes.ts).
-const PUBLIC_WITH_OPTIONAL_AUTH = ['/entities/search', '/years', '/contracts'];
 
 describe('procurementRouter API key acceptance', () => {
   beforeEach(() => {
@@ -195,7 +195,7 @@ describe('procurementRouter API key acceptance', () => {
     expect(res.body.userId).toBeNull();
   });
 
-  it.each(PUBLIC_WITH_OPTIONAL_AUTH)('reaches public route %s with the key owner id when a valid API key is sent', async (path) => {
+  it.each(PUBLIC)('reaches public route %s with the key owner id when a valid API key is sent', async (path) => {
     state.apiKeyRow = activeKeyRow();
     const app = await buildApp();
 
@@ -207,7 +207,7 @@ describe('procurementRouter API key acceptance', () => {
     expect(res.body.userId).toBe('00000000-0000-0000-0000-0000000000aa');
   });
 
-  it.each(PUBLIC_WITH_OPTIONAL_AUTH)('reaches public route %s with the session user when a session token is sent', async (path) => {
+  it.each(PUBLIC)('reaches public route %s with the session user when a session token is sent', async (path) => {
     const app = await buildApp();
 
     const res = await request(app)
@@ -218,12 +218,12 @@ describe('procurementRouter API key acceptance', () => {
     expect(res.body.userId).toBe('00000000-0000-0000-0000-000000000001');
   });
 
-  it('rejects public route /contracts with 401 for a revoked key instead of falling back to anonymous', async () => {
+  it.each(PUBLIC)('rejects public route %s with 401 for a revoked key instead of falling back to anonymous', async (path) => {
     state.apiKeyRow = { ...activeKeyRow(), revokedAt: new Date() };
     const app = await buildApp();
 
     const res = await request(app)
-      .get('/api/v1/procurement/contracts')
+      .get(`/api/v1/procurement${path}`)
       .set('Authorization', 'Bearer ' + 'ctr360_' + 'A'.repeat(43));
 
     expect(res.status).toBe(401);

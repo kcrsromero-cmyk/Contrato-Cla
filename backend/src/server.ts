@@ -13,8 +13,7 @@ import { AuditService } from './modules/audit/application/AuditService';
 import { AuditMiddleware } from './modules/audit/presentation/AuditMiddleware';
 import { blockedPathsMiddleware } from './infrastructure/security/blockedPathsMiddleware';
 import { healthCheckHandler } from './modules/health/presentation/healthController';
-import { extractBearerToken } from './modules/identity/domain/ApiKey';
-import { apiKeyService } from './modules/identity/presentation/apiKeyAuth';
+import { identifyApiKey } from './modules/identity/presentation/apiKeyAuth';
 
 const app = express();
 
@@ -39,28 +38,25 @@ const API_PREFIX = '/api/v1';
 app.get('/health/live', healthCheckHandler);
 app.get('/health/ready', healthCheckHandler);
 
+// Autentica una API key una sola vez por solicitud, antes de que exista una ruta — el `skip`
+// del limitador global, ApiKeyAuthMiddleware y los limitadores por ruta reutilizan el
+// resultado (req.apiKey/req.user) en vez de volver a consultar Postgres cada uno.
+app.use(identifyApiKey);
+
 // Rate limit global — 500 requests por IP cada 15 minutos.
-// Las solicitudes con una API key VÁLIDA (existe, activa, con USE_API) quedan exentas: su
-// propio límite por plan (ApiKeyAuthMiddleware + apiKeyRateLimiter, hasta 600/min en
-// ENTERPRISE) ya las protege. La exención exige autenticar la clave aquí mismo — nunca
-// alcanza con que el token tenga el formato `ctr360_`, o cualquiera podría fabricar uno falso
-// para eludir este límite y cargar de solicitudes al sistema de autenticación y a Postgres.
+// Las solicitudes con una API key YA AUTENTICADA por identifyApiKey (req.apiKey) quedan
+// exentas: su propio límite por plan (apiKeyRateLimiter / identityAwareRateLimiter, hasta
+// 600/min en ENTERPRISE) ya las protege. Nunca se exime solo por el formato `ctr360_` — eso
+// permitiría fabricar una clave falsa para eludir este límite sin autenticarse de verdad.
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   store: new FallbackRedisStore(redisAppClient, 'rl:global:'),
-  skip: async (req) => {
+  skip: (req) => {
     if (req.ip === '127.0.0.1' || req.ip === '::1') return true;
-    const token = extractBearerToken(req.headers.authorization);
-    if (token === null) return false;
-    try {
-      await apiKeyService.authenticate(token);
-      return true;
-    } catch {
-      return false;
-    }
+    return Boolean((req as any).apiKey);
   },
   message: { error: 'Too many requests, please try again later.' }
 });
