@@ -38,9 +38,17 @@ export function extractBearerToken(authorization: string | undefined): string | 
 }
 
 /**
- * True only for `Bearer ck_live_…`. A Supabase JWT starts with `eyJ`, so it can never match.
+ * Accepted only so a key issued before this prefix existed still routes to the API-key
+ * handlers and fails there with a clean 401 INVALID_API_KEY, instead of falling through to
+ * session/JWT verification and surfacing a raw parser error. Never used to generate new keys.
+ */
+const LEGACY_API_KEY_PREFIX = 'ck_live_';
+
+/**
+ * True for `Bearer ctr360_…` (current) or `Bearer ck_live_…` (legacy, see `LEGACY_API_KEY_PREFIX`).
+ * A Supabase JWT starts with `eyJ`, so it can never match either.
  */
 export function isApiKeyAuthorization(authorization: string | undefined): boolean {
   const token = extractBearerToken(authorization);
-  return token !== null && token.startsWith(API_KEY_PREFIX);
+  return token !== null && (token.startsWith(API_KEY_PREFIX) || token.startsWith(LEGACY_API_KEY_PREFIX));
 }

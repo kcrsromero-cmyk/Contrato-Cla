@@ -46,6 +46,7 @@ vi.mock('../../../infrastructure/db/prisma', () => ({
     plan: { findUnique: vi.fn(async () => null) },
     featureFlag: { findUnique: vi.fn(async () => null) },
     apiKey: {
+      count: vi.fn(async () => 0),
       create: vi.fn(async ({ data }: any) => ({
         id: '3f1c2a8e-5b7d-4c9e-9a1b-2d3e4f5a6b7c',
         name: data.name,
@@ -109,6 +110,23 @@ describe('authRouter /api-keys', () => {
     expect(res.body.key).toMatch(API_KEY_PATTERN);
     expect(res.body.keyPrefix).toBe(res.body.key.slice(0, 12));
     expect('keyHash' in res.body).toBe(false);
+  });
+
+  it('responds 409 API_KEY_LIMIT_EXCEEDED when the session already has 10 active keys', async () => {
+    (prisma.apiKey.count as any).mockResolvedValueOnce(10);
+    const app = await buildApp();
+
+    const res = await request(app)
+      .post('/api/v1/auth/api-keys')
+      .set('Authorization', SESSION)
+      .send({ name: 'Integración ERP' });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({
+      error: 'Alcanzaste el máximo de 10 claves de API activas. Revoca una existente antes de crear otra.',
+      code: 'API_KEY_LIMIT_EXCEEDED',
+    });
+    expect(prisma.apiKey.create).not.toHaveBeenCalled();
   });
 
   it('responds 403 SESSION_REQUIRED for an API key and does not verify a JWT or create a key', async () => {

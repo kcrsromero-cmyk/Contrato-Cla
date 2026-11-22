@@ -153,6 +153,7 @@ export default function ApiKeysTab({ capabilities, onRevealedChange }: ApiKeysTa
           <p className="text-xs font-mono text-slate-500 dark:text-slate-400">{k.keyPrefix}</p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
             Creada: {formatDate(k.createdAt)} · Último uso: {formatDate(k.lastUsedAt)}
+            {k.revokedAt && <> · Revocada: {formatDate(k.revokedAt)}</>}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">

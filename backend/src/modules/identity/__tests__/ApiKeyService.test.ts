@@ -42,6 +42,14 @@ describe('ApiKeyService.authenticate', () => {
     expect(client.apiKey.findUnique).not.toHaveBeenCalled();
   });
 
+  it('rejects a legacy ck_live_-prefixed key as malformed, without querying api_keys', async () => {
+    const client = buildClient();
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await expect(service.authenticate('ck_live_' + 'A'.repeat(43))).rejects.toBeInstanceOf(ApiKeyAuthenticationError);
+    expect(client.apiKey.findUnique).not.toHaveBeenCalled();
+  });
+
   it('rejects when no row matches the hash', async () => {
     const client = buildClient();
     client.apiKey.findUnique.mockResolvedValue(null);

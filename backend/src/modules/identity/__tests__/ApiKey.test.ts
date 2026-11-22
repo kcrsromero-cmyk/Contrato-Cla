@@ -34,6 +34,10 @@ describe('isApiKeyAuthorization', () => {
     expect(isApiKeyAuthorization('Bearer ctr360_abc')).toBe(true);
   });
 
+  it('returns true for the legacy ck_live_ prefix, routed here only to fail authentication cleanly', () => {
+    expect(isApiKeyAuthorization('Bearer ck_live_abc')).toBe(true);
+  });
+
   it.each([
     ['a JWT', 'Bearer eyJhbGciOiJIUzI1NiJ9.e30.sig'],
     ['a missing header', undefined],
