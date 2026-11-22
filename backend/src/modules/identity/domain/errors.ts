@@ -24,3 +24,12 @@ export class ApiKeyNotFoundError extends Error {
     super('Clave de API no encontrada.');
   }
 }
+
+export class ApiKeyLimitExceededError extends Error {
+  readonly name = 'ApiKeyLimitExceededError';
+  readonly code = 'API_KEY_LIMIT_EXCEEDED';
+
+  constructor() {
+    super('Alcanzaste el máximo de 10 claves de API activas. Revoca una existente antes de crear otra.');
+  }
+}

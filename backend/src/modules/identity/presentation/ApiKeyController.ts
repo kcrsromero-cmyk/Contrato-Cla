@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { logger } from '../../../infrastructure/logger';
-import { ApiKeyNotFoundError } from '../domain/errors';
+import { ApiKeyLimitExceededError, ApiKeyNotFoundError } from '../domain/errors';
 import type { ApiKeySummary, IssuedApiKey } from '../application/ApiKeyService';
 import { ApiKeyIdSchema, CreateApiKeySchema } from './ApiKeySchemas';
 
@@ -31,6 +31,9 @@ export class ApiKeyController {
       const issued = await this.apiKeys.issue(user.id, parsed.data.name);
       return res.status(201).json(issued);
     } catch (error) {
+      if (error instanceof ApiKeyLimitExceededError) {
+        return res.status(409).json({ error: error.message, code: error.code });
+      }
       return this.fail(res, user.id, error);
     }
   }

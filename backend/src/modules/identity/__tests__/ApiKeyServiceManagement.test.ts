@@ -2,13 +2,13 @@ import { createHash } from 'node:crypto';
 import { describe, it, expect, vi } from 'vitest';
 import { ApiKeyService } from '../application/ApiKeyService';
 import { API_KEY_PATTERN } from '../domain/ApiKey';
-import { ApiKeyNotFoundError } from '../domain/errors';
+import { ApiKeyLimitExceededError, ApiKeyNotFoundError } from '../domain/errors';
 
 const NOW = new Date('2026-12-01T00:00:00.000Z');
 
 function buildClient() {
   return {
-    apiKey: { create: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+    apiKey: { create: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn(), count: vi.fn() },
     plan: { findUnique: vi.fn() },
   };
 }
@@ -16,6 +16,7 @@ function buildClient() {
 describe('ApiKeyService.issue', () => {
   it('creates the key with exactly userId, name, keyHash and keyPrefix, and returns the plaintext once', async () => {
     const client = buildClient();
+    client.apiKey.count.mockResolvedValue(0);
     client.apiKey.create.mockImplementation(async ({ data }: any) => ({
       id: 'key-1',
       name: 'CI',
@@ -34,6 +35,39 @@ describe('ApiKeyService.issue', () => {
     );
     expect(result.keyPrefix).toBe(result.key.slice(0, 12));
     expect('keyHash' in result).toBe(false);
+  });
+
+  it('queries the active-key count by userId before issuing', async () => {
+    const client = buildClient();
+    client.apiKey.count.mockResolvedValue(3);
+    client.apiKey.create.mockImplementation(async ({ data }: any) => ({
+      id: 'key-1', name: 'CI', keyPrefix: data.keyPrefix, createdAt: NOW,
+    }));
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await service.issue('user-1', 'CI');
+
+    expect(client.apiKey.count).toHaveBeenCalledWith({ where: { userId: 'user-1', revokedAt: null } });
+  });
+
+  it('throws ApiKeyLimitExceededError at exactly 10 active keys, without calling create', async () => {
+    const client = buildClient();
+    client.apiKey.count.mockResolvedValue(10);
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await expect(service.issue('user-1', 'CI')).rejects.toBeInstanceOf(ApiKeyLimitExceededError);
+    expect(client.apiKey.create).not.toHaveBeenCalled();
+  });
+
+  it('still allows issuing at 9 active keys', async () => {
+    const client = buildClient();
+    client.apiKey.count.mockResolvedValue(9);
+    client.apiKey.create.mockImplementation(async ({ data }: any) => ({
+      id: 'key-1', name: 'CI', keyPrefix: data.keyPrefix, createdAt: NOW,
+    }));
+    const service = new ApiKeyService(client as any, () => NOW);
+
+    await expect(service.issue('user-1', 'CI')).resolves.toBeDefined();
   });
 });
 

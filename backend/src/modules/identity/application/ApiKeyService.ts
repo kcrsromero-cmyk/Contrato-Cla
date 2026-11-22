@@ -1,10 +1,16 @@
 import type { PrismaClient } from '@prisma/client';
 import { AuthenticatedUser } from '../domain/AuthenticatedUser';
 import { API_KEY_PATTERN, generateApiKey, hashApiKey } from '../domain/ApiKey';
-import { ApiAccessNotAllowedError, ApiKeyAuthenticationError, ApiKeyNotFoundError } from '../domain/errors';
+import {
+  ApiAccessNotAllowedError,
+  ApiKeyAuthenticationError,
+  ApiKeyLimitExceededError,
+  ApiKeyNotFoundError,
+} from '../domain/errors';
 import { buildAuthenticatedUserFromDbUser } from './ApiKeyUserMapper';
 
 export const USE_API_CAPABILITY = 'USE_API';
+export const MAX_ACTIVE_API_KEYS_PER_USER = 10;
 
 export type ApiKeyClient = Pick<PrismaClient, 'apiKey' | 'plan'>;
 
@@ -80,6 +86,9 @@ export class ApiKeyService {
 
   /** Returns the plaintext exactly once; only its hash and 12-char prefix are stored. */
   async issue(userId: string, name: string): Promise<IssuedApiKey> {
+    const activeCount = await this.prisma.apiKey.count({ where: { userId, revokedAt: null } });
+    if (activeCount >= MAX_ACTIVE_API_KEYS_PER_USER) throw new ApiKeyLimitExceededError();
+
     const generated = generateApiKey();
     const created = await this.prisma.apiKey.create({
       data: { userId, name, keyHash: generated.keyHash, keyPrefix: generated.keyPrefix },

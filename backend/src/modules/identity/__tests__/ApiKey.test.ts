@@ -6,7 +6,7 @@ import {
   generateApiKey,
   isApiKeyAuthorization,
 } from '../domain/ApiKey';
-import { ApiAccessNotAllowedError, ApiKeyAuthenticationError, ApiKeyNotFoundError } from '../domain/errors';
+import { ApiAccessNotAllowedError, ApiKeyAuthenticationError, ApiKeyLimitExceededError, ApiKeyNotFoundError } from '../domain/errors';
 
 describe('generateApiKey', () => {
   it('returns a plaintext matching the pattern, a 12-char prefix and the SHA-256 hash', () => {
@@ -77,6 +77,14 @@ describe('typed API key errors', () => {
     expect(error).toBeInstanceOf(Error);
     expect(error.name).toBe('ApiKeyNotFoundError');
     expect(error.code).toBe('API_KEY_NOT_FOUND');
+    expect(error.message.length).toBeGreaterThan(0);
+  });
+
+  it('ApiKeyLimitExceededError exposes the expected code and name', () => {
+    const error = new ApiKeyLimitExceededError();
+    expect(error).toBeInstanceOf(Error);
+    expect(error.name).toBe('ApiKeyLimitExceededError');
+    expect(error.code).toBe('API_KEY_LIMIT_EXCEEDED');
     expect(error.message.length).toBeGreaterThan(0);
   });
 });

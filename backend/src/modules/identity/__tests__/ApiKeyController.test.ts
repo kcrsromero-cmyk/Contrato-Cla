@@ -4,7 +4,7 @@ vi.mock('../../../infrastructure/logger', () => ({ logger: { warn: vi.fn(), erro
 
 import { logger } from '../../../infrastructure/logger';
 import { ApiKeyController } from '../presentation/ApiKeyController';
-import { ApiKeyNotFoundError } from '../domain/errors';
+import { ApiKeyLimitExceededError, ApiKeyNotFoundError } from '../domain/errors';
 
 const KEY_ID = '3f1c2a8e-5b7d-4c9e-9a1b-2d3e4f5a6b7c';
 
@@ -41,6 +41,20 @@ describe('ApiKeyController', () => {
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
       expect(manager.issue).not.toHaveBeenCalled();
+    });
+
+    it('responds 409 when the service throws ApiKeyLimitExceededError', async () => {
+      const controller = new ApiKeyController(manager);
+      manager.issue.mockRejectedValue(new ApiKeyLimitExceededError());
+      const req: any = { user: { id: 'user-1' }, body: { name: 'ERP' } };
+
+      await controller.create(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Alcanzaste el máximo de 10 claves de API activas. Revoca una existente antes de crear otra.',
+        code: 'API_KEY_LIMIT_EXCEEDED',
+      });
     });
   });
 
